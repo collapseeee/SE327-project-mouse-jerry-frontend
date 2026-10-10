@@ -1,6 +1,45 @@
 @import "tailwindcss";
 
 @theme {
-    --font-sans: 'Roboto', sans-serif;
+  --font-sans: 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-brand: 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+
+  /* Theme Color Palette matching the baseline mouse-jerry */
+  --color-primary: #360185;
+  --color-secondary: #8F0177;
+  --color-accent-red: #DE1A58;
+  --color-accent-yellow: #F4B342;
+  --color-accent-orange: #e05638;
+  --color-bg-light: #f8f9fa;
+  --color-bg-surface: #ffffff;
+  --color-text-dark: #1e293b;
+  --color-text-muted: #64748b;
+  --color-banner-gray: #5a6572;
 }
-    
+
+:root {
+  --primary: #360185;
+  --secondary: #8F0177;
+  --accent-red: #DE1A58;
+  --accent-yellow: #F4B342;
+  --bg-light: #f8f9fa;
+  --bg-surface: #ffffff;
+  --text-dark: #1e293b;
+  --text-muted: #64748b;
+  --font-sans: 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: var(--bg-light);
+  color: var(--text-dark);
+  min-height: 100vh;
+  margin: 0;
+  /* Soft lavender ambient glow from the baseline web store */
+  background-image: 
+    radial-gradient(circle at 10% 25%, rgba(143, 1, 119, 0.12), transparent 35%),
+    radial-gradient(circle at 90% 15%, rgba(54, 1, 133, 0.14), transparent 40%),
+    radial-gradient(circle at 85% 85%, rgba(143, 1, 119, 0.08), transparent 40%),
+    radial-gradient(circle at 15% 90%, rgba(54, 1, 133, 0.08), transparent 40%);
+  background-attachment: fixed;
+}
