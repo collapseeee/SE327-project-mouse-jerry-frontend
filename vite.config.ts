@@ -13,5 +13,10 @@ export default defineConfig({
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url))
     }
+  },
+  // @ts-ignore
+  test: {
+    environment: 'jsdom',
+    globals: true
   }
 })
