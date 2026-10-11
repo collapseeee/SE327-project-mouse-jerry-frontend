@@ -10,19 +10,25 @@ This skill guides the automated end-to-end lifecycle of implementing a feature o
 
 ## Workflow Steps
 
-### Step 1: Branch Preparation
+### Step 1: Branch Preparation & Existing PR Detection
 1. Ensure the working directory is `se327-mouse-jerry-frontend`.
 2. Check git status to ensure working directory is clean.
-3. Switch to the `development` branch and pull latest changes:
-   ```bash
-   git checkout development
-   git pull origin development
-   ```
-4. Create and checkout a semantic feature branch off `development`:
-   ```bash
-   git checkout -b feature/<short-descriptive-kebab-name>
-   # Or for bugfixes: git checkout -b fix/<short-descriptive-kebab-name>
-   ```
+3. **Check for Existing Open PR**:
+   - If the user is requesting changes, fixes, or review feedback on an **already open PR**:
+     - **DO NOT create a new branch or a new PR**.
+     - Stay on the current PR feature branch (e.g. `fix/navbar-search-input-label`).
+     - Proceed directly to Step 2 (Implementation & Testing).
+   - If starting a **NEW feature or bugfix**:
+     - Switch to `development` and pull latest changes:
+       ```bash
+       git checkout development
+       git pull origin development
+       ```
+     - Create and checkout a semantic feature branch off `development`:
+       ```bash
+       git checkout -b feature/<short-descriptive-kebab-name>
+       # Or for bugfixes: git checkout -b fix/<short-descriptive-kebab-name>
+       ```
 
 ### Step 2: Implementation, Visual Alignment & Testing
 1. **🎨 Visual Design & UI Alignment (STRICT REQUIREMENT)**:
@@ -62,13 +68,18 @@ This skill guides the automated end-to-end lifecycle of implementing a feature o
    git push -u origin feature/<short-descriptive-kebab-name>
    ```
 
-### Step 4: Pull Request Creation
-1. Create a Pull Request targeting `development` with the `agent` label using the GitHub CLI (`gh`):
-   ```bash
-   gh pr create --base development --head feature/<short-descriptive-kebab-name> --label "agent" --title "feat(<scope>): <Title>" --body-file pr_body.md
-   ```
-   *(If `gh` CLI is not installed or authenticated, provide the direct GitHub PR URL output by git push)*
-2. The PR description body MUST follow this template:
+### Step 4: Pull Request Handling (No Duplicate PRs)
+1. **If updating an EXISTING open PR**:
+   - Pushing the branch in Step 3 **automatically updates the existing PR on GitHub**.
+   - **DO NOT run `gh pr create`**.
+   - Output the existing PR link confirming new commits were pushed.
+2. **If creating a NEW Pull Request**:
+   - Create a Pull Request targeting `development` with the `agent` label using the GitHub CLI (`gh`):
+     ```bash
+     gh pr create --base development --head feature/<short-descriptive-kebab-name> --label "agent" --title "feat(<scope>): <Title>" --body-file pr_body.md
+     ```
+     *(If `gh` CLI is not installed or authenticated, provide the direct GitHub PR URL output by git push)*
+   - The PR description body MUST follow this template:
    ```markdown
    ## 📌 Summary of Changes
    - Detailed description of what feature was implemented and key components touched.
