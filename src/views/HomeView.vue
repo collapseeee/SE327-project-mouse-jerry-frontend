@@ -1,13 +1,10 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import HighlightCarousel, { type HighlightItem } from '../components/HighlightCarousel.vue'
-
-interface Game {
-  id: string
-  name: string
-  price: number
-  coverImage: string
-}
+import GameCard from '../components/GameCard.vue'
+import Pagination from '../components/Pagination.vue'
+import { getAllGames } from '@/data/games'
+import type { Game } from '@/types/game'
 
 // Carousel highlights matching the baseline Swiper Coverflow
 const highlights = ref<HighlightItem[]>([
@@ -15,84 +12,80 @@ const highlights = ref<HighlightItem[]>([
     id: 'h1',
     gameId: 'anstoss-3',
     name: 'ANSTOSS 3 - Der Fußballmanager',
-    // Realistic football stadium / banner matching the user's screenshot
     customImage: 'https://images.igdb.com/igdb/image/upload/t_1080p/sc66l2.jpg',
-    buttonColor: 'var(--color-accent-green)' // Green SHOP NOW button from theme
+    buttonColor: 'var(--color-accent-green)'
   },
   {
     id: 'h2',
     gameId: 'cyberpunk-2077',
     name: 'Cyberpunk 2077',
     customImage: 'https://images.igdb.com/igdb/image/upload/t_1080p/sc7x7t.jpg',
-    buttonColor: 'var(--color-accent-red)' // Red/Pink SHOP NOW button from theme
+    buttonColor: 'var(--color-accent-red)'
   },
   {
     id: 'h3',
     gameId: 'elden-ring',
     name: 'Elden Ring',
     customImage: 'https://images.igdb.com/igdb/image/upload/t_1080p/sclh7y.jpg',
-    buttonColor: 'var(--color-accent-yellow)' // Gold SHOP NOW button from theme
+    buttonColor: 'var(--color-accent-yellow)'
   },
   {
     id: 'h4',
     gameId: 'planet-zoo',
     name: 'Planet Zoo: Aquatic Pack',
     customImage: 'https://images.igdb.com/igdb/image/upload/t_1080p/sc7x7t.jpg',
-    buttonColor: 'var(--color-secondary)' // Secondary purple SHOP NOW button from theme
+    buttonColor: 'var(--color-secondary)'
   }
 ])
 
-// Games matching the user's screenshot grid
-const games = ref<Game[]>([
-  {
-    id: '1',
-    name: 'Among Us',
-    price: 99,
-    coverImage: 'https://images.igdb.com/igdb/image/upload/t_cover_big/co5vmg.jpg'
-  },
-  {
-    id: '2',
-    name: 'Planet Zoo: Aquatic Pack',
-    price: 350,
-    coverImage: 'https://images.igdb.com/igdb/image/upload/t_cover_big/co2oau.jpg'
-  },
-  {
-    id: '3',
-    name: 'Blake: The Visual Novel',
-    price: 189,
-    coverImage: 'https://images.igdb.com/igdb/image/upload/t_cover_big/co3p2b.jpg'
-  },
-  {
-    id: '4',
-    name: 'Motor City Online',
-    price: 450,
-    coverImage: 'https://images.igdb.com/igdb/image/upload/t_cover_big/co1x4c.jpg'
-  },
-  {
-    id: '5',
-    name: 'Bubsy in: Claws Encounters of the Furred Kind',
-    price: 150,
-    coverImage: 'https://images.igdb.com/igdb/image/upload/t_cover_big/co26vi.jpg'
-  },
-  {
-    id: '6',
-    name: 'Cyberpunk 2077',
-    price: 1399,
-    coverImage: 'https://images.igdb.com/igdb/image/upload/t_cover_big/co41mu.jpg'
-  },
-  {
-    id: '7',
-    name: 'Elden Ring',
-    price: 1790,
-    coverImage: 'https://images.igdb.com/igdb/image/upload/t_cover_big/co4jni.jpg'
-  },
-  {
-    id: '8',
-    name: 'Hollow Knight',
-    price: 315,
-    coverImage: 'https://images.igdb.com/igdb/image/upload/t_cover_big/co1rgi.jpg'
+// Preferred ordering for Home page 1 matching Screenshot 3:
+// 1. Battlefield 3: Premium Edition (1969 Baht)
+// 2. Headquarters World War II (1277 Baht)
+// 3. FiveM (837 Baht)
+// 4. Clone Drone in the Hyperdome (1702 Baht)
+// 5. Tropico 4: Modern Times (243 Baht)
+const homeGameOrder = [
+  'battlefield-3',
+  'headquarters-wwii',
+  'fivem',
+  'clone-drone',
+  'tropico-4'
+]
+
+const allGames = getAllGames()
+const sortedGames = computed<Game[]>(() => {
+  const page1Games: Game[] = []
+  const remainingGames: Game[] = []
+
+  for (const id of homeGameOrder) {
+    const found = allGames.find((g) => g.id === id)
+    if (found) page1Games.push(found)
   }
-])
+
+  for (const g of allGames) {
+    if (!homeGameOrder.includes(g.id)) {
+      remainingGames.push(g)
+    }
+  }
+
+  return [...page1Games, ...remainingGames]
+})
+
+const currentPage = ref(1)
+const pageSize = ref(5)
+
+const totalPages = computed(() => {
+  return Math.ceil(sortedGames.value.length / pageSize.value) || 1
+})
+
+const paginatedGames = computed(() => {
+  const start = (currentPage.value - 1) * pageSize.value
+  return sortedGames.value.slice(start, start + pageSize.value)
+})
+
+function onPageChange(page: number) {
+  currentPage.value = page
+}
 </script>
 
 <template>
@@ -109,48 +102,20 @@ const games = ref<Game[]>([
       </h3>
     </div>
 
-    <!-- Product Grid -->
-    <section class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-5 mb-12">
-      <div
-        v-for="game in games"
+    <!-- Product Grid matching Screenshot 3 -->
+    <section class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-5 mb-8">
+      <GameCard
+        v-for="game in paginatedGames"
         :key="game.id"
-        class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden flex flex-col hover:shadow-md hover:-translate-y-0.5 transition-all duration-300"
-      >
-        <!-- Game Cover Image -->
-        <div class="aspect-[3/4] w-full overflow-hidden bg-slate-100">
-          <img
-            :src="game.coverImage"
-            :alt="game.name"
-            class="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
-            loading="lazy"
-          />
-        </div>
-
-        <!-- Card Details -->
-        <div class="p-3.5 flex flex-col flex-1">
-          <h4 class="font-bold text-slate-800 text-sm truncate mb-1" :title="game.name">
-            {{ game.name }}
-          </h4>
-          <p class="text-accent-red font-semibold text-sm mb-3">
-            {{ game.price }} Baht
-          </p>
-
-          <div class="mt-auto flex items-center gap-2">
-            <router-link
-              :to="`/product/${game.id}`"
-              class="flex-1 py-1.5 px-3 text-xs font-semibold text-primary border border-primary/40 hover:bg-primary hover:text-white rounded-md transition-colors text-center"
-            >
-              View
-            </router-link>
-            <button
-              class="p-1.5 px-2.5 bg-accent-orange hover:bg-accent-orange-hover text-white rounded-md transition-colors shadow-sm"
-              title="Add to Cart"
-            >
-              <i class="fa-solid fa-cart-plus text-xs"></i>
-            </button>
-          </div>
-        </div>
-      </div>
+        :game="game"
+      />
     </section>
+
+    <!-- Pagination matching Screenshot 3: < 1 2 ... 6 > -->
+    <Pagination
+      :current-page="currentPage"
+      :total-pages="totalPages"
+      @update:current-page="onPageChange"
+    />
   </main>
 </template>
