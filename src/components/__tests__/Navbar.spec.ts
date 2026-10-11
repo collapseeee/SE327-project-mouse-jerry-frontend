@@ -31,11 +31,13 @@ describe('Navbar', () => {
     })
   }
 
-  it('renders brand name and Login link when unauthenticated', () => {
+  it('renders brand name and icon-only Login link matching baseline when unauthenticated', () => {
     const wrapper = mountNavbar()
     expect(wrapper.text()).toContain('Mouse Jerry')
-    expect(wrapper.find('[data-test="navbar-login-link"]').exists()).toBe(true)
-    expect(wrapper.text()).toContain('Login')
+    const loginLink = wrapper.find('[data-test="navbar-login-link"]')
+    expect(loginLink.exists()).toBe(true)
+    expect(loginLink.attributes('aria-label')).toBe('Login')
+    expect(loginLink.find('i.fa-solid.fa-user').exists()).toBe(true)
     expect(wrapper.find('[data-test="navbar-user-btn"]').exists()).toBe(false)
   })
 

@@ -175,10 +175,10 @@ onUnmounted(() => {
 
         <!-- 
           CRITICAL AGENT INSTRUCTION - DO NOT REMOVE OR HARDCODE USERNAME:
-          The user profile/login section below is DYNAMIC based on authentication state (authStore.isAuthenticated).
+          The login / user profile element below is DYNAMIC based on authentication state (authStore.isAuthenticated).
+          - Unauthenticated: Renders the original baseline icon-only login button (<i class="fa-solid fa-user"></i>) without any text, matching the original baseline design.
+          - Authenticated: Renders the active user's username (<i class="fa-regular fa-circle-user"></i> + {{ authStore.currentUsername }}).
           DO NOT hardcode 'thainchai' or any static username here to match baseline UI screenshots/mockups.
-          When logged out (unauthenticated), display 'Login'.
-          When logged in, display the actual authenticated username from authStore.currentUsername.
         -->
         <template v-if="authStore.isAuthenticated">
           <div ref="userDropdownRef" class="relative">
@@ -188,11 +188,11 @@ onUnmounted(() => {
               aria-haspopup="true"
               :aria-expanded="isUserDropdownOpen"
               class="flex items-center gap-1.5 text-white hover:text-accent-yellow transition-colors p-1 group cursor-pointer"
-              title="User Profile"
+              :title="authStore.currentUsername"
               data-test="navbar-user-btn"
               @click="toggleUserDropdown"
             >
-              <i class="fa-solid fa-circle-user text-xl text-accent-yellow"></i>
+              <i class="fa-regular fa-circle-user text-xl text-accent-yellow"></i>
               <span class="text-sm font-medium hidden sm:inline-block" data-test="navbar-username">
                 {{ authStore.currentUsername }}
               </span>
@@ -233,14 +233,15 @@ onUnmounted(() => {
           </div>
         </template>
         <template v-else>
+          <!-- Original baseline icon-only login button matching reference image -->
           <router-link
             to="/login"
-            class="flex items-center gap-1.5 text-white hover:text-accent-yellow transition-colors p-1 group"
+            class="text-white hover:text-accent-yellow transition-all duration-200 p-1 flex items-center justify-center text-lg hover:scale-110 cursor-pointer"
             title="Login"
+            aria-label="Login"
             data-test="navbar-login-link"
           >
-            <i class="fa-regular fa-circle-user text-xl"></i>
-            <span class="text-sm font-medium hidden sm:inline-block">Login</span>
+            <i class="fa-solid fa-user"></i>
           </router-link>
         </template>
       </div>
