@@ -2,24 +2,37 @@ import type { AuthResponse, LoginPayload, RegisterPayload } from '@/types/auth'
 
 const API_BASE = '/api/v1/auth'
 
+const extractDetailsError = (data: Record<string, unknown>): string | null => {
+  if (!data.details || typeof data.details !== 'object') {
+    return null
+  }
+  const details = Object.values(data.details as Record<string, unknown>)
+    .filter((val): val is string => typeof val === 'string' && Boolean(val.trim()))
+  return details.length > 0 ? details.join(', ') : null
+}
+
+const extractObjectError = (data: Record<string, unknown>): string | null => {
+  const detailsMsg = extractDetailsError(data)
+  if (detailsMsg) {
+    return detailsMsg
+  }
+  if (typeof data.error === 'string' && data.error.trim()) {
+    return data.error
+  }
+  if (typeof data.message === 'string' && data.message.trim()) {
+    return data.message
+  }
+  return null
+}
+
 const extractErrorMessage = (errData: unknown, fallback: string): string => {
   if (typeof errData === 'string' && errData.trim()) {
     return errData
   }
   if (errData && typeof errData === 'object') {
-    const data = errData as Record<string, unknown>
-    if (data.details && typeof data.details === 'object') {
-      const details = Object.values(data.details as Record<string, unknown>)
-        .filter((val): val is string => typeof val === 'string' && val.trim().length > 0)
-      if (details.length > 0) {
-        return details.join(', ')
-      }
-    }
-    if (typeof data.error === 'string' && data.error.trim()) {
-      return data.error
-    }
-    if (typeof data.message === 'string' && data.message.trim()) {
-      return data.message
+    const objMsg = extractObjectError(errData as Record<string, unknown>)
+    if (objMsg) {
+      return objMsg
     }
   }
   return fallback

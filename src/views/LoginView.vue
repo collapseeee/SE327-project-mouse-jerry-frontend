@@ -27,27 +27,32 @@ const handleLoginAction = async (username: string, password: string) => {
   serverError.value = result.error || 'Login failed. Please check your credentials.'
 }
 
-const handleRegisterAction = async (data: { username: string; email?: string; password: string; confirmPassword?: string }) => {
-  const result = await authStore.register({
-    username: data.username,
-    email: data.email || '',
-    password: data.password,
-    confirmPassword: data.confirmPassword || data.password
-  })
-  if (!result.success) {
-    serverError.value = result.error || 'Registration failed.'
-    return
-  }
-  // Auto login after registration
+const autoLoginAfterRegister = async (username: string, password: string) => {
   const loginResult = await authStore.login({
-    username: data.username,
-    password: data.password
+    username,
+    password
   })
   if (loginResult.success) {
     router?.push('/')
     return
   }
   serverError.value = loginResult.error || 'Registration succeeded, but auto-login failed. Please sign in.'
+}
+
+const handleRegisterAction = async (data: { username: string; email?: string; password: string; confirmPassword?: string }) => {
+  const confirmPassword = data.confirmPassword ? data.confirmPassword : data.password
+  const email = data.email ? data.email : ''
+  const result = await authStore.register({
+    username: data.username,
+    email,
+    password: data.password,
+    confirmPassword
+  })
+  if (!result.success) {
+    serverError.value = result.error || 'Registration failed.'
+    return
+  }
+  await autoLoginAfterRegister(data.username, data.password)
 }
 
 const handleAuthSubmit = async (data: { mode: 'register' | 'login'; username: string; email?: string; password: string; confirmPassword?: string }) => {
