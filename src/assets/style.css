@@ -6,10 +6,15 @@
 
   /* Theme Color Palette matching the baseline mouse-jerry */
   --color-primary: #360185;
+  --color-primary-hover: #4a02b5;
   --color-secondary: #8F0177;
+  --color-secondary-hover: #b00293;
   --color-accent-red: #DE1A58;
   --color-accent-yellow: #F4B342;
   --color-accent-orange: #e05638;
+  --color-accent-orange-hover: #c9492d;
+  --color-accent-green: #00c853;
+  --color-accent-green-hover: #00b046;
   --color-bg-light: #f8f9fa;
   --color-bg-surface: #ffffff;
   --color-text-dark: #1e293b;
@@ -19,13 +24,20 @@
 
 :root {
   --primary: #360185;
+  --primary-hover: #4a02b5;
   --secondary: #8F0177;
+  --secondary-hover: #b00293;
   --accent-red: #DE1A58;
   --accent-yellow: #F4B342;
+  --accent-orange: #e05638;
+  --accent-orange-hover: #c9492d;
+  --accent-green: #00c853;
+  --accent-green-hover: #00b046;
   --bg-light: #f8f9fa;
   --bg-surface: #ffffff;
   --text-dark: #1e293b;
   --text-muted: #64748b;
+  --banner-gray: #5a6572;
   --font-sans: 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, Roboto, 'Helvetica Neue', Arial, sans-serif;
 }
 
