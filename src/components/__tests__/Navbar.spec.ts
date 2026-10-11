@@ -37,6 +37,7 @@ describe('Navbar', () => {
     const loginLink = wrapper.find('[data-test="navbar-login-link"]')
     expect(loginLink.exists()).toBe(true)
     expect(loginLink.attributes('aria-label')).toBe('Login')
+    expect(loginLink.attributes('href')).toBe('/login?mode=login')
     expect(loginLink.find('i.fa-solid.fa-user').exists()).toBe(true)
     expect(wrapper.find('[data-test="navbar-user-btn"]').exists()).toBe(false)
   })

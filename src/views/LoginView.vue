@@ -44,6 +44,8 @@ async function handleAuthSubmit(data: { mode: 'register' | 'login'; username: st
       })
       if (loginResult.success) {
         router?.push('/')
+      } else {
+        serverError.value = loginResult.error || 'Registration succeeded, but auto-login failed. Please sign in.'
       }
     } else {
       serverError.value = result.error || 'Registration failed.'

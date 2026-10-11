@@ -117,6 +117,34 @@ describe('LoginView', () => {
     expect(mockPush).toHaveBeenCalledWith('/')
   })
 
+  it('handles registration success but auto-login failure with error feedback', async () => {
+    const authStore = useAuthStore()
+    vi.spyOn(authStore, 'register').mockResolvedValueOnce({
+      success: true,
+      message: 'Created'
+    })
+    vi.spyOn(authStore, 'login').mockResolvedValueOnce({
+      success: false,
+      error: 'Cannot auto-login'
+    })
+
+    const wrapper = mount(LoginView)
+    const authCard = wrapper.findComponent(AuthCard)
+
+    authCard.vm.$emit('submit', {
+      mode: 'register',
+      username: 'newuser',
+      email: 'newuser@example.com',
+      password: 'password123'
+    })
+    await flushPromises()
+
+    expect(authStore.register).toHaveBeenCalled()
+    expect(authStore.login).toHaveBeenCalled()
+    expect(mockPush).not.toHaveBeenCalled()
+    expect(authCard.props('serverError')).toBe('Cannot auto-login')
+  })
+
   it('handles failed register and sets server error', async () => {
     const authStore = useAuthStore()
     vi.spyOn(authStore, 'register').mockResolvedValueOnce({

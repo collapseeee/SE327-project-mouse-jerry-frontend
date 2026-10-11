@@ -41,12 +41,12 @@ This skill guides the automated end-to-end lifecycle of implementing a feature o
 3. **👤 Dynamic Authentication Over Static Mockups**: Even though reference screenshots show static placeholder usernames like `thainchai`, navbar and user profile components MUST dynamically display the active user from the authentication store (`authStore.isAuthenticated ? authStore.currentUsername : 'Login'`). **NEVER hardcode `thainchai` or any static username in production templates just to match a screenshot image**.
 4. **Clean Implementation**: Implement the requested Vue 3 / TypeScript components, views, or Pinia stores adhering strictly to Tailwind CSS theme tokens.
 5. **Mandatory Test Coverage**: Always write corresponding Vitest unit tests in `__tests__/` with `@vue/test-utils` to maintain high **Statement and Branch coverage** (required by SE327 Software Metrics rubric).
-4. **Local Verification**: Run local verification before committing:
+6. **Local Verification**: Run local verification before committing:
    ```bash
    npm run build
    npm test
    ```
-5. Verify that:
+7. Verify that:
    - Build completes with zero TypeScript or Vite errors.
    - All Vitest test suites pass with 100% success rate.
    - Statement and Branch coverage metrics meet the quality gate standard (>80%).

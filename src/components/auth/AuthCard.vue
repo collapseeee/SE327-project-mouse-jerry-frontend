@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, reactive } from 'vue'
+import { ref, reactive, watch } from 'vue'
 
 const props = withDefaults(
   defineProps<{
@@ -20,6 +20,15 @@ const emit = defineEmits<{
 const isRegister = ref(props.initialMode === 'register')
 const errorMessage = ref('')
 const successMessage = ref('')
+
+watch(
+  () => props.serverError,
+  (newVal) => {
+    if (newVal) {
+      successMessage.value = ''
+    }
+  }
+)
 
 const form = reactive({
   username: '',
@@ -185,7 +194,7 @@ function handleSubmit() {
         <div v-if="serverError || errorMessage" class="text-accent-red text-xs font-semibold pt-1" data-test="error-msg">
           {{ serverError || errorMessage }}
         </div>
-        <div v-if="successMessage" class="text-accent-green text-xs font-semibold pt-1" data-test="success-msg">
+        <div v-if="successMessage && !serverError && !errorMessage" class="text-accent-green text-xs font-semibold pt-1" data-test="success-msg">
           {{ successMessage }}
         </div>
 

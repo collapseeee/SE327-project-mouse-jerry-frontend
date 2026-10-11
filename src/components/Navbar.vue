@@ -117,13 +117,13 @@ onUnmounted(() => {
             >
               <div
                 v-if="isCategoryDropdownOpen"
-                class="absolute left-0 mt-2 w-56 bg-white text-slate-800 rounded-lg shadow-xl border border-slate-100 py-2 z-50 overflow-hidden"
+                class="absolute left-0 mt-2 w-56 bg-bg-surface text-text-dark rounded-lg shadow-xl border border-auth-border py-2 z-50 overflow-hidden"
               >
                 <router-link
                   v-for="cat in categories"
                   :key="cat.id"
                   :to="`/category/${encodeURIComponent(cat.slug)}`"
-                  class="block px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-100 hover:text-primary transition-colors"
+                  class="block px-4 py-2.5 text-sm font-medium text-text-dark hover:bg-bg-light hover:text-primary transition-colors"
                   @click="closeCategoryDropdown"
                 >
                   {{ cat.name }}
@@ -213,15 +213,15 @@ onUnmounted(() => {
             >
               <div
                 v-if="isUserDropdownOpen"
-                class="absolute right-0 mt-2 w-48 bg-white text-slate-800 rounded-lg shadow-xl border border-slate-100 py-1.5 z-50 overflow-hidden"
+                class="absolute right-0 mt-2 w-48 bg-bg-surface text-text-dark rounded-lg shadow-xl border border-auth-border py-1.5 z-50 overflow-hidden"
                 data-test="navbar-user-dropdown"
               >
-                <div class="px-4 py-2 border-b border-slate-100 text-xs text-slate-500">
-                  Signed in as <span class="font-bold text-slate-800">{{ authStore.currentUsername }}</span>
+                <div class="px-4 py-2 border-b border-auth-border text-xs text-text-muted">
+                  Signed in as <span class="font-bold text-text-dark">{{ authStore.currentUsername }}</span>
                 </div>
                 <button
                   type="button"
-                  class="w-full text-left px-4 py-2 text-sm text-accent-red hover:bg-slate-100 transition-colors cursor-pointer flex items-center gap-2"
+                  class="w-full text-left px-4 py-2 text-sm text-accent-red hover:bg-bg-light transition-colors cursor-pointer flex items-center gap-2"
                   data-test="navbar-logout-btn"
                   @click="handleLogout"
                 >
@@ -235,7 +235,7 @@ onUnmounted(() => {
         <template v-else>
           <!-- Original baseline icon-only login button matching reference image -->
           <router-link
-            to="/login"
+            to="/login?mode=login"
             class="text-white hover:text-accent-yellow transition-all duration-200 p-1 flex items-center justify-center text-lg hover:scale-110 cursor-pointer"
             title="Login"
             aria-label="Login"
