@@ -8,7 +8,8 @@ describe('HomeView', () => {
       global: {
         stubs: {
           RouterLink: {
-            template: '<a><slot /></a>'
+            props: ['to'],
+            template: '<a :href="to"><slot /></a>'
           },
           swiper: {
             template: '<div><slot /></div>'
@@ -26,11 +27,27 @@ describe('HomeView', () => {
     expect(wrapper.text()).toContain('SHOP NOW')
   })
 
-  it('renders games with name and price', () => {
+  it('renders games on page 1 matching Screenshot 3', () => {
     const wrapper = mountComponent()
-    expect(wrapper.text()).toContain('Elden Ring')
-    expect(wrapper.text()).toContain('1790 Baht')
     expect(wrapper.text()).toContain('All Games')
+    expect(wrapper.text()).toContain('Battlefield 3: Premium Edition')
+    expect(wrapper.text()).toContain('1969 Baht')
+    expect(wrapper.text()).toContain('FiveM')
+    expect(wrapper.text()).toContain('837 Baht')
+  })
+
+  it('navigates through pages using pagination', async () => {
+    const wrapper = mountComponent()
+    expect(wrapper.text()).toContain('1')
+    expect(wrapper.text()).toContain('6')
+
+    const page2Btn = wrapper.findAll('button').find((b) => b.text() === '2')
+    expect(page2Btn).toBeDefined()
+    await page2Btn!.trigger('click')
+
+    expect(wrapper.text()).toContain('Towerfall Ascension: Dark World')
+    expect(wrapper.text()).toContain('683 Baht')
+    expect(wrapper.text()).toContain('Vampire Survivors: Emergency Meeting')
   })
 
   it('gives every cover image alt text', () => {
