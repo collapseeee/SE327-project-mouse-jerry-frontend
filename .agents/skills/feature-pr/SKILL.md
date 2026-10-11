@@ -74,29 +74,32 @@ This skill guides the automated end-to-end lifecycle of implementing a feature o
    - **DO NOT run `gh pr create`**.
    - Output the existing PR link confirming new commits were pushed.
 2. **If creating a NEW Pull Request**:
-   - Create a Pull Request targeting `development` with the `agent` label using the GitHub CLI (`gh`):
+   - Write the formatted markdown description to a temporary file `pr_body.md`:
+     ```bash
+     cat << 'EOF' > pr_body.md
+     ## 📌 Summary of Changes
+     - Detailed description of what feature was implemented and key components touched.
+
+     ## 🖼️ Visual Alignment & Verification
+     - Confirmation of adherence to the reference screenshot (or attached visual preview/mockup).
+
+     ## 🧪 Test Coverage & Metrics
+     - **Statement Coverage**: X%
+     - **Branch Coverage**: X%
+     - All Vitest test suites passing (`npm test`).
+
+     ## ✅ Review Checklist
+     - [ ] UI visually matches the reference image.
+     - [ ] Unit & branch tests pass cleanly.
+     - [ ] Ready to merge into `development`.
+     EOF
+     ```
+   - Create the Pull Request targeting `development` with the `agent` label using GitHub CLI (`gh`):
      ```bash
      gh pr create --base development --head feature/<short-descriptive-kebab-name> --label "agent" --title "feat(<scope>): <Title>" --body-file pr_body.md
+     rm pr_body.md
      ```
      *(If `gh` CLI is not installed or authenticated, provide the direct GitHub PR URL output by git push)*
-   - The PR description body MUST follow this template:
-   ```markdown
-   ## 📌 Summary of Changes
-   - Detailed description of what feature was implemented and key components touched.
-
-   ## 🖼️ Visual Alignment & Verification
-   - Confirmation of adherence to the reference screenshot (or attached visual preview/mockup).
-
-   ## 🧪 Test Coverage & Metrics
-   - **Statement Coverage**: X%
-   - **Branch Coverage**: X%
-   - All Vitest test suites passing (`npm test`).
-
-   ## ✅ Review Checklist
-   - [ ] UI visually matches the reference image.
-   - [ ] Unit & branch tests pass cleanly.
-   - [ ] Ready to merge into `development`.
-   ```
 
 ### Step 5: Review Gate (STOP)
 - Output the created Pull Request URL clearly to the user.
