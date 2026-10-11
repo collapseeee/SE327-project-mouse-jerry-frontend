@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import HighlightCarousel, { type HighlightItem } from '../components/HighlightCarousel.vue'
 
 interface Game {
   id: string
@@ -8,21 +9,85 @@ interface Game {
   coverImage: string
 }
 
+// Carousel highlights matching the baseline Swiper Coverflow
+const highlights = ref<HighlightItem[]>([
+  {
+    id: 'h1',
+    gameId: 'anstoss-3',
+    name: 'ANSTOSS 3 - Der Fußballmanager',
+    // Realistic football stadium / banner matching the user's screenshot
+    customImage: 'https://images.igdb.com/igdb/image/upload/t_1080p/sc66l2.jpg',
+    buttonColor: 'var(--color-accent-green)' // Green SHOP NOW button from theme
+  },
+  {
+    id: 'h2',
+    gameId: 'cyberpunk-2077',
+    name: 'Cyberpunk 2077',
+    customImage: 'https://images.igdb.com/igdb/image/upload/t_1080p/sc7x7t.jpg',
+    buttonColor: 'var(--color-accent-red)' // Red/Pink SHOP NOW button from theme
+  },
+  {
+    id: 'h3',
+    gameId: 'elden-ring',
+    name: 'Elden Ring',
+    customImage: 'https://images.igdb.com/igdb/image/upload/t_1080p/sclh7y.jpg',
+    buttonColor: 'var(--color-accent-yellow)' // Gold SHOP NOW button from theme
+  },
+  {
+    id: 'h4',
+    gameId: 'planet-zoo',
+    name: 'Planet Zoo: Aquatic Pack',
+    customImage: 'https://images.igdb.com/igdb/image/upload/t_1080p/sc7x7t.jpg',
+    buttonColor: 'var(--color-secondary)' // Secondary purple SHOP NOW button from theme
+  }
+])
+
+// Games matching the user's screenshot grid
 const games = ref<Game[]>([
   {
     id: '1',
+    name: 'Among Us',
+    price: 99,
+    coverImage: 'https://images.igdb.com/igdb/image/upload/t_cover_big/co5vmg.jpg'
+  },
+  {
+    id: '2',
+    name: 'Planet Zoo: Aquatic Pack',
+    price: 350,
+    coverImage: 'https://images.igdb.com/igdb/image/upload/t_cover_big/co2oau.jpg'
+  },
+  {
+    id: '3',
+    name: 'Blake: The Visual Novel',
+    price: 189,
+    coverImage: 'https://images.igdb.com/igdb/image/upload/t_cover_big/co3p2b.jpg'
+  },
+  {
+    id: '4',
+    name: 'Motor City Online',
+    price: 450,
+    coverImage: 'https://images.igdb.com/igdb/image/upload/t_cover_big/co1x4c.jpg'
+  },
+  {
+    id: '5',
+    name: 'Bubsy in: Claws Encounters of the Furred Kind',
+    price: 150,
+    coverImage: 'https://images.igdb.com/igdb/image/upload/t_cover_big/co26vi.jpg'
+  },
+  {
+    id: '6',
     name: 'Cyberpunk 2077',
     price: 1399,
     coverImage: 'https://images.igdb.com/igdb/image/upload/t_cover_big/co41mu.jpg'
   },
   {
-    id: '2',
+    id: '7',
     name: 'Elden Ring',
     price: 1790,
     coverImage: 'https://images.igdb.com/igdb/image/upload/t_cover_big/co4jni.jpg'
   },
   {
-    id: '3',
+    id: '8',
     name: 'Hollow Knight',
     price: 315,
     coverImage: 'https://images.igdb.com/igdb/image/upload/t_cover_big/co1rgi.jpg'
@@ -31,27 +96,25 @@ const games = ref<Game[]>([
 </script>
 
 <template>
-  <main class="max-w-7xl mx-auto px-6 py-8">
-    <!-- Featured Carousel / Banner -->
-    <div class="w-full max-w-2xl mx-auto mb-10">
-      <div class="h-64 rounded-2xl bg-[#5a6572] shadow-lg flex items-center justify-center text-center px-6">
-        <h2 class="text-white text-3xl font-bold tracking-tight">
-          Welcome to Mouse Jerry!
-        </h2>
-      </div>
-    </div>
+  <main class="max-w-7xl mx-auto px-6 py-6">
+    <!-- Premium Swiper Coverflow Carousel -->
+    <section class="mb-8">
+      <HighlightCarousel :highlights="highlights" />
+    </section>
 
     <!-- Section Title -->
-    <h3 class="text-2xl font-bold text-primary mb-6">
-      All Games
-    </h3>
+    <div class="mb-6">
+      <h3 class="text-2xl font-bold text-primary">
+        All Games
+      </h3>
+    </div>
 
-    <!-- Game Cards Grid -->
-    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-5">
+    <!-- Product Grid -->
+    <section class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-5 mb-12">
       <div
         v-for="game in games"
         :key="game.id"
-        class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden flex flex-col hover:shadow-md transition-shadow"
+        class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden flex flex-col hover:shadow-md hover:-translate-y-0.5 transition-all duration-300"
       >
         <!-- Game Cover Image -->
         <div class="aspect-[3/4] w-full overflow-hidden bg-slate-100">
@@ -59,26 +122,28 @@ const games = ref<Game[]>([
             :src="game.coverImage"
             :alt="game.name"
             class="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+            loading="lazy"
           />
         </div>
 
-        <!-- Card Body -->
-        <div class="p-4 flex flex-col flex-1">
-          <h4 class="font-bold text-slate-800 text-sm truncate mb-1">
+        <!-- Card Details -->
+        <div class="p-3.5 flex flex-col flex-1">
+          <h4 class="font-bold text-slate-800 text-sm truncate mb-1" :title="game.name">
             {{ game.name }}
           </h4>
-          <p class="text-accent-red font-semibold text-sm mb-4">
+          <p class="text-accent-red font-semibold text-sm mb-3">
             {{ game.price }} Baht
           </p>
 
           <div class="mt-auto flex items-center gap-2">
-            <button
-              class="flex-1 py-1 px-3 text-xs font-semibold text-primary border border-primary/50 hover:bg-primary hover:text-white rounded transition-colors text-center"
+            <router-link
+              :to="`/product/${game.id}`"
+              class="flex-1 py-1.5 px-3 text-xs font-semibold text-primary border border-primary/40 hover:bg-primary hover:text-white rounded-md transition-colors text-center"
             >
               View
-            </button>
+            </router-link>
             <button
-              class="p-1.5 px-2.5 bg-[#e05638] hover:bg-[#c9492d] text-white rounded transition-colors"
+              class="p-1.5 px-2.5 bg-accent-orange hover:bg-accent-orange-hover text-white rounded-md transition-colors shadow-sm"
               title="Add to Cart"
             >
               <i class="fa-solid fa-cart-plus text-xs"></i>
@@ -86,6 +151,6 @@ const games = ref<Game[]>([
           </div>
         </div>
       </div>
-    </div>
+    </section>
   </main>
 </template>
