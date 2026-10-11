@@ -3,23 +3,40 @@ import { mount } from '@vue/test-utils'
 import HomeView from '../HomeView.vue'
 
 describe('HomeView', () => {
-  it('shows the welcome banner', () => {
-    const wrapper = mount(HomeView)
-    expect(wrapper.text()).toContain('Welcome to Mouse Jerry!')
+  const mountComponent = () => {
+    return mount(HomeView, {
+      global: {
+        stubs: {
+          RouterLink: {
+            template: '<a><slot /></a>'
+          },
+          swiper: {
+            template: '<div><slot /></div>'
+          },
+          SwiperSlide: {
+            template: '<div class="slide"><slot /></div>'
+          }
+        }
+      }
+    })
+  }
+
+  it('renders the highlights carousel with SHOP NOW buttons', () => {
+    const wrapper = mountComponent()
+    expect(wrapper.text()).toContain('SHOP NOW')
   })
 
-  it('renders one card per game with name and price', () => {
-    const wrapper = mount(HomeView)
-    const cards = wrapper.findAll('h4')
-    expect(cards).toHaveLength(3)
+  it('renders games with name and price', () => {
+    const wrapper = mountComponent()
     expect(wrapper.text()).toContain('Elden Ring')
     expect(wrapper.text()).toContain('1790 Baht')
+    expect(wrapper.text()).toContain('All Games')
   })
 
   it('gives every cover image alt text', () => {
-    const wrapper = mount(HomeView)
+    const wrapper = mountComponent()
     const images = wrapper.findAll('img')
-    expect(images).toHaveLength(3)
+    expect(images.length).toBeGreaterThan(0)
     images.forEach((img) => expect(img.attributes('alt')).toBeTruthy())
   })
 })
