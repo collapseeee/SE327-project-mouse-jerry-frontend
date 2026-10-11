@@ -13,7 +13,7 @@ const props = withDefaults(
 )
 
 const emit = defineEmits<{
-  (e: 'submit', data: { mode: 'register' | 'login'; username: string; email?: string; password: string }): void
+  (e: 'submit', data: { mode: 'register' | 'login'; username: string; email?: string; password: string; confirmPassword?: string }): void
   (e: 'mode-change', mode: 'register' | 'login'): void
 }>()
 
@@ -67,7 +67,8 @@ function handleSubmit() {
       mode: 'register',
       username: form.username,
       email: form.email,
-      password: form.password
+      password: form.password,
+      confirmPassword: form.confirmPassword
     })
   } else {
     successMessage.value = 'Login submitted successfully!'

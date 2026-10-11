@@ -18,7 +18,7 @@ const initialMode = computed<'register' | 'login'>(() => {
   return 'register'
 })
 
-async function handleAuthSubmit(data: { mode: 'register' | 'login'; username: string; email?: string; password: string }) {
+async function handleAuthSubmit(data: { mode: 'register' | 'login'; username: string; email?: string; password: string; confirmPassword?: string }) {
   serverError.value = ''
   if (data.mode === 'login') {
     const result = await authStore.login({
@@ -34,7 +34,8 @@ async function handleAuthSubmit(data: { mode: 'register' | 'login'; username: st
     const result = await authStore.register({
       username: data.username,
       email: data.email || '',
-      password: data.password
+      password: data.password,
+      confirmPassword: data.confirmPassword || data.password
     })
     if (result.success) {
       // Auto login after registration
