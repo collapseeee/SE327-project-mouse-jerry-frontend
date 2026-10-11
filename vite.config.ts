@@ -4,10 +4,10 @@ import tailwindcss from '@tailwindcss/vite'
 import { fileURLToPath } from 'url'
 
 // https://vite.dev/config/
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   plugins: [
     vue(),
-    tailwindcss()
+    ...(mode === 'test' ? [] : [tailwindcss()])
   ],
   resolve: {
     alias: {
@@ -17,6 +17,12 @@ export default defineConfig({
   // @ts-ignore
   test: {
     environment: 'jsdom',
-    globals: true
+    globals: true,
+    fileParallelism: false,
+    poolOptions: {
+      forks: {
+        singleFork: true
+      }
+    }
   }
-})
+}))
