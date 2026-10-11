@@ -1,11 +1,15 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
 import AuthCard from '../components/auth/AuthCard.vue'
 import loginBg from '../assets/login-bg.png'
 
 const route = useRoute()
 const router = useRouter()
+const authStore = useAuthStore()
+
+const serverError = ref('')
 
 const initialMode = computed<'register' | 'login'>(() => {
   if (route?.query?.mode === 'login') {
@@ -14,9 +18,38 @@ const initialMode = computed<'register' | 'login'>(() => {
   return 'register'
 })
 
-function handleAuthSubmit(data: { mode: 'register' | 'login'; username: string; email?: string; password: string }) {
+async function handleAuthSubmit(data: { mode: 'register' | 'login'; username: string; email?: string; password: string }) {
+  serverError.value = ''
   if (data.mode === 'login') {
-    router?.push('/')
+    const result = await authStore.login({
+      username: data.username,
+      password: data.password
+    })
+    if (result.success) {
+      router?.push('/')
+    } else {
+      serverError.value = result.error || 'Login failed. Please check your credentials.'
+    }
+  } else {
+    const result = await authStore.register({
+      username: data.username,
+      email: data.email || '',
+      password: data.password
+    })
+    if (result.success) {
+      // Auto login after registration
+      const loginResult = await authStore.login({
+        username: data.username,
+        password: data.password
+      })
+      if (loginResult.success) {
+        router?.push('/')
+      } else {
+        serverError.value = loginResult.error || 'Registration succeeded, but auto-login failed. Please sign in.'
+      }
+    } else {
+      serverError.value = result.error || 'Registration failed.'
+    }
   }
 }
 </script>
@@ -40,7 +73,9 @@ function handleAuthSubmit(data: { mode: 'register' | 'login'; username: string; 
     <!-- Auth Card Component -->
     <AuthCard
       :initial-mode="initialMode"
+      :server-error="serverError"
       @submit="handleAuthSubmit"
+      @mode-change="serverError = ''"
     />
   </div>
 </template>
