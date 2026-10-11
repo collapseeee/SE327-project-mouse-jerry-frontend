@@ -43,10 +43,11 @@ When implementing any feature or fix:
         - Decompose complex functions into single-responsibility helpers with cyclomatic complexity $\le 5$.
         - Run local verification: `npm test && npm run build` (Frontend) or `./mvnw clean test` (Backend).
      4. **Push & Verify**: Commit with atomic message (`fix(<scope>): resolve DeepSource <issue>`), push to the PR branch, and poll/wait for DeepSource to rerun.
-     5. **Iterate**: Repeat until DeepSource reports `success` (`"Analysis passed: No blocking issues or failing metrics found"`) and SonarQube/SonarCloud Quality Gate is passed.
+     5. **Resolve Review Threads**: Once the fix is verified and the checks pass, automatically resolve the review comment threads via GitHub GraphQL API (`resolveReviewThread`).
+     6. **Iterate**: Repeat until DeepSource reports `success` (`"Analysis passed: No blocking issues or failing metrics found"`) and SonarQube/SonarCloud Quality Gate is passed.
 7. **Human-in-the-Loop Merge Gate**:
    - The agent must **NEVER auto-merge** PRs into `development` or `main`.
-   - Once all CI and DeepSource checks are 100% Green, hand over the PR URL to the user to click **Merge** on GitHub.
+   - Once all CI and DeepSource checks are 100% Green and review threads are resolved, hand over the PR URL to the user to click **Merge** on GitHub.
 
 ## 3. Spring Boot Architecture Rules (Backend Mandatory)
 - **Strict 5-Tier Layered Architecture**: Every HTTP request flows strictly through:
