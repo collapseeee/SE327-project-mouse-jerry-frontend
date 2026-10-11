@@ -88,7 +88,7 @@ describe('AuthCard', () => {
     await wrapper.find('[data-test="input-confirm-password"]').setValue('correctpass')
     await wrapper.find('[data-test="auth-form"]').trigger('submit.prevent')
 
-    expect(wrapper.find('[data-test="success-msg"]').text()).toBe('Account registration submitted successfully!')
+    expect(wrapper.find('[data-test="success-msg"]').exists()).toBe(false)
     expect(wrapper.emitted('submit')?.[0]).toEqual([{
       mode: 'register',
       username: 'gamer123',
@@ -107,7 +107,7 @@ describe('AuthCard', () => {
     await wrapper.find('[data-test="input-password"]').setValue('correctpass')
     await wrapper.find('[data-test="auth-form"]').trigger('submit.prevent')
 
-    expect(wrapper.find('[data-test="success-msg"]').text()).toBe('Login submitted successfully!')
+    expect(wrapper.find('[data-test="success-msg"]').exists()).toBe(false)
     expect(wrapper.emitted('submit')?.[0]).toEqual([{
       mode: 'login',
       username: 'gamer123',
@@ -125,5 +125,15 @@ describe('AuthCard', () => {
 
     expect(wrapper.find('[data-test="error-msg"]').text()).toBe('Account locked')
     expect(wrapper.find('[data-test="success-msg"]').exists()).toBe(false)
+  })
+
+  it('renders serverSuccess in success alert when provided', () => {
+    const wrapper = mount(AuthCard, {
+      props: {
+        serverSuccess: 'Account created successfully!'
+      }
+    })
+
+    expect(wrapper.find('[data-test="success-msg"]').text()).toBe('Account created successfully!')
   })
 })

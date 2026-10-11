@@ -5,10 +5,12 @@ const props = withDefaults(
   defineProps<{
     initialMode?: 'register' | 'login'
     serverError?: string
+    serverSuccess?: string
   }>(),
   {
     initialMode: 'register',
-    serverError: ''
+    serverError: '',
+    serverSuccess: ''
   }
 )
 
@@ -69,7 +71,6 @@ const handleSubmit = () => {
       errorMessage.value = validationError
       return
     }
-    successMessage.value = 'Account registration submitted successfully!'
     emit('submit', {
       mode: 'register',
       username: form.username,
@@ -80,7 +81,6 @@ const handleSubmit = () => {
     return
   }
 
-  successMessage.value = 'Login submitted successfully!'
   emit('submit', {
     mode: 'login',
     username: form.username,
@@ -203,8 +203,8 @@ const handleSubmit = () => {
         <div v-if="serverError || errorMessage" class="text-accent-red text-xs font-semibold pt-1" data-test="error-msg">
           {{ serverError || errorMessage }}
         </div>
-        <div v-if="successMessage && !serverError && !errorMessage" class="text-accent-green text-xs font-semibold pt-1" data-test="success-msg">
-          {{ successMessage }}
+        <div v-if="(serverSuccess || successMessage) && !serverError && !errorMessage" class="text-accent-green text-xs font-semibold pt-1" data-test="success-msg">
+          {{ serverSuccess || successMessage }}
         </div>
 
         <!-- Submit Button -->
