@@ -38,8 +38,9 @@ This skill guides the automated end-to-end lifecycle of implementing a feature o
        1. Generate a UI visual mockup (or pull reference screenshots from the baseline project).
        2. Present this visual image/mockup to the user for visual confirmation before finalizing implementation.
 2. **🎨 Strict Theme Colors (NO Arbitrary Hexes)**: Every color used in components MUST exist in `@theme` inside `style.css` (e.g. `primary`, `secondary`, `accent-red`, `accent-yellow`, `accent-orange`, `accent-green`, `bg-light`, `text-dark`). **NEVER use arbitrary inline hex classes like `bg-[#...]` or `text-[#...]`**.
-3. **Clean Implementation**: Implement the requested Vue 3 / TypeScript components, views, or Pinia stores adhering strictly to Tailwind CSS theme tokens.
-4. **Mandatory Test Coverage**: Always write corresponding Vitest unit tests in `__tests__/` with `@vue/test-utils` to maintain high **Statement and Branch coverage** (required by SE327 Software Metrics rubric).
+3. **👤 Dynamic Authentication Over Static Mockups**: Even though reference screenshots show static placeholder usernames like `thainchai`, navbar and user profile components MUST dynamically display the active user from the authentication store (`authStore.isAuthenticated ? authStore.currentUsername : 'Login'`). **NEVER hardcode `thainchai` or any static username in production templates just to match a screenshot image**.
+4. **Clean Implementation**: Implement the requested Vue 3 / TypeScript components, views, or Pinia stores adhering strictly to Tailwind CSS theme tokens.
+5. **Mandatory Test Coverage**: Always write corresponding Vitest unit tests in `__tests__/` with `@vue/test-utils` to maintain high **Statement and Branch coverage** (required by SE327 Software Metrics rubric).
 4. **Local Verification**: Run local verification before committing:
    ```bash
    npm run build
