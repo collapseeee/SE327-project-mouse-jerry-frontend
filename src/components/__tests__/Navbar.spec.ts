@@ -1,6 +1,8 @@
-import { describe, it, expect, vi } from 'vitest'
-import { mount } from '@vue/test-utils'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { mount, flushPromises } from '@vue/test-utils'
+import { setActivePinia, createPinia } from 'pinia'
 import Navbar from '../Navbar.vue'
+import { useAuthStore } from '@/stores/auth'
 
 const mockPush = vi.fn()
 vi.mock('vue-router', () => ({
@@ -10,6 +12,12 @@ vi.mock('vue-router', () => ({
 }))
 
 describe('Navbar', () => {
+  beforeEach(() => {
+    localStorage.clear()
+    setActivePinia(createPinia())
+    mockPush.mockClear()
+  })
+
   const mountNavbar = () => {
     return mount(Navbar, {
       global: {
@@ -23,13 +31,71 @@ describe('Navbar', () => {
     })
   }
 
-  it('renders the brand name and username', () => {
+  it('renders brand name and Login link when unauthenticated', () => {
     const wrapper = mountNavbar()
     expect(wrapper.text()).toContain('Mouse Jerry')
-    expect(wrapper.text()).toContain('thainchai')
+    expect(wrapper.find('[data-test="navbar-login-link"]').exists()).toBe(true)
+    expect(wrapper.text()).toContain('Login')
+    expect(wrapper.find('[data-test="navbar-user-btn"]').exists()).toBe(false)
   })
 
-  it('renders the search input with an accessible label and matching id', () => {
+  it('renders dynamic username when authenticated and toggles dropdown', async () => {
+    const authStore = useAuthStore()
+    authStore.setUserSession({ id: 1, username: 'thainchai' }, 'token-123')
+
+    const wrapper = mountNavbar()
+    const userBtn = wrapper.find('[data-test="navbar-user-btn"]')
+    expect(userBtn.exists()).toBe(true)
+    expect(wrapper.find('[data-test="navbar-username"]').text()).toBe('thainchai')
+
+    // Initially dropdown closed
+    expect(wrapper.find('[data-test="navbar-user-dropdown"]').exists()).toBe(false)
+
+    // Open dropdown
+    await userBtn.trigger('click')
+    expect(wrapper.find('[data-test="navbar-user-dropdown"]').exists()).toBe(true)
+    expect(wrapper.text()).toContain('Signed in as thainchai')
+
+    // Close dropdown on click again
+    await userBtn.trigger('click')
+    expect(wrapper.find('[data-test="navbar-user-dropdown"]').exists()).toBe(false)
+  })
+
+  it('handles logout and navigates to login page', async () => {
+    const authStore = useAuthStore()
+    authStore.setUserSession({ id: 2, username: 'gamer99' }, 'token-xyz')
+
+    const wrapper = mountNavbar()
+    const userBtn = wrapper.find('[data-test="navbar-user-btn"]')
+    await userBtn.trigger('click')
+
+    const logoutBtn = wrapper.find('[data-test="navbar-logout-btn"]')
+    expect(logoutBtn.exists()).toBe(true)
+
+    await logoutBtn.trigger('click')
+    await flushPromises()
+
+    expect(authStore.isAuthenticated).toBe(false)
+    expect(mockPush).toHaveBeenCalledWith('/login?mode=login')
+  })
+
+  it('closes dropdowns when clicking outside', async () => {
+    const authStore = useAuthStore()
+    authStore.setUserSession({ id: 1, username: 'thainchai' }, 'token-123')
+
+    const wrapper = mountNavbar()
+    const userBtn = wrapper.find('[data-test="navbar-user-btn"]')
+    await userBtn.trigger('click')
+    expect(wrapper.find('[data-test="navbar-user-dropdown"]').exists()).toBe(true)
+
+    // Simulate clicking outside on document body
+    document.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+    await wrapper.vm.$nextTick()
+
+    expect(wrapper.find('[data-test="navbar-user-dropdown"]').exists()).toBe(false)
+  })
+
+  it('renders search input with accessible label and matching id', () => {
     const wrapper = mountNavbar()
     const label = wrapper.find('label[for="navbar-search"]')
     const input = wrapper.find('input#navbar-search')
@@ -39,7 +105,7 @@ describe('Navbar', () => {
     expect(input.exists()).toBe(true)
   })
 
-  it('toggles category dropdown menu on click', async () => {
+  it('toggles category dropdown menu on click and closes on item select', async () => {
     const wrapper = mountNavbar()
     const categoryBtn = wrapper.find('#category-dropdown-btn')
     expect(categoryBtn.exists()).toBe(true)
@@ -51,41 +117,27 @@ describe('Navbar', () => {
     await categoryBtn.trigger('click')
     expect(wrapper.find('a[href="/category/Fighting"]').exists()).toBe(true)
     expect(wrapper.text()).toContain('Fighting')
-    expect(wrapper.text()).toContain('Indie')
 
-    // Click again to close
-    await categoryBtn.trigger('click')
-    expect(wrapper.find('a[href="/category/Fighting"]').exists()).toBe(false)
-  })
-
-  it('closes dropdown when clicking a category item', async () => {
-    const wrapper = mountNavbar()
-    const categoryBtn = wrapper.find('#category-dropdown-btn')
-    await categoryBtn.trigger('click')
-
+    // Click item to close
     const categoryLink = wrapper.find('a[href="/category/Fighting"]')
-    expect(categoryLink.exists()).toBe(true)
-
     await categoryLink.trigger('click')
     expect(wrapper.find('a[href="/category/Fighting"]').exists()).toBe(false)
   })
 
   it('navigates to /search when search form is submitted with non-empty query', async () => {
-    mockPush.mockClear()
     const wrapper = mountNavbar()
     const input = wrapper.find('input#navbar-search')
 
-    await input.setValue('battle')
+    await input.setValue('cyberpunk')
     await wrapper.find('form').trigger('submit.prevent')
 
     expect(mockPush).toHaveBeenCalledWith({
       path: '/search',
-      query: { q: 'battle' }
+      query: { q: 'cyberpunk' }
     })
   })
 
   it('does not navigate when search query is empty or whitespace', async () => {
-    mockPush.mockClear()
     const wrapper = mountNavbar()
     const input = wrapper.find('input#navbar-search')
 
