@@ -3,8 +3,8 @@ import { computed } from 'vue'
 
 const props = withDefaults(
   defineProps<{
-    currentPage: number
-    totalPages: number
+    currentPage?: number
+    totalPages?: number
   }>(),
   {
     currentPage: 1,

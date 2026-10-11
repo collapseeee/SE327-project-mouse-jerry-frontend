@@ -23,7 +23,7 @@ describe('Pagination', () => {
     expect(wrapper.find('nav').exists()).toBe(true)
     const pageButtons = wrapper.findAll('button')
     // prev + 4 pages + next = 6 buttons
-    expect(pageButtons.length).toBe(6)
+    expect(pageButtons).toHaveLength(6)
   })
 
   it('renders ellipsis when totalPages > 5 near start', () => {

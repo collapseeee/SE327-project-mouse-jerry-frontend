@@ -51,6 +51,7 @@ const homeGameOrder = [
   'clone-drone',
   'tropico-4'
 ]
+const homeGameOrderSet = new Set(homeGameOrder)
 
 const allGames = getAllGames()
 const sortedGames = computed<Game[]>(() => {
@@ -63,7 +64,7 @@ const sortedGames = computed<Game[]>(() => {
   }
 
   for (const g of allGames) {
-    if (!homeGameOrder.includes(g.id)) {
+    if (!homeGameOrderSet.has(g.id)) {
       remainingGames.push(g)
     }
   }
