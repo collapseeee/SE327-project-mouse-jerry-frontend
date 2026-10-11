@@ -113,4 +113,16 @@ describe('AuthCard', () => {
       password: 'correctpass'
     }])
   })
+
+  it('renders serverError in error alert and suppresses successMessage', () => {
+    const wrapper = mount(AuthCard, {
+      props: {
+        initialMode: 'login',
+        serverError: 'Account locked'
+      }
+    })
+
+    expect(wrapper.find('[data-test="error-msg"]').text()).toBe('Account locked')
+    expect(wrapper.find('[data-test="success-msg"]').exists()).toBe(false)
+  })
 })
