@@ -51,21 +51,37 @@ This skill guides the automated end-to-end lifecycle of implementing a feature o
    - Statement and Branch coverage metrics meet the quality gate standard (>80%).
    - If any test or build fails, fix the code immediately before proceeding.
 
-### Step 3: Conventional Commit & Push
-1. Stage modified and newly created files:
+### Step 3: Atomic Commits & Remote Push (DevOps Principle)
+1. **Enforce Atomic Commits (One Purpose Per Commit)**:
+   - **Never bulk commit unrelated files together (`git add .`)**. Stage and commit files by individual concern:
+     - **Component / Feature Implementation**:
+       ```bash
+       git add src/components/<Component>.vue src/views/<View>.vue
+       git commit -m "feat(<scope>): <description of feature>" -m "Co-authored-by: Antigravity Agent <agent@antigravity.google.com>"
+       ```
+     - **Unit / Coverage Tests**:
+       ```bash
+       git add src/**/__tests__/<Test>.spec.ts
+       git commit -m "test(<scope>): add unit and branch coverage tests" -m "Co-authored-by: Antigravity Agent <agent@antigravity.google.com>"
+       ```
+     - **Styling / Theme Tokens**:
+       ```bash
+       git add src/assets/style.css
+       git commit -m "style(<scope>): update tailwind theme tokens" -m "Co-authored-by: Antigravity Agent <agent@antigravity.google.com>"
+       ```
+     - **Bug Fixes**:
+       ```bash
+       git add <fixed-file>
+       git commit -m "fix(<scope>): <description of bugfix>" -m "Co-authored-by: Antigravity Agent <agent@antigravity.google.com>"
+       ```
+     - **CI Workflows or Tooling**:
+       ```bash
+       git add .github/workflows/<file>.yml
+       git commit -m "ci: <description of workflow update>" -m "Co-authored-by: Antigravity Agent <agent@antigravity.google.com>"
+       ```
+2. **Push the Branch**:
    ```bash
-   git add .
-   ```
-2. Commit changes using Conventional Commits format with the Antigravity Agent Co-authored-by trailer:
-   ```bash
-   git commit -m "feat(<scope>): <short description of what was built>" -m "Co-authored-by: Antigravity Agent <agent@antigravity.google.com>"
-   # Examples:
-   # git commit -m "feat(carousel): add 3d coverflow swiper with shop now buttons matching reference" -m "Co-authored-by: Antigravity Agent <agent@antigravity.google.com>"
-   # git commit -m "feat(cart): implement reactive pinia cart store with badge counter" -m "Co-authored-by: Antigravity Agent <agent@antigravity.google.com>"
-   ```
-3. Push the feature branch to GitHub remote:
-   ```bash
-   git push -u origin feature/<short-descriptive-kebab-name>
+   git push -u origin <branch-name>
    ```
 
 ### Step 4: Pull Request Handling (No Duplicate PRs)
