@@ -38,7 +38,9 @@ const searchQuery = ref('')
       <!-- Right side: Search bar & User Actions -->
       <div class="flex items-center gap-5">
         <div class="relative w-56 sm:w-72">
+          <label for="navbar-search" class="sr-only">Search epic games</label>
           <input
+            id="navbar-search"
             v-model="searchQuery"
             type="text"
             placeholder="Search epic games..."
