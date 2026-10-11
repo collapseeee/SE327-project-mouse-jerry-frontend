@@ -11,8 +11,8 @@ const currentPage = ref(1)
 const pageSize = ref(10)
 
 const searchQuery = computed(() => {
-  const q = route.query.q
-  if (typeof q === 'string') return q.trim()
+  const queryParam = route.query.q
+  if (typeof queryParam === 'string') return queryParam.trim()
   return ''
 })
 
@@ -37,7 +37,7 @@ watch(
   }
 )
 
-function onPageChange(page: number) {
+const onPageChange = (page: number) => {
   currentPage.value = page
   window.scrollTo({ top: 0, behavior: 'smooth' })
 }

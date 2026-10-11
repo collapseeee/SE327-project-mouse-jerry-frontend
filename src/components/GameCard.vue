@@ -6,7 +6,7 @@ defineProps<{
 }>()
 
 const emit = defineEmits<{
-  (e: 'add-to-cart', game: Game): void
+  'add-to-cart': [game: Game]
 }>()
 </script>
 

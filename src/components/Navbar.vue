@@ -17,36 +17,36 @@ const userDropdownRef = ref<HTMLElement | null>(null)
 
 const categories = getAllCategories()
 
-function toggleCategoryDropdown() {
+const toggleCategoryDropdown = () => {
   isCategoryDropdownOpen.value = !isCategoryDropdownOpen.value
 }
 
-function closeCategoryDropdown() {
+const closeCategoryDropdown = () => {
   isCategoryDropdownOpen.value = false
 }
 
-function toggleUserDropdown() {
+const toggleUserDropdown = () => {
   isUserDropdownOpen.value = !isUserDropdownOpen.value
 }
 
-function closeUserDropdown() {
+const closeUserDropdown = () => {
   isUserDropdownOpen.value = false
 }
 
-async function handleLogout() {
+const handleLogout = async () => {
   closeUserDropdown()
   await authStore.logout()
   router.push('/login?mode=login')
 }
 
-function handleSearch() {
+const handleSearch = () => {
   const query = searchQuery.value.trim()
   if (query) {
     router.push({ path: '/search', query: { q: query } })
   }
 }
 
-function handleClickOutside(event: MouseEvent) {
+const handleClickOutside = (event: MouseEvent) => {
   const target = event.target as Node
   if (
     categoryDropdownRef.value &&

@@ -31,7 +31,23 @@ When implementing any feature or fix:
 5. **Pull Request Handling**:
    - If the branch already has an open PR: **Do NOT run `gh pr create`**. Pushing to remote automatically updates the existing PR.
    - If it is a new branch: Open PR targeting `development` with `--label "agent"`, summary, coverage report, and review checklist.
-6. **Review Gate**: Stop and hand over the PR URL to the human reviewer. Never auto-merge.
+6. **Automated DeepSource & CI Review Iteration (Continuous Quality Gate)**:
+   - After pushing commits or opening a PR, the agent **MUST autonomously monitor and iterate until all checks are green**:
+     1. **Monitor Commit Status**: Query GitHub Commit Status API (`https://api.github.com/repos/<owner>/<repo>/commits/<sha>/statuses`) and Check Runs (`/commits/<sha>/check-runs`).
+     2. **Fetch Review Comments on Failure**: If DeepSource reports `state == "failure"` or posts review comments:
+        - Query `GET https://api.github.com/repos/<owner>/<repo>/pulls/<pr_number>/comments`.
+        - Filter comments authored by `deepsource-io[bot]`.
+        - Extract the reported file `path`, `line`, and issue description (e.g., cyclomatic complexity $> 5$, unexpected function declaration in setup scope, anti-patterns).
+     3. **Auto-Remediate Locally**:
+        - Refactor the flagged code directly in the local workspace.
+        - Decompose complex functions into single-responsibility helpers with cyclomatic complexity $\le 5$.
+        - Run local verification: `npm test && npm run build` (Frontend) or `./mvnw clean test` (Backend).
+     4. **Push & Verify**: Commit with atomic message (`fix(<scope>): resolve DeepSource <issue>`), push to the PR branch, and poll/wait for DeepSource to rerun.
+     5. **Resolve Review Threads**: Once the fix is verified and the checks pass, automatically resolve the review comment threads via GitHub GraphQL API (`resolveReviewThread`).
+     6. **Iterate**: Repeat until DeepSource reports `success` (`"Analysis passed: No blocking issues or failing metrics found"`) and SonarQube/SonarCloud Quality Gate is passed.
+7. **Human-in-the-Loop Merge Gate**:
+   - The agent must **NEVER auto-merge** PRs into `development` or `main`.
+   - Once all CI and DeepSource checks are 100% Green and review threads are resolved, hand over the PR URL to the user to click **Merge** on GitHub.
 
 ## 3. Spring Boot Architecture Rules (Backend Mandatory)
 - **Strict 5-Tier Layered Architecture**: Every HTTP request flows strictly through:

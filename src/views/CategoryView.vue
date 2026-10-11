@@ -38,7 +38,7 @@ watch(
   }
 )
 
-function onPageChange(page: number) {
+const onPageChange = (page: number) => {
   currentPage.value = page
   window.scrollTo({ top: 0, behavior: 'smooth' })
 }

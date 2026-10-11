@@ -484,34 +484,31 @@ export const games: Game[] = [
   }
 ]
 
-export function getAllCategories(): CategoryItem[] {
+export const getAllCategories = (): CategoryItem[] => {
   return categories
 }
 
-export function getAllGames(): Game[] {
+export const getAllGames = (): Game[] => {
   return games
 }
 
-export function getGameById(id: string): Game | undefined {
+export const getGameById = (id: string): Game | undefined => {
   return games.find((g) => g.id === id)
 }
 
-export function getGamesByCategory(categoryName: string): Game[] {
+export const getGamesByCategory = (categoryName: string): Game[] => {
   const normalized = categoryName.trim().toLowerCase()
-  return games.filter((g) => {
-    if (g.category.toLowerCase() === normalized) return true
-    if (g.categories?.some((c) => c.toLowerCase() === normalized)) return true
-    return false
-  })
+  return games.filter((g) =>
+    g.category.toLowerCase() === normalized ||
+    Boolean(g.categories?.some((c) => c.toLowerCase() === normalized))
+  )
 }
 
-export function searchGames(query: string): Game[] {
+export const searchGames = (query: string): Game[] => {
   const normalized = query.trim().toLowerCase()
   if (!normalized) return []
-  return games.filter((g) => {
-    return (
-      g.name.toLowerCase().includes(normalized) ||
-      g.category.toLowerCase().includes(normalized)
-    )
-  })
+  return games.filter((g) =>
+    g.name.toLowerCase().includes(normalized) ||
+    g.category.toLowerCase().includes(normalized)
+  )
 }
