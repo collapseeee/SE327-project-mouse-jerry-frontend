@@ -26,7 +26,7 @@ const galleryImages = computed(() => {
 const activeImageIndex = ref(0)
 const quantity = ref(1)
 
-function prevImage() {
+const prevImage = () => {
   if (galleryImages.value.length === 0) return
   if (activeImageIndex.value > 0) {
     activeImageIndex.value--
@@ -35,7 +35,7 @@ function prevImage() {
   }
 }
 
-function nextImage() {
+const nextImage = () => {
   if (galleryImages.value.length === 0) return
   if (activeImageIndex.value < galleryImages.value.length - 1) {
     activeImageIndex.value++
@@ -44,17 +44,17 @@ function nextImage() {
   }
 }
 
-function selectImage(index: number) {
+const selectImage = (index: number) => {
   activeImageIndex.value = index
 }
 
-function decrementQuantity() {
+const decrementQuantity = () => {
   if (quantity.value > 1) {
     quantity.value--
   }
 }
 
-function incrementQuantity() {
+const incrementQuantity = () => {
   const maxStock = game.value?.stock ?? 99
   if (quantity.value < maxStock) {
     quantity.value++

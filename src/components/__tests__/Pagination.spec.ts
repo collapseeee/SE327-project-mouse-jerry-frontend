@@ -92,7 +92,9 @@ describe('Pagination', () => {
     })
     const page2Btn = wrapper.findAll('button').find((b) => b.text() === '2')
     expect(page2Btn).toBeDefined()
-    await page2Btn!.trigger('click')
+    if (page2Btn) {
+      await page2Btn.trigger('click')
+    }
 
     expect(wrapper.emitted('update:currentPage')?.[0]).toEqual([2])
     expect(wrapper.emitted('page-change')?.[0]).toEqual([2])

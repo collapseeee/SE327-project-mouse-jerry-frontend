@@ -84,7 +84,7 @@ const paginatedGames = computed(() => {
   return sortedGames.value.slice(start, start + pageSize.value)
 })
 
-function onPageChange(page: number) {
+const onPageChange = (page: number) => {
   currentPage.value = page
 }
 </script>

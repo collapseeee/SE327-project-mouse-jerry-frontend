@@ -13,11 +13,11 @@ const props = withDefaults(
 )
 
 const emit = defineEmits<{
-  (e: 'update:currentPage', page: number): void
-  (e: 'page-change', page: number): void
+  'update:currentPage': [page: number]
+  'page-change': [page: number]
 }>()
 
-function setPage(page: number) {
+const setPage = (page: number) => {
   if (page >= 1 && page <= props.totalPages && page !== props.currentPage) {
     emit('update:currentPage', page)
     emit('page-change', page)

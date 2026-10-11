@@ -5,15 +5,17 @@ const props = withDefaults(
   defineProps<{
     initialMode?: 'register' | 'login'
     serverError?: string
+    serverSuccess?: string
   }>(),
   {
     initialMode: 'register',
-    serverError: ''
+    serverError: '',
+    serverSuccess: ''
   }
 )
 
 const emit = defineEmits<{
-  (e: 'submit', data: { mode: 'register' | 'login'; username: string; email?: string; password: string }): void
+  (e: 'submit', data: { mode: 'register' | 'login'; username: string; email?: string; password: string; confirmPassword?: string }): void
   (e: 'mode-change', mode: 'register' | 'login'): void
 }>()
 
@@ -37,14 +39,24 @@ const form = reactive({
   confirmPassword: ''
 })
 
-function toggleMode() {
+const toggleMode = () => {
   isRegister.value = !isRegister.value
   errorMessage.value = ''
   successMessage.value = ''
   emit('mode-change', isRegister.value ? 'register' : 'login')
 }
 
-function handleSubmit() {
+const validateRegistration = (): string | null => {
+  if (!form.email.trim()) {
+    return 'Please provide an email address.'
+  }
+  if (form.password !== form.confirmPassword) {
+    return 'Passwords do not match.'
+  }
+  return null
+}
+
+const handleSubmit = () => {
   errorMessage.value = ''
   successMessage.value = ''
 
@@ -54,29 +66,26 @@ function handleSubmit() {
   }
 
   if (isRegister.value) {
-    if (!form.email.trim()) {
-      errorMessage.value = 'Please provide an email address.'
+    const validationError = validateRegistration()
+    if (validationError) {
+      errorMessage.value = validationError
       return
     }
-    if (form.password !== form.confirmPassword) {
-      errorMessage.value = 'Passwords do not match.'
-      return
-    }
-    successMessage.value = 'Account registration submitted successfully!'
     emit('submit', {
       mode: 'register',
       username: form.username,
       email: form.email,
-      password: form.password
+      password: form.password,
+      confirmPassword: form.confirmPassword
     })
-  } else {
-    successMessage.value = 'Login submitted successfully!'
-    emit('submit', {
-      mode: 'login',
-      username: form.username,
-      password: form.password
-    })
+    return
   }
+
+  emit('submit', {
+    mode: 'login',
+    username: form.username,
+    password: form.password
+  })
 }
 </script>
 
@@ -194,8 +203,8 @@ function handleSubmit() {
         <div v-if="serverError || errorMessage" class="text-accent-red text-xs font-semibold pt-1" data-test="error-msg">
           {{ serverError || errorMessage }}
         </div>
-        <div v-if="successMessage && !serverError && !errorMessage" class="text-accent-green text-xs font-semibold pt-1" data-test="success-msg">
-          {{ successMessage }}
+        <div v-if="(serverSuccess || successMessage) && !serverError && !errorMessage" class="text-accent-green text-xs font-semibold pt-1" data-test="success-msg">
+          {{ serverSuccess || successMessage }}
         </div>
 
         <!-- Submit Button -->

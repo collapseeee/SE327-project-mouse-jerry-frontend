@@ -1,0 +1,33 @@
+version = 1
+
+test_patterns = [
+  "src/**/__tests__/**",
+  "src/**/*.spec.ts",
+  "src/**/*.test.ts"
+]
+
+exclude_patterns = [
+  "dist/**",
+  "node_modules/**",
+  "coverage/**"
+]
+
+[[analyzers]]
+name = "javascript"
+enabled = true
+
+[analyzers.meta]
+plugins = [
+  "vue"
+]
+environment = [
+  "browser",
+  "nodejs",
+  "vitest"
+]
+module_system = "es-modules"
+dialect = "typescript"
+
+[[analyzers]]
+name = "secrets"
+enabled = true

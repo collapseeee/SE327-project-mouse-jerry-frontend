@@ -6,7 +6,7 @@ import { loginUser, registerUser, logoutUser } from '@/services/authApi'
 const STORAGE_KEY_TOKEN = 'se327_auth_token'
 const STORAGE_KEY_USER = 'se327_auth_user'
 
-function loadSavedUser(): User | null {
+const loadSavedUser = (): User | null => {
   try {
     const saved = localStorage.getItem(STORAGE_KEY_USER)
     return saved ? JSON.parse(saved) : null
@@ -21,7 +21,7 @@ export const useAuthStore = defineStore('auth', () => {
   const isLoading = ref(false)
   const error = ref<string | null>(null)
 
-  const isAuthenticated = computed(() => !!token.value && !!user.value)
+  const isAuthenticated = computed(() => Boolean(token.value && user.value))
   const currentUsername = computed(() => user.value?.username || '')
   const isAdmin = computed(() => user.value?.role === 'ROLE_ADMIN')
 
