@@ -4,9 +4,11 @@ import { ref, reactive } from 'vue'
 const props = withDefaults(
   defineProps<{
     initialMode?: 'register' | 'login'
+    serverError?: string
   }>(),
   {
-    initialMode: 'register'
+    initialMode: 'register',
+    serverError: ''
   }
 )
 
@@ -180,8 +182,8 @@ function handleSubmit() {
         </div>
 
         <!-- Feedback Alert -->
-        <div v-if="errorMessage" class="text-accent-red text-xs font-semibold pt-1" data-test="error-msg">
-          {{ errorMessage }}
+        <div v-if="serverError || errorMessage" class="text-accent-red text-xs font-semibold pt-1" data-test="error-msg">
+          {{ serverError || errorMessage }}
         </div>
         <div v-if="successMessage" class="text-accent-green text-xs font-semibold pt-1" data-test="success-msg">
           {{ successMessage }}

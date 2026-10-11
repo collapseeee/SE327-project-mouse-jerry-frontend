@@ -3,11 +3,17 @@ import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import logoImg from '@/assets/logo.png'
 import { getAllCategories } from '@/data/games'
+import { useAuthStore } from '@/stores/auth'
 
 const router = useRouter()
+const authStore = useAuthStore()
+
 const searchQuery = ref('')
 const isCategoryDropdownOpen = ref(false)
 const categoryDropdownRef = ref<HTMLElement | null>(null)
+
+const isUserDropdownOpen = ref(false)
+const userDropdownRef = ref<HTMLElement | null>(null)
 
 const categories = getAllCategories()
 
@@ -19,6 +25,20 @@ function closeCategoryDropdown() {
   isCategoryDropdownOpen.value = false
 }
 
+function toggleUserDropdown() {
+  isUserDropdownOpen.value = !isUserDropdownOpen.value
+}
+
+function closeUserDropdown() {
+  isUserDropdownOpen.value = false
+}
+
+async function handleLogout() {
+  closeUserDropdown()
+  await authStore.logout()
+  router.push('/login?mode=login')
+}
+
 function handleSearch() {
   const query = searchQuery.value.trim()
   if (query) {
@@ -27,11 +47,18 @@ function handleSearch() {
 }
 
 function handleClickOutside(event: MouseEvent) {
+  const target = event.target as Node
   if (
     categoryDropdownRef.value &&
-    !categoryDropdownRef.value.contains(event.target as Node)
+    !categoryDropdownRef.value.contains(target)
   ) {
     closeCategoryDropdown()
+  }
+  if (
+    userDropdownRef.value &&
+    !userDropdownRef.value.contains(target)
+  ) {
+    closeUserDropdown()
   }
 }
 
@@ -146,15 +173,76 @@ onUnmounted(() => {
           </span>
         </router-link>
 
-        <!-- User profile with name thainchai matching screenshots -->
-        <router-link
-          to="/login"
-          class="flex items-center gap-1.5 text-white hover:text-accent-yellow transition-colors p-1 group"
-          title="User Profile"
-        >
-          <i class="fa-regular fa-circle-user text-xl"></i>
-          <span class="text-sm font-medium hidden sm:inline-block">thainchai</span>
-        </router-link>
+        <!-- 
+          CRITICAL AGENT INSTRUCTION - DO NOT REMOVE OR HARDCODE USERNAME:
+          The user profile/login section below is DYNAMIC based on authentication state (authStore.isAuthenticated).
+          DO NOT hardcode 'thainchai' or any static username here to match baseline UI screenshots/mockups.
+          When logged out (unauthenticated), display 'Login'.
+          When logged in, display the actual authenticated username from authStore.currentUsername.
+        -->
+        <template v-if="authStore.isAuthenticated">
+          <div ref="userDropdownRef" class="relative">
+            <button
+              type="button"
+              id="navbar-user-btn"
+              aria-haspopup="true"
+              :aria-expanded="isUserDropdownOpen"
+              class="flex items-center gap-1.5 text-white hover:text-accent-yellow transition-colors p-1 group cursor-pointer"
+              title="User Profile"
+              data-test="navbar-user-btn"
+              @click="toggleUserDropdown"
+            >
+              <i class="fa-solid fa-circle-user text-xl text-accent-yellow"></i>
+              <span class="text-sm font-medium hidden sm:inline-block" data-test="navbar-username">
+                {{ authStore.currentUsername }}
+              </span>
+              <i
+                class="fa-solid fa-chevron-down text-[10px] text-white/70 transition-transform duration-200"
+                :class="{ 'rotate-180': isUserDropdownOpen }"
+              ></i>
+            </button>
+
+            <!-- User Dropdown Menu -->
+            <transition
+              enter-active-class="transition duration-150 ease-out"
+              enter-from-class="opacity-0 -translate-y-2 scale-95"
+              enter-to-class="opacity-100 translate-y-0 scale-100"
+              leave-active-class="transition duration-100 ease-in"
+              leave-from-class="opacity-100 translate-y-0 scale-100"
+              leave-to-class="opacity-0 -translate-y-2 scale-95"
+            >
+              <div
+                v-if="isUserDropdownOpen"
+                class="absolute right-0 mt-2 w-48 bg-white text-slate-800 rounded-lg shadow-xl border border-slate-100 py-1.5 z-50 overflow-hidden"
+                data-test="navbar-user-dropdown"
+              >
+                <div class="px-4 py-2 border-b border-slate-100 text-xs text-slate-500">
+                  Signed in as <span class="font-bold text-slate-800">{{ authStore.currentUsername }}</span>
+                </div>
+                <button
+                  type="button"
+                  class="w-full text-left px-4 py-2 text-sm text-accent-red hover:bg-slate-100 transition-colors cursor-pointer flex items-center gap-2"
+                  data-test="navbar-logout-btn"
+                  @click="handleLogout"
+                >
+                  <i class="fa-solid fa-right-from-bracket"></i>
+                  <span>Logout</span>
+                </button>
+              </div>
+            </transition>
+          </div>
+        </template>
+        <template v-else>
+          <router-link
+            to="/login"
+            class="flex items-center gap-1.5 text-white hover:text-accent-yellow transition-colors p-1 group"
+            title="Login"
+            data-test="navbar-login-link"
+          >
+            <i class="fa-regular fa-circle-user text-xl"></i>
+            <span class="text-sm font-medium hidden sm:inline-block">Login</span>
+          </router-link>
+        </template>
       </div>
     </div>
   </nav>
