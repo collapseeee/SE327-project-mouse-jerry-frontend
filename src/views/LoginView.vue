@@ -10,6 +10,7 @@ const router = useRouter()
 const authStore = useAuthStore()
 
 const serverError = ref('')
+const serverSuccess = ref('')
 
 const initialMode = computed<'register' | 'login'>(() => {
   if (route?.query?.mode === 'login') {
@@ -37,6 +38,7 @@ const autoLoginAfterRegister = async (username: string, password: string) => {
     return
   }
   serverError.value = loginResult.error || 'Registration succeeded, but auto-login failed. Please sign in.'
+  serverSuccess.value = ''
 }
 
 const handleRegisterAction = async (data: { username: string; email?: string; password: string; confirmPassword?: string }) => {
@@ -50,13 +52,16 @@ const handleRegisterAction = async (data: { username: string; email?: string; pa
   })
   if (!result.success) {
     serverError.value = result.error || 'Registration failed.'
+    serverSuccess.value = ''
     return
   }
+  serverSuccess.value = 'Registration successful! Signing in...'
   await autoLoginAfterRegister(data.username, data.password)
 }
 
 const handleAuthSubmit = async (data: { mode: 'register' | 'login'; username: string; email?: string; password: string; confirmPassword?: string }) => {
   serverError.value = ''
+  serverSuccess.value = ''
   if (data.mode === 'login') {
     await handleLoginAction(data.username, data.password)
     return
@@ -85,8 +90,9 @@ const handleAuthSubmit = async (data: { mode: 'register' | 'login'; username: st
     <AuthCard
       :initial-mode="initialMode"
       :server-error="serverError"
+      :server-success="serverSuccess"
       @submit="handleAuthSubmit"
-      @mode-change="serverError = ''"
+      @mode-change="serverError = ''; serverSuccess = ''"
     />
   </div>
 </template>
