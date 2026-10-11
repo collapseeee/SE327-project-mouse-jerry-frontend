@@ -10,19 +10,25 @@ This skill guides the automated end-to-end lifecycle of implementing a feature o
 
 ## Workflow Steps
 
-### Step 1: Branch Preparation
+### Step 1: Branch Preparation & Existing PR Detection
 1. Ensure the working directory is `se327-mouse-jerry-frontend`.
 2. Check git status to ensure working directory is clean.
-3. Switch to the `development` branch and pull latest changes:
-   ```bash
-   git checkout development
-   git pull origin development
-   ```
-4. Create and checkout a semantic feature branch off `development`:
-   ```bash
-   git checkout -b feature/<short-descriptive-kebab-name>
-   # Or for bugfixes: git checkout -b fix/<short-descriptive-kebab-name>
-   ```
+3. **Check for Existing Open PR**:
+   - If the user is requesting changes, fixes, or review feedback on an **already open PR**:
+     - **DO NOT create a new branch or a new PR**.
+     - Stay on the current PR feature branch (e.g. `fix/navbar-search-input-label`).
+     - Proceed directly to Step 2 (Implementation & Testing).
+   - If starting a **NEW feature or bugfix**:
+     - Switch to `development` and pull latest changes:
+       ```bash
+       git checkout development
+       git pull origin development
+       ```
+     - Create and checkout a semantic feature branch off `development`:
+       ```bash
+       git checkout -b feature/<short-descriptive-kebab-name>
+       # Or for bugfixes: git checkout -b fix/<short-descriptive-kebab-name>
+       ```
 
 ### Step 2: Implementation, Visual Alignment & Testing
 1. **🎨 Visual Design & UI Alignment (STRICT REQUIREMENT)**:
@@ -45,47 +51,71 @@ This skill guides the automated end-to-end lifecycle of implementing a feature o
    - Statement and Branch coverage metrics meet the quality gate standard (>80%).
    - If any test or build fails, fix the code immediately before proceeding.
 
-### Step 3: Conventional Commit & Push
-1. Stage modified and newly created files:
+### Step 3: Atomic Commits & Remote Push (DevOps Principle)
+1. **Enforce Atomic Commits (One Purpose Per Commit)**:
+   - **Never bulk commit unrelated files together (`git add .`)**. Stage and commit files by individual concern:
+     - **Component / Feature Implementation**:
+       ```bash
+       git add src/components/<Component>.vue src/views/<View>.vue
+       git commit -m "feat(<scope>): <description of feature>" -m "Co-authored-by: Antigravity Agent <agent@antigravity.google.com>"
+       ```
+     - **Unit / Coverage Tests**:
+       ```bash
+       git add src/**/__tests__/<Test>.spec.ts
+       git commit -m "test(<scope>): add unit and branch coverage tests" -m "Co-authored-by: Antigravity Agent <agent@antigravity.google.com>"
+       ```
+     - **Styling / Theme Tokens**:
+       ```bash
+       git add src/assets/style.css
+       git commit -m "style(<scope>): update tailwind theme tokens" -m "Co-authored-by: Antigravity Agent <agent@antigravity.google.com>"
+       ```
+     - **Bug Fixes**:
+       ```bash
+       git add <fixed-file>
+       git commit -m "fix(<scope>): <description of bugfix>" -m "Co-authored-by: Antigravity Agent <agent@antigravity.google.com>"
+       ```
+     - **CI Workflows or Tooling**:
+       ```bash
+       git add .github/workflows/<file>.yml
+       git commit -m "ci: <description of workflow update>" -m "Co-authored-by: Antigravity Agent <agent@antigravity.google.com>"
+       ```
+2. **Push the Branch**:
    ```bash
-   git add .
-   ```
-2. Commit changes using Conventional Commits format:
-   ```bash
-   git commit -m "feat(<scope>): <short description of what was built>"
-   # Examples:
-   # git commit -m "feat(carousel): add 3d coverflow swiper with shop now buttons matching reference"
-   # git commit -m "feat(cart): implement reactive pinia cart store with badge counter"
-   ```
-3. Push the feature branch to GitHub remote:
-   ```bash
-   git push -u origin feature/<short-descriptive-kebab-name>
+   git push -u origin <branch-name>
    ```
 
-### Step 4: Pull Request Creation
-1. Create a Pull Request targeting `development` using the GitHub CLI (`gh`):
-   ```bash
-   gh pr create --base development --head feature/<short-descriptive-kebab-name> --title "feat(<scope>): <Title>" --body "<Body>"
-   ```
-   *(If `gh` CLI is not installed or authenticated, provide the direct GitHub PR URL output by git push: `https://github.com/collapseeee/SE327-project-mouse-jerry/pull/new/feature/...`)*
-2. The PR description body MUST follow this template:
-   ```markdown
-   ## 📌 Summary of Changes
-   - Detailed description of what feature was implemented and key components touched.
+### Step 4: Pull Request Handling (No Duplicate PRs)
+1. **If updating an EXISTING open PR**:
+   - Pushing the branch in Step 3 **automatically updates the existing PR on GitHub**.
+   - **DO NOT run `gh pr create`**.
+   - Output the existing PR link confirming new commits were pushed.
+2. **If creating a NEW Pull Request**:
+   - Write the formatted markdown description to a temporary file `pr_body.md`:
+     ```bash
+     cat << 'EOF' > pr_body.md
+     ## 📌 Summary of Changes
+     - Detailed description of what feature was implemented and key components touched.
 
-   ## 🖼️ Visual Alignment & Verification
-   - Confirmation of adherence to the reference screenshot (or attached visual preview/mockup).
+     ## 🖼️ Visual Alignment & Verification
+     - Confirmation of adherence to the reference screenshot (or attached visual preview/mockup).
 
-   ## 🧪 Test Coverage & Metrics
-   - **Statement Coverage**: X%
-   - **Branch Coverage**: X%
-   - All Vitest test suites passing (`npm test`).
+     ## 🧪 Test Coverage & Metrics
+     - **Statement Coverage**: X%
+     - **Branch Coverage**: X%
+     - All Vitest test suites passing (`npm test`).
 
-   ## ✅ Review Checklist
-   - [ ] UI visually matches the reference image.
-   - [ ] Unit & branch tests pass cleanly.
-   - [ ] Ready to merge into `development`.
-   ```
+     ## ✅ Review Checklist
+     - [ ] UI visually matches the reference image.
+     - [ ] Unit & branch tests pass cleanly.
+     - [ ] Ready to merge into `development`.
+     EOF
+     ```
+   - Create the Pull Request targeting `development` with the `agent` label using GitHub CLI (`gh`):
+     ```bash
+     gh pr create --base development --head feature/<short-descriptive-kebab-name> --label "agent" --title "feat(<scope>): <Title>" --body-file pr_body.md
+     rm pr_body.md
+     ```
+     *(If `gh` CLI is not installed or authenticated, provide the direct GitHub PR URL output by git push)*
 
 ### Step 5: Review Gate (STOP)
 - Output the created Pull Request URL clearly to the user.

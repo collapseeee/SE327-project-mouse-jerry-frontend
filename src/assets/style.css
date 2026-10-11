@@ -20,6 +20,10 @@
   --color-text-dark: #1e293b;
   --color-text-muted: #64748b;
   --color-banner-gray: #5a6572;
+  --color-auth-bg: #0b0717;
+  --color-auth-card-dark: #120a24;
+  --color-auth-card-overlay: rgba(18, 10, 36, 0.85);
+  --color-auth-border: #e2e8f0;
 }
 
 :root {
@@ -38,6 +42,10 @@
   --text-dark: #1e293b;
   --text-muted: #64748b;
   --banner-gray: #5a6572;
+  --auth-bg: #0b0717;
+  --auth-card-dark: #120a24;
+  --auth-card-overlay: rgba(18, 10, 36, 0.85);
+  --auth-border: #e2e8f0;
   --font-sans: 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, Roboto, 'Helvetica Neue', Arial, sans-serif;
 }
 
