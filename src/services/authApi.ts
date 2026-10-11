@@ -2,13 +2,22 @@ import type { AuthResponse, LoginPayload, RegisterPayload } from '@/types/auth'
 
 const API_BASE = '/api/v1/auth'
 
+const isNonEmptyString = (val: unknown): val is string => typeof val === 'string' && Boolean(val.trim())
+
+const isRecord = (val: unknown): val is Record<string, unknown> => typeof val === 'object' && val !== null
+
+const getStringField = (obj: Record<string, unknown>, key: string): string | null => {
+  const val = obj[key]
+  return isNonEmptyString(val) ? val : null
+}
+
 const extractDetailsError = (data: Record<string, unknown>): string | null => {
-  if (!data.details || typeof data.details !== 'object') {
+  const details = data.details
+  if (!isRecord(details)) {
     return null
   }
-  const details = Object.values(data.details as Record<string, unknown>)
-    .filter((val): val is string => typeof val === 'string' && Boolean(val.trim()))
-  return details.length > 0 ? details.join(', ') : null
+  const messages = Object.values(details).filter(isNonEmptyString)
+  return messages.length > 0 ? messages.join(', ') : null
 }
 
 const extractObjectError = (data: Record<string, unknown>): string | null => {
@@ -16,24 +25,15 @@ const extractObjectError = (data: Record<string, unknown>): string | null => {
   if (detailsMsg) {
     return detailsMsg
   }
-  if (typeof data.error === 'string' && data.error.trim()) {
-    return data.error
-  }
-  if (typeof data.message === 'string' && data.message.trim()) {
-    return data.message
-  }
-  return null
+  return getStringField(data, 'error') ?? getStringField(data, 'message')
 }
 
 const extractErrorMessage = (errData: unknown, fallback: string): string => {
-  if (typeof errData === 'string' && errData.trim()) {
+  if (isNonEmptyString(errData)) {
     return errData
   }
-  if (errData && typeof errData === 'object') {
-    const objMsg = extractObjectError(errData as Record<string, unknown>)
-    if (objMsg) {
-      return objMsg
-    }
+  if (isRecord(errData)) {
+    return extractObjectError(errData) ?? fallback
   }
   return fallback
 }
