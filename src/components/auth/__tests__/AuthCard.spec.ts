@@ -93,7 +93,8 @@ describe('AuthCard', () => {
       mode: 'register',
       username: 'gamer123',
       email: 'gamer@mousejerry.com',
-      password: 'correctpass'
+      password: 'correctpass',
+      confirmPassword: 'correctpass'
     }])
   })
 

@@ -112,7 +112,12 @@ describe('LoginView', () => {
     })
     await flushPromises()
 
-    expect(authStore.register).toHaveBeenCalled()
+    expect(authStore.register).toHaveBeenCalledWith({
+      username: 'newuser',
+      email: 'newuser@example.com',
+      password: 'password123',
+      confirmPassword: 'password123'
+    })
     expect(authStore.login).toHaveBeenCalled()
     expect(mockPush).toHaveBeenCalledWith('/')
   })
