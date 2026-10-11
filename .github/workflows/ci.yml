@@ -2,8 +2,13 @@ name: Build and analyze (SonarCloud)
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
+      - development
   pull_request:
+    branches:
+      - main
+      - development
     types: [opened, synchronize, reopened]
 
 permissions:
