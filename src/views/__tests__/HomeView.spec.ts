@@ -43,7 +43,9 @@ describe('HomeView', () => {
 
     const page2Btn = wrapper.findAll('button').find((b) => b.text() === '2')
     expect(page2Btn).toBeDefined()
-    await page2Btn!.trigger('click')
+    if (page2Btn) {
+      await page2Btn.trigger('click')
+    }
 
     expect(wrapper.text()).toContain('Towerfall Ascension: Dark World')
     expect(wrapper.text()).toContain('683 Baht')

@@ -18,40 +18,45 @@ const initialMode = computed<'register' | 'login'>(() => {
   return 'register'
 })
 
-async function handleAuthSubmit(data: { mode: 'register' | 'login'; username: string; email?: string; password: string; confirmPassword?: string }) {
+const handleLoginAction = async (username: string, password: string) => {
+  const result = await authStore.login({ username, password })
+  if (result.success) {
+    router?.push('/')
+    return
+  }
+  serverError.value = result.error || 'Login failed. Please check your credentials.'
+}
+
+const handleRegisterAction = async (data: { username: string; email?: string; password: string; confirmPassword?: string }) => {
+  const result = await authStore.register({
+    username: data.username,
+    email: data.email || '',
+    password: data.password,
+    confirmPassword: data.confirmPassword || data.password
+  })
+  if (!result.success) {
+    serverError.value = result.error || 'Registration failed.'
+    return
+  }
+  // Auto login after registration
+  const loginResult = await authStore.login({
+    username: data.username,
+    password: data.password
+  })
+  if (loginResult.success) {
+    router?.push('/')
+    return
+  }
+  serverError.value = loginResult.error || 'Registration succeeded, but auto-login failed. Please sign in.'
+}
+
+const handleAuthSubmit = async (data: { mode: 'register' | 'login'; username: string; email?: string; password: string; confirmPassword?: string }) => {
   serverError.value = ''
   if (data.mode === 'login') {
-    const result = await authStore.login({
-      username: data.username,
-      password: data.password
-    })
-    if (result.success) {
-      router?.push('/')
-    } else {
-      serverError.value = result.error || 'Login failed. Please check your credentials.'
-    }
-  } else {
-    const result = await authStore.register({
-      username: data.username,
-      email: data.email || '',
-      password: data.password,
-      confirmPassword: data.confirmPassword || data.password
-    })
-    if (result.success) {
-      // Auto login after registration
-      const loginResult = await authStore.login({
-        username: data.username,
-        password: data.password
-      })
-      if (loginResult.success) {
-        router?.push('/')
-      } else {
-        serverError.value = loginResult.error || 'Registration succeeded, but auto-login failed. Please sign in.'
-      }
-    } else {
-      serverError.value = result.error || 'Registration failed.'
-    }
+    await handleLoginAction(data.username, data.password)
+    return
   }
+  await handleRegisterAction(data)
 }
 </script>
 

@@ -2,7 +2,7 @@ import type { AuthResponse, LoginPayload, RegisterPayload } from '@/types/auth'
 
 const API_BASE = '/api/v1/auth'
 
-function extractErrorMessage(errData: unknown, fallback: string): string {
+const extractErrorMessage = (errData: unknown, fallback: string): string => {
   if (typeof errData === 'string' && errData.trim()) {
     return errData
   }
@@ -25,7 +25,7 @@ function extractErrorMessage(errData: unknown, fallback: string): string {
   return fallback
 }
 
-export async function loginUser(payload: LoginPayload): Promise<AuthResponse> {
+export const loginUser = async (payload: LoginPayload): Promise<AuthResponse> => {
   const response = await fetch(`${API_BASE}/login`, {
     method: 'POST',
     headers: {
@@ -48,7 +48,7 @@ export async function loginUser(payload: LoginPayload): Promise<AuthResponse> {
   return response.json()
 }
 
-export async function registerUser(payload: RegisterPayload): Promise<{ message: string; id?: number; username?: string }> {
+export const registerUser = async (payload: RegisterPayload): Promise<{ message: string; id?: number; username?: string }> => {
   const bodyPayload = {
     username: payload.username,
     email: payload.email,
@@ -78,7 +78,7 @@ export async function registerUser(payload: RegisterPayload): Promise<{ message:
   return response.json()
 }
 
-export async function logoutUser(token?: string | null): Promise<void> {
+export const logoutUser = async (token?: string | null): Promise<void> => {
   try {
     await fetch(`${API_BASE}/logout`, {
       method: 'POST',

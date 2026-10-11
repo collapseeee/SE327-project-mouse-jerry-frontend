@@ -22,7 +22,7 @@ export default defineConfig(({ mode }) => ({
       '@': fileURLToPath(new URL('./src', import.meta.url))
     }
   },
-  // @ts-ignore
+  // @ts-ignore: Vitest inline configuration is not typed on standard Vite UserConfig
   test: {
     environment: 'jsdom',
     globals: true,

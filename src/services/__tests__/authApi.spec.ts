@@ -17,7 +17,7 @@ describe('authApi', () => {
 
     vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
       ok: true,
-      json: async () => mockResponse
+      json: () => Promise.resolve(mockResponse)
     } as unknown as Response)
 
     const result = await loginUser({ username: 'thainchai', password: 'password123' })
@@ -31,7 +31,7 @@ describe('authApi', () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
       ok: false,
       statusText: 'Unauthorized',
-      json: async () => ({ message: 'Invalid credentials' })
+      json: () => Promise.resolve({ message: 'Invalid credentials' })
     } as unknown as Response)
 
     await expect(loginUser({ username: 'thainchai', password: 'wrong' }))
@@ -42,9 +42,7 @@ describe('authApi', () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
       ok: false,
       statusText: 'Bad Request',
-      json: async () => {
-        throw new Error('Not JSON')
-      }
+      json: () => Promise.reject(new Error('Not JSON'))
     } as unknown as Response)
 
     await expect(loginUser({ username: 'thainchai', password: 'wrong' }))
@@ -56,7 +54,7 @@ describe('authApi', () => {
 
     const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
       ok: true,
-      json: async () => mockSuccess
+      json: () => Promise.resolve(mockSuccess)
     } as unknown as Response)
 
     const result = await registerUser({
@@ -82,7 +80,7 @@ describe('authApi', () => {
 
     const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
       ok: true,
-      json: async () => mockSuccess
+      json: () => Promise.resolve(mockSuccess)
     } as unknown as Response)
 
     const result = await registerUser({
@@ -106,7 +104,7 @@ describe('authApi', () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
       ok: false,
       statusText: 'Conflict',
-      json: async () => ({ message: 'Username already exists' })
+      json: () => Promise.resolve({ message: 'Username already exists' })
     } as unknown as Response)
 
     await expect(registerUser({
@@ -120,7 +118,7 @@ describe('authApi', () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
       ok: false,
       statusText: 'Bad Request',
-      json: async () => ({ error: 'Username or Email already taken!' })
+      json: () => Promise.resolve({ error: 'Username or Email already taken!' })
     } as unknown as Response)
 
     await expect(registerUser({
@@ -132,7 +130,7 @@ describe('authApi', () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
       ok: false,
       statusText: 'Bad Request',
-      json: async () => ({ error: 'Validation failed', details: { email: 'Email format is invalid' } })
+      json: () => Promise.resolve({ error: 'Validation failed', details: { email: 'Email format is invalid' } })
     } as unknown as Response)
 
     await expect(registerUser({
@@ -146,9 +144,7 @@ describe('authApi', () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
       ok: false,
       statusText: 'Internal Error',
-      json: async () => {
-        throw new Error('Parse error')
-      }
+      json: () => Promise.reject(new Error('Parse error'))
     } as unknown as Response)
 
     await expect(registerUser({

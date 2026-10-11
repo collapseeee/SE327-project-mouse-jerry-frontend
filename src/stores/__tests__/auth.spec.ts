@@ -1,7 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { setActivePinia, createPinia } from 'pinia'
 import { useAuthStore } from '../auth'
-import * as authApi from '@/services/authApi'
+import { loginUser, registerUser, logoutUser } from '@/services/authApi'
+
+vi.mock('@/services/authApi', () => ({
+  loginUser: vi.fn(),
+  registerUser: vi.fn(),
+  logoutUser: vi.fn()
+}))
 
 describe('useAuthStore', () => {
   beforeEach(() => {
@@ -45,7 +51,7 @@ describe('useAuthStore', () => {
       role: 'ROLE_CUSTOMER'
     }
 
-    vi.spyOn(authApi, 'loginUser').mockResolvedValueOnce(mockAuthResponse)
+    vi.mocked(loginUser).mockResolvedValueOnce(mockAuthResponse)
 
     const store = useAuthStore()
     const result = await store.login({ username: 'jerry', password: 'password123' })
@@ -59,7 +65,7 @@ describe('useAuthStore', () => {
   })
 
   it('handles login failure properly', async () => {
-    vi.spyOn(authApi, 'loginUser').mockRejectedValueOnce(new Error('Invalid username or password'))
+    vi.mocked(loginUser).mockRejectedValueOnce(new Error('Invalid username or password'))
 
     const store = useAuthStore()
     const result = await store.login({ username: 'jerry', password: 'wrong' })
@@ -71,7 +77,7 @@ describe('useAuthStore', () => {
   })
 
   it('handles login failure with non-Error object', async () => {
-    vi.spyOn(authApi, 'loginUser').mockRejectedValueOnce('Unknown error string')
+    vi.mocked(loginUser).mockRejectedValueOnce('Unknown error string')
 
     const store = useAuthStore()
     const result = await store.login({ username: 'jerry', password: 'wrong' })
@@ -81,7 +87,7 @@ describe('useAuthStore', () => {
   })
 
   it('performs successful registration', async () => {
-    vi.spyOn(authApi, 'registerUser').mockResolvedValueOnce({
+    vi.mocked(registerUser).mockResolvedValueOnce({
       message: 'User registered successfully',
       id: 5,
       username: 'mouse'
@@ -99,7 +105,7 @@ describe('useAuthStore', () => {
   })
 
   it('handles registration failure', async () => {
-    vi.spyOn(authApi, 'registerUser').mockRejectedValueOnce(new Error('Username taken'))
+    vi.mocked(registerUser).mockRejectedValueOnce(new Error('Username taken'))
 
     const store = useAuthStore()
     const result = await store.register({
@@ -113,7 +119,7 @@ describe('useAuthStore', () => {
   })
 
   it('handles registration failure with non-Error object', async () => {
-    vi.spyOn(authApi, 'registerUser').mockRejectedValueOnce('Some failure string')
+    vi.mocked(registerUser).mockRejectedValueOnce('Some failure string')
 
     const store = useAuthStore()
     const result = await store.register({
@@ -127,7 +133,7 @@ describe('useAuthStore', () => {
   })
 
   it('clears state and removes credentials on logout', async () => {
-    const logoutSpy = vi.spyOn(authApi, 'logoutUser').mockResolvedValueOnce()
+    vi.mocked(logoutUser).mockResolvedValueOnce()
 
     const store = useAuthStore()
     store.setUserSession({ id: 1, username: 'thainchai' }, 'valid-token')
@@ -135,7 +141,7 @@ describe('useAuthStore', () => {
 
     await store.logout()
 
-    expect(logoutSpy).toHaveBeenCalledWith('valid-token')
+    expect(logoutUser).toHaveBeenCalledWith('valid-token')
     expect(store.isAuthenticated).toBe(false)
     expect(store.user).toBeNull()
     expect(store.token).toBeNull()

@@ -37,7 +37,7 @@ describe('LoginView', () => {
     expect(wrapper.findComponent(AuthCard).exists()).toBe(true)
   })
 
-  it('renders AuthCard without stubs and allows interactions', async () => {
+  it('renders AuthCard without stubs and allows interactions', () => {
     const wrapper = mount(LoginView)
 
     expect(wrapper.text()).toContain('MOUSE JERRY')
@@ -177,7 +177,7 @@ describe('LoginView', () => {
     vi.mocked(useRoute).mockReturnValueOnce({
       path: '/login',
       query: { mode: 'login' }
-    } as any)
+    } as unknown as ReturnType<typeof useRoute>)
 
     const wrapper = mount(LoginView)
     const authCard = wrapper.findComponent(AuthCard)
