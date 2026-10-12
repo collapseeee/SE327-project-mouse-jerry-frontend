@@ -82,7 +82,7 @@ describe('KeysView', () => {
   })
 
   it('handles copying key to clipboard successfully', async () => {
-    const writeTextMock = vi.fn().mockResolvedValue(undefined)
+    const writeTextMock = vi.fn().mockImplementation(() => Promise.resolve())
     Object.assign(navigator, {
       clipboard: {
         writeText: writeTextMock
