@@ -1,3 +1,9 @@
+<script lang="ts">
+export default {
+  name: 'ToastContainer'
+}
+</script>
+
 <script setup lang="ts">
 import { useToastStore } from '@/stores/toast'
 

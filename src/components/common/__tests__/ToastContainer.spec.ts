@@ -15,7 +15,7 @@ describe('ToastContainer', () => {
     expect(wrapper.findAll('[role="status"]')).toHaveLength(0)
   })
 
-  it('renders a success toast with game title and success icon', async () => {
+  it('renders a success toast with game title and success icon', () => {
     const toastStore = useToastStore()
     toastStore.showCartSuccess('Cyberpunk 2077')
 
@@ -26,7 +26,7 @@ describe('ToastContainer', () => {
     expect(wrapper.text()).toContain('"Cyberpunk 2077"')
   })
 
-  it('renders an error toast with error icon', async () => {
+  it('renders an error toast with error icon', () => {
     const toastStore = useToastStore()
     toastStore.showError('Unable to connect to server')
 
@@ -36,7 +36,7 @@ describe('ToastContainer', () => {
     expect(wrapper.text()).toContain('Unable to connect to server')
   })
 
-  it('renders an info toast with info icon and standard message', async () => {
+  it('renders an info toast with info icon and standard message', () => {
     const toastStore = useToastStore()
     toastStore.showInfo('Special promotion active')
 
