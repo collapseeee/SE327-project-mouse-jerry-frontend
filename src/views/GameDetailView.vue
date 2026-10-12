@@ -114,7 +114,7 @@ const handleAddToCart = async () => {
   }
   isAddingToCart.value = true
   try {
-    await cartStore.addItem(game.value.id, quantity.value)
+    await cartStore.addItem(game.value.id, quantity.value, game.value.name)
   } finally {
     isAddingToCart.value = false
   }
@@ -130,7 +130,7 @@ const handleBuyNow = async () => {
   }
   isAddingToCart.value = true
   try {
-    const success = await cartStore.addItem(game.value.id, quantity.value)
+    const success = await cartStore.addItem(game.value.id, quantity.value, game.value.name)
     if (success) {
       router.push('/cart')
     }

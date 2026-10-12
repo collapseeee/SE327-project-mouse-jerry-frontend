@@ -75,7 +75,7 @@ const handleAddToCart = async (game: Game): Promise<void> => {
     })
     return
   }
-  await cartStore.addItem(game.id, 1)
+  await cartStore.addItem(game.id, 1, game.name)
 }
 </script>
 

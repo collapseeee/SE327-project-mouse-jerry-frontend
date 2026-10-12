@@ -10,6 +10,16 @@ import {
 } from '@/services/cartApi'
 import { fetchGameById } from '@/services/gameApi'
 import { useAuthStore } from './auth'
+import { useToastStore } from './toast'
+
+const notifyCartItemAdded = (gameTitle?: string): void => {
+  const toastStore = useToastStore()
+  if (gameTitle) {
+    toastStore.showCartSuccess(gameTitle)
+    return
+  }
+  toastStore.showSuccess('Item added to cart!')
+}
 
 const categoryCache = new Map<string, string>()
 
@@ -83,7 +93,11 @@ export const useCartStore = defineStore('cart', () => {
     }
   }
 
-  const addItem = async (gameId: string, quantity = 1): Promise<boolean> => {
+  const addItem = async (
+    gameId: string,
+    quantity = 1,
+    gameTitle?: string
+  ): Promise<boolean> => {
     if (!authStore.isAuthenticated || !authStore.token) {
       error.value = 'User must be authenticated to add to cart'
       return false
@@ -94,6 +108,9 @@ export const useCartStore = defineStore('cart', () => {
     try {
       const cartDto = await addToCart(authStore.token, { gameId, quantity })
       items.value = await enrichItemsWithCategory(cartDto.items)
+      const resolvedTitle =
+        gameTitle || items.value.find((it) => it.gameId === gameId)?.gameTitle
+      notifyCartItemAdded(resolvedTitle)
       return true
     } catch (err: unknown) {
       error.value = err instanceof Error ? err.message : 'Failed to add item'
