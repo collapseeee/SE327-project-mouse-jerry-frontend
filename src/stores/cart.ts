@@ -27,8 +27,8 @@ const resolveGameCategory = async (gameId: string): Promise<string> => {
   }
 }
 
-const enrichItemsWithCategory = async (cartItems: CartItem[]): Promise<CartItem[]> => {
-  return Promise.all(
+const enrichItemsWithCategory = (cartItems: CartItem[]): Promise<CartItem[]> =>
+  Promise.all(
     cartItems.map(async (item) => {
       if (item.category) {
         return item
@@ -37,7 +37,6 @@ const enrichItemsWithCategory = async (cartItems: CartItem[]): Promise<CartItem[
       return { ...item, category }
     })
   )
-}
 
 const isInvalidQuantity = (token: string | null, quantity: number): boolean =>
   !token || quantity < 1
