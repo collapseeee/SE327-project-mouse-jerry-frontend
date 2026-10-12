@@ -117,4 +117,23 @@ describe('categoryApi', () => {
     const result = await fetchCategoryById(1)
     expect(result).toBeNull()
   })
+
+  it('resolves category id and slug fallback when id or slug is missing or not a primitive', async () => {
+    const rawCategories = [
+      { id: null, name: 'Arcade', slug: null, isVisible: false }
+    ]
+
+    vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve(rawCategories)
+    } as unknown as Response)
+
+    const result = await fetchCategories()
+    expect(result[0]).toEqual({
+      id: 'Arcade',
+      name: 'Arcade',
+      slug: 'Arcade',
+      isVisible: false
+    })
+  })
 })

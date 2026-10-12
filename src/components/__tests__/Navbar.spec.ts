@@ -173,5 +173,26 @@ describe('Navbar', () => {
     await categoryBtn.trigger('click')
     expect(wrapper.text()).toContain('Sci-Fi')
   })
+
+  it('does not close category dropdown when clicking inside it, and handles empty categories', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve([])
+    } as unknown as Response)
+
+    const wrapper = mountNavbar()
+    await flushPromises()
+
+    const categoryBtn = wrapper.find('#category-dropdown-btn')
+    await categoryBtn.trigger('click')
+    expect(wrapper.find('a[href="/category/Fighting"]').exists()).toBe(true)
+
+    // Click inside the dropdown menu button itself
+    await categoryBtn.trigger('click')
+    // Click outside when dropdown is already closed
+    document.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+    await wrapper.vm.$nextTick()
+    expect(wrapper.find('a[href="/category/Fighting"]').exists()).toBe(false)
+  })
 })
 

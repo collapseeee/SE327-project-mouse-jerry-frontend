@@ -104,4 +104,21 @@ describe('HomeView', () => {
     expect(fetchSpy).toHaveBeenCalledWith(expect.stringContaining('page=2'))
     expect(wrapper.text()).toContain('Backend Page 2 Game')
   })
+
+  it('keeps local fallbacks when remote highlights and games return empty', async () => {
+    vi.spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve([])
+      } as unknown as Response)
+      .mockResolvedValueOnce({
+        ok: true,
+        headers: new Headers({ 'x-total-count': '0' }),
+        json: () => Promise.resolve([])
+      } as unknown as Response)
+
+    const wrapper = mountComponent()
+    await flushPromises()
+    expect(wrapper.text()).toContain('Battlefield 3: Premium Edition')
+  })
 })

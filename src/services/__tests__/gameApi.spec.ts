@@ -197,4 +197,31 @@ describe('gameApi', () => {
     const result = await fetchHighlights()
     expect(result).toEqual([])
   })
+
+  it('builds empty query string for empty params object and handles non-primitive id and invalid numbers', async () => {
+    const rawGames = [
+      {
+        id: null,
+        name: 'Game Without ID',
+        price: 'invalid-price',
+        stock: {},
+        categories: 'not-an-array',
+        screenshots: null
+      }
+    ]
+
+    vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
+      ok: true,
+      headers: new Headers(),
+      json: () => Promise.resolve(rawGames)
+    } as unknown as Response)
+
+    const result = await fetchGames({})
+    expect(fetch).toHaveBeenCalledWith('/api/v1/games')
+    expect(result.games[0]?.id).toBe('Game Without ID')
+    expect(result.games[0]?.price).toBe(0)
+    expect(result.games[0]?.stock).toBe(0)
+    expect(result.games[0]?.categories).toEqual([])
+    expect(result.games[0]?.screenshots).toEqual([])
+  })
 })

@@ -1,17 +1,21 @@
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
-import { ref } from 'vue'
+import { reactive } from 'vue'
 import CategoryView from '../CategoryView.vue'
 
-const mockRouteParams = ref<{ category?: string }>({ category: 'Fighting' })
+const mockRoute = reactive<{ params: { category?: unknown } }>({
+  params: { category: 'Fighting' }
+})
 
 vi.mock('vue-router', () => ({
-  useRoute: () => ({
-    params: mockRouteParams.value
-  })
+  useRoute: () => mockRoute
 }))
 
 describe('CategoryView', () => {
+  beforeEach(() => {
+    vi.restoreAllMocks()
+    mockRoute.params.category = 'Fighting'
+  })
   const mountCategoryView = () => {
     return mount(CategoryView, {
       global: {
@@ -26,7 +30,7 @@ describe('CategoryView', () => {
   }
 
   it('renders breadcrumb and heading matching the category parameter', () => {
-    mockRouteParams.value = { category: 'Fighting' }
+    mockRoute.params.category = 'Fighting'
     const wrapper = mountCategoryView()
 
     expect(wrapper.text()).toContain('Home')
@@ -36,7 +40,7 @@ describe('CategoryView', () => {
   })
 
   it('renders products found under Fighting category', () => {
-    mockRouteParams.value = { category: 'Fighting' }
+    mockRoute.params.category = 'Fighting'
     const wrapper = mountCategoryView()
 
     expect(wrapper.text()).toContain('Clone Drone in the Hyperdome')
@@ -45,7 +49,7 @@ describe('CategoryView', () => {
   })
 
   it('shows empty state when category has no games', () => {
-    mockRouteParams.value = { category: 'NonExistentCategory' }
+    mockRoute.params.category = 'NonExistentCategory'
     const wrapper = mountCategoryView()
 
     expect(wrapper.text()).toContain('No games found')
@@ -53,7 +57,7 @@ describe('CategoryView', () => {
   })
 
   it('handles page change and loads remote games from backend with pagination params', async () => {
-    mockRouteParams.value = { category: 'Fighting' }
+    mockRoute.params.category = 'Fighting'
     const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue({
       ok: true,
       headers: new Headers({ 'x-total-count': '25' }),
@@ -76,11 +80,38 @@ describe('CategoryView', () => {
   })
 
   it('updates games when route category param changes', async () => {
-    mockRouteParams.value = { category: 'Fighting' }
+    mockRoute.params.category = 'Fighting'
     const wrapper = mountCategoryView()
-    mockRouteParams.value = { category: 'Indie' }
+    mockRoute.params.category = 'Indie'
     await wrapper.vm.$nextTick()
     await flushPromises()
     expect(wrapper.exists()).toBe(true)
+
+    // Route changes to undefined / non-string
+    mockRoute.params.category = undefined
+    await wrapper.vm.$nextTick()
+    await flushPromises()
+    expect(wrapper.text()).toContain('No games found')
+  })
+
+  it('handles empty category param on initial mount gracefully', () => {
+    mockRoute.params.category = ''
+    const wrapper = mountCategoryView()
+    expect(wrapper.text()).toContain('Category')
+    expect(wrapper.text()).toContain('0 products found')
+  })
+
+  it('falls back to local category games when remote returns 0 items', async () => {
+    mockRoute.params.category = 'Fighting'
+    vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
+      ok: true,
+      headers: new Headers({ 'x-total-count': '0' }),
+      json: () => Promise.resolve([])
+    } as unknown as Response)
+
+    const wrapper = mountCategoryView()
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('Clone Drone in the Hyperdome')
   })
 })

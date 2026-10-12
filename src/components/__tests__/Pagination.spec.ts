@@ -115,4 +115,20 @@ describe('Pagination', () => {
     await prevBtn.trigger('click')
     expect(wrapper.emitted('update:currentPage')?.[1]).toEqual([1])
   })
+
+  it('does not emit page change when clicking the already active page button', async () => {
+    const wrapper = mount(Pagination, {
+      props: {
+        currentPage: 2,
+        totalPages: 5
+      }
+    })
+    const page2Btn = wrapper.findAll('button').find((b) => b.text() === '2')
+    expect(page2Btn).toBeDefined()
+    if (page2Btn) {
+      await page2Btn.trigger('click')
+    }
+    expect(wrapper.emitted('update:currentPage')).toBeUndefined()
+    expect(wrapper.emitted('page-change')).toBeUndefined()
+  })
 })

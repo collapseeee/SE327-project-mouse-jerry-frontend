@@ -157,4 +157,12 @@ describe('useAuthStore', () => {
     expect(store.currentUsername).toBe('adminuser')
     expect(store.isAdmin).toBe(true)
   })
+
+  it('does not invoke logoutUser if token is null during logout', async () => {
+    const store = useAuthStore()
+    expect(store.token).toBeNull()
+
+    await store.logout()
+    expect(logoutUser).not.toHaveBeenCalled()
+  })
 })

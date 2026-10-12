@@ -1,17 +1,22 @@
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
-import { ref } from 'vue'
+import { reactive } from 'vue'
 import SearchView from '../SearchView.vue'
 
-const mockRouteQuery = ref<{ q?: string }>({ q: 'battle' })
+const mockRoute = reactive<{ query: { q?: unknown } }>({
+  query: { q: 'battle' }
+})
 
 vi.mock('vue-router', () => ({
-  useRoute: () => ({
-    query: mockRouteQuery.value
-  })
+  useRoute: () => mockRoute
 }))
 
 describe('SearchView', () => {
+  beforeEach(() => {
+    vi.restoreAllMocks()
+    mockRoute.query.q = 'battle'
+  })
+
   const mountSearchView = () => {
     return mount(SearchView, {
       global: {
@@ -26,7 +31,7 @@ describe('SearchView', () => {
   }
 
   it('renders search query in breadcrumb and heading matching Screenshot 1', () => {
-    mockRouteQuery.value = { q: 'battle' }
+    mockRoute.query.q = 'battle'
     const wrapper = mountSearchView()
 
     expect(wrapper.text()).toContain('Search Results for: "battle"')
@@ -35,7 +40,7 @@ describe('SearchView', () => {
   })
 
   it('renders matched games: Battlefield 3 and Beast Battle Simulator', () => {
-    mockRouteQuery.value = { q: 'battle' }
+    mockRoute.query.q = 'battle'
     const wrapper = mountSearchView()
 
     expect(wrapper.text()).toContain('Battlefield 3: Premium Edition')
@@ -45,7 +50,7 @@ describe('SearchView', () => {
   })
 
   it('shows empty state when no games match the query', () => {
-    mockRouteQuery.value = { q: 'NonExistingQueryXYZ123' }
+    mockRoute.query.q = 'NonExistingQueryXYZ123'
     const wrapper = mountSearchView()
 
     expect(wrapper.text()).toContain('No games found')
@@ -53,13 +58,13 @@ describe('SearchView', () => {
   })
 
   it('handles empty query parameter gracefully', () => {
-    mockRouteQuery.value = { q: '' }
+    mockRoute.query.q = ''
     const wrapper = mountSearchView()
     expect(wrapper.text()).toContain('No games found')
   })
 
   it('handles backend search querying and pagination params', async () => {
-    mockRouteQuery.value = { q: 'battle' }
+    mockRoute.query.q = 'battle'
     const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue({
       ok: true,
       headers: new Headers({ 'x-total-count': '15' }),
@@ -82,11 +87,34 @@ describe('SearchView', () => {
   })
 
   it('updates search results when query parameter changes', async () => {
-    mockRouteQuery.value = { q: 'battle' }
+    mockRoute.query.q = 'battle'
     const wrapper = mountSearchView()
-    mockRouteQuery.value = { q: 'ring' }
+    mockRoute.query.q = 'ring'
     await wrapper.vm.$nextTick()
     await flushPromises()
     expect(wrapper.exists()).toBe(true)
+
+    // Route changes to undefined / non-string
+    mockRoute.query.q = undefined
+    await wrapper.vm.$nextTick()
+    await flushPromises()
+    expect(wrapper.text()).toContain('No games found')
+  })
+
+  it('handles non-string query parameter on mount and falls back to local when remote is empty', async () => {
+    mockRoute.query.q = ['array'] as unknown as string
+    const wrapper = mountSearchView()
+    expect(wrapper.text()).toContain('No games found')
+
+    mockRoute.query.q = 'battle'
+    vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
+      ok: true,
+      headers: new Headers({ 'x-total-count': '0' }),
+      json: () => Promise.resolve([])
+    } as unknown as Response)
+
+    const wrapper2 = mountSearchView()
+    await flushPromises()
+    expect(wrapper2.text()).toContain('Battlefield 3: Premium Edition')
   })
 })
