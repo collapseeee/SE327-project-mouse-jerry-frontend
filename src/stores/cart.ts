@@ -39,6 +39,16 @@ const enrichItemsWithCategory = async (cartItems: CartItem[]): Promise<CartItem[
   )
 }
 
+const isInvalidQuantity = (token: string | null, quantity: number): boolean =>
+  !token || quantity < 1
+
+const exceedsStock = (item: CartItem | undefined, quantity: number): boolean => {
+  if (!item) {
+    return false
+  }
+  return item.stock > 0 && quantity > item.stock
+}
+
 export const useCartStore = defineStore('cart', () => {
   const authStore = useAuthStore()
 
@@ -95,17 +105,17 @@ export const useCartStore = defineStore('cart', () => {
   }
 
   const updateQuantity = async (gameId: string, newQuantity: number): Promise<boolean> => {
-    if (!authStore.token || newQuantity < 1) {
+    if (isInvalidQuantity(authStore.token, newQuantity)) {
       return false
     }
 
     const targetItem = items.value.find((it) => it.gameId === gameId)
-    if (targetItem && targetItem.stock > 0 && newQuantity > targetItem.stock) {
+    if (exceedsStock(targetItem, newQuantity)) {
       return false
     }
 
     try {
-      const cartDto = await updateCartItemQuantity(authStore.token, gameId, newQuantity)
+      const cartDto = await updateCartItemQuantity(authStore.token as string, gameId, newQuantity)
       items.value = await enrichItemsWithCategory(cartDto.items)
       return true
     } catch (err: unknown) {

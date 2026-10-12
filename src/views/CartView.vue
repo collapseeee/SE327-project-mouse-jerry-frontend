@@ -1,3 +1,9 @@
+<script lang="ts">
+export default {
+  name: 'CartView'
+}
+</script>
+
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
