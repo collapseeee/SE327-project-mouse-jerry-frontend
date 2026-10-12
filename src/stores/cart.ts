@@ -81,9 +81,20 @@ const exceedsStock = (item: CartItem | undefined, quantity: number): boolean => 
   return item.stock > 0 && quantity > item.stock
 }
 
+let orderFallbackSequence = 100000
+
+const generateKeySegment = (): string => {
+  orderFallbackSequence += 1
+  return orderFallbackSequence.toString(36).toUpperCase()
+}
+
 const generateRandomKey = (): string => {
-  const seg = () => Math.random().toString(36).substring(2, 6).toUpperCase()
-  return `${seg()}-${seg()}-${seg()}`
+  return `${generateKeySegment()}-${generateKeySegment()}-${generateKeySegment()}`
+}
+
+const generateOrderNumber = (): string => {
+  orderFallbackSequence += 1
+  return `ORD-${orderFallbackSequence.toString(36).toUpperCase()}`
 }
 
 const createDirectFallbackOrder = (
@@ -128,7 +139,7 @@ const createLocalFallbackOrder = (
   directItem: DirectPurchaseItem | null,
   cartItemsList: CartItem[]
 ): Order => {
-  const orderNumber = `ORD-${Math.random().toString(36).substring(2, 8).toUpperCase()}`
+  const orderNumber = generateOrderNumber()
   const dateStr = formatDate()
   if (directItem) {
     return createDirectFallbackOrder(directItem, orderNumber, dateStr)
