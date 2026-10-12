@@ -11,11 +11,22 @@ vi.mock('vue-router', () => ({
   })
 }))
 
+const sampleCategories = [
+  { id: 1, name: 'Fighting', slug: 'Fighting', isVisible: true },
+  { id: 2, name: 'Hack and slash/Beat \'em up', slug: 'Hack and slash/Beat \'em up', isVisible: true },
+  { id: 3, name: 'Indie', slug: 'Indie', isVisible: true }
+]
+
 describe('Navbar', () => {
   beforeEach(() => {
     localStorage.clear()
     setActivePinia(createPinia())
     mockPush.mockClear()
+    vi.restoreAllMocks()
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve(sampleCategories)
+    } as Response)
   })
 
   const mountNavbar = () => {
@@ -31,8 +42,9 @@ describe('Navbar', () => {
     })
   }
 
-  it('renders brand name and icon-only Login link matching baseline when unauthenticated', () => {
+  it('renders brand name and icon-only Login link matching baseline when unauthenticated', async () => {
     const wrapper = mountNavbar()
+    await flushPromises()
     expect(wrapper.text()).toContain('Mouse Jerry')
     const loginLink = wrapper.find('[data-test="navbar-login-link"]')
     expect(loginLink.exists()).toBe(true)
@@ -47,6 +59,7 @@ describe('Navbar', () => {
     authStore.setUserSession({ id: 1, username: 'thainchai' }, 'token-123')
 
     const wrapper = mountNavbar()
+    await flushPromises()
     const userBtn = wrapper.find('[data-test="navbar-user-btn"]')
     expect(userBtn.exists()).toBe(true)
     expect(wrapper.find('[data-test="navbar-username"]').text()).toBe('thainchai')
@@ -69,6 +82,7 @@ describe('Navbar', () => {
     authStore.setUserSession({ id: 2, username: 'gamer99' }, 'token-xyz')
 
     const wrapper = mountNavbar()
+    await flushPromises()
     const userBtn = wrapper.find('[data-test="navbar-user-btn"]')
     await userBtn.trigger('click')
 
@@ -87,6 +101,7 @@ describe('Navbar', () => {
     authStore.setUserSession({ id: 1, username: 'thainchai' }, 'token-123')
 
     const wrapper = mountNavbar()
+    await flushPromises()
     const userBtn = wrapper.find('[data-test="navbar-user-btn"]')
     await userBtn.trigger('click')
     expect(wrapper.find('[data-test="navbar-user-dropdown"]').exists()).toBe(true)
@@ -98,8 +113,9 @@ describe('Navbar', () => {
     expect(wrapper.find('[data-test="navbar-user-dropdown"]').exists()).toBe(false)
   })
 
-  it('renders search input with accessible label and matching id', () => {
+  it('renders search input with accessible label and matching id', async () => {
     const wrapper = mountNavbar()
+    await flushPromises()
     const label = wrapper.find('label[for="navbar-search"]')
     const input = wrapper.find('input#navbar-search')
 
@@ -110,6 +126,7 @@ describe('Navbar', () => {
 
   it('toggles category dropdown menu on click and closes on item select', async () => {
     const wrapper = mountNavbar()
+    await flushPromises()
     const categoryBtn = wrapper.find('#category-dropdown-btn')
     expect(categoryBtn.exists()).toBe(true)
 
@@ -129,6 +146,7 @@ describe('Navbar', () => {
 
   it('navigates to /search when search form is submitted with non-empty query', async () => {
     const wrapper = mountNavbar()
+    await flushPromises()
     const input = wrapper.find('input#navbar-search')
 
     await input.setValue('cyberpunk')
@@ -142,6 +160,7 @@ describe('Navbar', () => {
 
   it('does not navigate when search query is empty or whitespace', async () => {
     const wrapper = mountNavbar()
+    await flushPromises()
     const input = wrapper.find('input#navbar-search')
 
     await input.setValue('   ')
@@ -150,8 +169,9 @@ describe('Navbar', () => {
     expect(mockPush).not.toHaveBeenCalled()
   })
 
-  it('renders cart badge with product count', () => {
+  it('renders cart badge with product count', async () => {
     const wrapper = mountNavbar()
+    await flushPromises()
     const cartLink = wrapper.find('a[href="/cart"]')
     expect(cartLink.exists()).toBe(true)
     expect(cartLink.text()).toContain('2')
@@ -166,15 +186,14 @@ describe('Navbar', () => {
     } as unknown as Response)
 
     const wrapper = mountNavbar()
-    await Promise.resolve()
-    await Promise.resolve()
+    await flushPromises()
 
     const categoryBtn = wrapper.find('#category-dropdown-btn')
     await categoryBtn.trigger('click')
     expect(wrapper.text()).toContain('Sci-Fi')
   })
 
-  it('does not close category dropdown when clicking inside it, and handles empty categories', async () => {
+  it('shows no categories found when remote categories list is empty', async () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
       ok: true,
       json: () => Promise.resolve([])
@@ -185,9 +204,9 @@ describe('Navbar', () => {
 
     const categoryBtn = wrapper.find('#category-dropdown-btn')
     await categoryBtn.trigger('click')
-    expect(wrapper.find('a[href="/category/Fighting"]').exists()).toBe(true)
+    expect(wrapper.text()).toContain('No categories found')
 
-    // Click inside the dropdown menu button itself
+    // Click inside the dropdown menu button itself to toggle off
     await categoryBtn.trigger('click')
     // Click outside when dropdown is already closed
     document.dispatchEvent(new MouseEvent('click', { bubbles: true }))
@@ -195,4 +214,3 @@ describe('Navbar', () => {
     expect(wrapper.find('a[href="/category/Fighting"]').exists()).toBe(false)
   })
 })
-

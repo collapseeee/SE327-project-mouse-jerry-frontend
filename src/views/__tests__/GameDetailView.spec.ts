@@ -11,15 +11,37 @@ vi.mock('vue-router', () => ({
   useRoute: () => mockRoute
 }))
 
+const sampleGame = {
+  id: 'vampire-survivors-emergency-meeting',
+  name: 'Vampire Survivors: Emergency Meeting',
+  price: 1788,
+  category: 'Hack and slash/Beat \'em up',
+  coverImage: 'vs.jpg',
+  screenshots: ['sc1.jpg', 'sc2.jpg', 'sc3.jpg'],
+  stock: 10,
+  description: 'Emergency meeting in space with vampires.',
+  publisher: 'Poncle',
+  releaseDate: '2023-12-18'
+}
+
 describe('GameDetailView', () => {
   beforeEach(() => {
     vi.restoreAllMocks()
-    vi.spyOn(globalThis, 'fetch').mockResolvedValue({
-      ok: false,
-      status: 404,
-      json: () => Promise.resolve({})
-    } as Response)
     mockRoute.params.id = 'vampire-survivors-emergency-meeting'
+    vi.spyOn(globalThis, 'fetch').mockImplementation((requestUrl) => {
+      const url = String(requestUrl)
+      if (url.includes('vampire-survivors-emergency-meeting')) {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve(sampleGame)
+        } as Response)
+      }
+      return Promise.resolve({
+        ok: false,
+        status: 404,
+        json: () => Promise.resolve({})
+      } as Response)
+    })
   })
 
   const mountGameDetailView = () => {
@@ -151,7 +173,6 @@ describe('GameDetailView', () => {
     await flushPromises()
 
     expect(wrapper.text()).toContain('No Screenshots Game')
-    // Since screenshots is empty, galleryImages has only 1 image (coverImage), so navigation buttons are hidden
     expect(wrapper.find('button[aria-label="Next screenshot"]').exists()).toBe(false)
     expect(wrapper.find('button[aria-label="Previous screenshot"]').exists()).toBe(false)
   })
@@ -174,8 +195,8 @@ describe('GameDetailView', () => {
   it('loads remote game details on mount and updates on route change', async () => {
     mockRoute.params.id = 'custom-remote-game'
     const fetchSpy = vi.spyOn(globalThis, 'fetch')
-    fetchSpy.mockImplementation((url) => {
-      const urlStr = String(url)
+    fetchSpy.mockImplementation((requestUrl) => {
+      const urlStr = String(requestUrl)
       if (urlStr.includes('custom-remote-game')) {
         return Promise.resolve({
           ok: true,
@@ -190,6 +211,20 @@ describe('GameDetailView', () => {
           })
         } as Response)
       }
+      if (urlStr.includes('elden-ring')) {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({
+            id: 'elden-ring',
+            name: 'Elden Ring',
+            price: 1790,
+            category: 'RPG',
+            screenshots: ['er1.jpg'],
+            coverImage: 'er.jpg',
+            stock: 8
+          })
+        } as Response)
+      }
       return Promise.resolve({
         ok: false,
         status: 404,
@@ -201,7 +236,7 @@ describe('GameDetailView', () => {
     await flushPromises()
     expect(wrapper.text()).toContain('Custom Remote Game')
 
-    // Route change to another string id (local fallback elden-ring)
+    // Route change to another string id
     mockRoute.params.id = 'elden-ring'
     await flushPromises()
     expect(wrapper.text()).toContain('Elden Ring')

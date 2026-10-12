@@ -3,41 +3,19 @@ import { ref, computed, onMounted } from 'vue'
 import HighlightCarousel, { type HighlightItem } from '../components/HighlightCarousel.vue'
 import GameCard from '../components/GameCard.vue'
 import Pagination from '../components/Pagination.vue'
-import { getAllGames } from '@/data/games'
 import { fetchGames, fetchHighlights } from '@/services/gameApi'
 import type { Game } from '@/types/game'
 
-// Carousel highlights matching the baseline Swiper Coverflow
-const highlights = ref<HighlightItem[]>([
-  {
-    id: 'h1',
-    gameId: 'anstoss-3',
-    name: 'ANSTOSS 3 - Der Fußballmanager',
-    customImage: 'https://images.igdb.com/igdb/image/upload/t_1080p/sc66l2.jpg',
-    buttonColor: 'var(--color-accent-green)'
-  },
-  {
-    id: 'h2',
-    gameId: 'cyberpunk-2077',
-    name: 'Cyberpunk 2077',
-    customImage: 'https://images.igdb.com/igdb/image/upload/t_1080p/sc7x7t.jpg',
-    buttonColor: 'var(--color-accent-red)'
-  },
-  {
-    id: 'h3',
-    gameId: 'elden-ring',
-    name: 'Elden Ring',
-    customImage: 'https://images.igdb.com/igdb/image/upload/t_1080p/sclh7y.jpg',
-    buttonColor: 'var(--color-accent-yellow)'
-  },
-  {
-    id: 'h4',
-    gameId: 'planet-zoo',
-    name: 'Planet Zoo: Aquatic Pack',
-    customImage: 'https://images.igdb.com/igdb/image/upload/t_1080p/sc7x7t.jpg',
-    buttonColor: 'var(--color-secondary)'
-  }
-])
+const highlights = ref<HighlightItem[]>([])
+const currentPage = ref(1)
+const pageSize = ref(5)
+const totalCount = ref(0)
+const catalogGames = ref<Game[]>([])
+const isLoading = ref(true)
+
+const totalPages = computed(() => {
+  return Math.ceil(totalCount.value / pageSize.value) || 1
+})
 
 const mapHighlightColor = (index: number): string => {
   const colors = [
@@ -49,35 +27,9 @@ const mapHighlightColor = (index: number): string => {
   return colors[index % colors.length]
 }
 
-const getInitialHomeGames = (): Game[] => {
-  const all = getAllGames()
-  const homeOrder = ['battlefield-3', 'headquarters-wwii', 'fivem', 'clone-drone', 'tropico-4']
-  const homeSet = new Set(homeOrder)
-  const p1: Game[] = []
-  const rest: Game[] = []
-  for (const id of homeOrder) {
-    const found = all.find((g) => g.id === id)
-    if (found) p1.push(found)
-  }
-  for (const g of all) {
-    if (!homeSet.has(g.id)) rest.push(g)
-  }
-  return [...p1, ...rest]
-}
-
-const initialAll = getInitialHomeGames()
-const currentPage = ref(1)
-const pageSize = ref(5)
-const totalCount = ref(initialAll.length)
-const catalogGames = ref<Game[]>(initialAll.slice(0, 5))
-
-const totalPages = computed(() => {
-  return Math.ceil(totalCount.value / pageSize.value) || 1
-})
-
 const loadHighlights = async (): Promise<void> => {
-  const remoteHighlights = await fetchHighlights()
-  if (remoteHighlights.length > 0) {
+  try {
+    const remoteHighlights = await fetchHighlights()
     highlights.value = remoteHighlights.map((item, index) => ({
       id: `h-${item.id}`,
       gameId: item.id,
@@ -85,20 +37,23 @@ const loadHighlights = async (): Promise<void> => {
       customImage: item.screenshots?.[0] || item.coverImage,
       buttonColor: mapHighlightColor(index)
     }))
+  } catch {
+    highlights.value = []
   }
 }
 
 const loadPageGames = async (page: number): Promise<void> => {
-  const remote = await fetchGames({ page, size: pageSize.value })
-  if (remote.games.length > 0 || remote.totalCount > 0) {
+  isLoading.value = true
+  try {
+    const remote = await fetchGames({ page, size: pageSize.value })
     catalogGames.value = remote.games
     totalCount.value = remote.totalCount
-    return
+  } catch {
+    catalogGames.value = []
+    totalCount.value = 0
+  } finally {
+    isLoading.value = false
   }
-  const all = getInitialHomeGames()
-  totalCount.value = all.length
-  const start = (page - 1) * pageSize.value
-  catalogGames.value = all.slice(start, start + pageSize.value)
 }
 
 onMounted(async () => {
@@ -111,13 +66,14 @@ onMounted(async () => {
 const onPageChange = async (page: number): Promise<void> => {
   currentPage.value = page
   await loadPageGames(page)
+  window.scrollTo({ top: 0, behavior: 'smooth' })
 }
 </script>
 
 <template>
   <main class="max-w-7xl mx-auto px-6 py-6">
     <!-- Premium Swiper Coverflow Carousel -->
-    <section class="mb-8">
+    <section v-if="highlights.length > 0" class="mb-8">
       <HighlightCarousel :highlights="highlights" />
     </section>
 
@@ -129,13 +85,34 @@ const onPageChange = async (page: number): Promise<void> => {
     </div>
 
     <!-- Product Grid matching Screenshot 3 -->
-    <section class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-5 mb-8">
+    <section
+      v-if="catalogGames.length > 0"
+      class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-5 mb-8"
+    >
       <GameCard
         v-for="game in catalogGames"
         :key="game.id"
         :game="game"
       />
     </section>
+
+    <!-- Empty State -->
+    <div
+      v-else-if="!isLoading"
+      class="py-16 text-center bg-white rounded-2xl border border-slate-100 shadow-sm mb-8"
+    >
+      <i class="fa-solid fa-gamepad text-4xl text-slate-300 mb-3 block"></i>
+      <p class="text-slate-600 font-medium">No games available at this time.</p>
+    </div>
+
+    <!-- Loading State -->
+    <div
+      v-else
+      class="py-16 text-center mb-8"
+    >
+      <i class="fa-solid fa-circle-notch fa-spin text-3xl text-primary mb-3 block"></i>
+      <p class="text-slate-500 text-sm">Loading games...</p>
+    </div>
 
     <!-- Pagination matching Screenshot 3: < 1 2 ... 6 > -->
     <Pagination
