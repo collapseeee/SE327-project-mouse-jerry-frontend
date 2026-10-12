@@ -105,7 +105,7 @@ describe('HomeView', () => {
     const addButtons = wrapper.findAll('button[title="Add to Cart"]')
     await addButtons[0].trigger('click')
 
-    expect(addItemSpy).toHaveBeenCalledWith('1', 1)
+    expect(addItemSpy).toHaveBeenCalledWith('1', 1, 'Battlefield 3: Premium Edition')
   })
 
   it('navigates through pages using pagination', async () => {

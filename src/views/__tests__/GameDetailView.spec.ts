@@ -108,7 +108,11 @@ describe('GameDetailView', () => {
     const addToCartBtn = wrapper.find('[data-test="add-to-cart-btn"]')
     await addToCartBtn.trigger('click')
 
-    expect(addItemSpy).toHaveBeenCalledWith('vampire-survivors-emergency-meeting', 1)
+    expect(addItemSpy).toHaveBeenCalledWith(
+      'vampire-survivors-emergency-meeting',
+      1,
+      'Vampire Survivors: Emergency Meeting'
+    )
   })
 
   it('redirects to login when unauthenticated user clicks buy now', async () => {

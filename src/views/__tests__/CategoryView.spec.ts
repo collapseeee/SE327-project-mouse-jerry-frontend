@@ -93,7 +93,7 @@ describe('CategoryView', () => {
     const addButtons = wrapper.findAll('button[title="Add to Cart"]')
     await addButtons[0].trigger('click')
 
-    expect(addItemSpy).toHaveBeenCalledWith('cd-1', 1)
+    expect(addItemSpy).toHaveBeenCalledWith('cd-1', 1, 'Clone Drone in the Hyperdome')
   })
 
   it('updates games when route category param changes', async () => {

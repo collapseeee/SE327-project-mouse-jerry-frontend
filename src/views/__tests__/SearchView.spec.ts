@@ -92,7 +92,7 @@ describe('SearchView', () => {
     const addButtons = wrapper.findAll('button[title="Add to Cart"]')
     await addButtons[0].trigger('click')
 
-    expect(addItemSpy).toHaveBeenCalledWith('bf-1', 1)
+    expect(addItemSpy).toHaveBeenCalledWith('bf-1', 1, 'Battlefield 3: Premium Edition')
   })
 
   it('shows empty state when no games match the query', async () => {

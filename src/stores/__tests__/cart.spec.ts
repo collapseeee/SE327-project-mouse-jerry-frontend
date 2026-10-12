@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { setActivePinia, createPinia } from 'pinia'
 import { useCartStore } from '../cart'
 import { useAuthStore } from '../auth'
+import { useToastStore } from '../toast'
 import {
   fetchCart,
   addToCart,
@@ -108,17 +109,49 @@ describe('useCartStore', () => {
       expect(store.error).toContain('User must be authenticated')
     })
 
-    it('successfully adds item and enriches category when authenticated', async () => {
+    it('successfully adds item, enriches category, and triggers toast notification', async () => {
       const authStore = useAuthStore()
       authStore.setUserSession({ id: 1, username: 'testuser' }, 'mock-token')
       vi.mocked(addToCart).mockResolvedValueOnce(sampleCartDto)
 
       const store = useCartStore()
+      const toastStore = useToastStore()
       const success = await store.addItem('vs-1', 2)
 
       expect(success).toBe(true)
       expect(store.items).toHaveLength(1)
       expect(store.totalItems).toBe(1)
+      expect(toastStore.toasts).toHaveLength(1)
+      expect(toastStore.toasts[0].gameTitle).toBe('Vampire Survivors')
+      expect(toastStore.toasts[0].message).toContain('Vampire Survivors')
+    })
+
+    it('triggers toast notification using explicit gameTitle parameter', async () => {
+      const authStore = useAuthStore()
+      authStore.setUserSession({ id: 1, username: 'testuser' }, 'mock-token')
+      vi.mocked(addToCart).mockResolvedValueOnce(sampleCartDto)
+
+      const store = useCartStore()
+      const toastStore = useToastStore()
+      const success = await store.addItem('vs-1', 1, 'Custom Game Title')
+
+      expect(success).toBe(true)
+      expect(toastStore.toasts).toHaveLength(1)
+      expect(toastStore.toasts[0].gameTitle).toBe('Custom Game Title')
+    })
+
+    it('triggers generic toast when item game title cannot be found', async () => {
+      const authStore = useAuthStore()
+      authStore.setUserSession({ id: 1, username: 'testuser' }, 'mock-token')
+      vi.mocked(addToCart).mockResolvedValueOnce({ items: [], totalItems: 0, totalAmount: 0 })
+
+      const store = useCartStore()
+      const toastStore = useToastStore()
+      const success = await store.addItem('unknown-id', 1)
+
+      expect(success).toBe(true)
+      expect(toastStore.toasts).toHaveLength(1)
+      expect(toastStore.toasts[0].message).toBe('Item added to cart!')
     })
 
     it('returns false when addToCart service fails', async () => {
