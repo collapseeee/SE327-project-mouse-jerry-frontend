@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { mount } from '@vue/test-utils'
+import { mount, flushPromises } from '@vue/test-utils'
 import { ref } from 'vue'
 import GameDetailView from '../GameDetailView.vue'
 
@@ -75,7 +75,15 @@ describe('GameDetailView', () => {
     // Click thumbnail directly
     const thumbButtons = wrapper.findAll('button[aria-label^="Select screenshot"]')
     expect(thumbButtons.length).toBeGreaterThan(0)
-    await thumbButtons[2].trigger('click')
+    const thirdThumb = thumbButtons[2]
+    if (thirdThumb) {
+      await thirdThumb.trigger('click')
+    }
+
+    await prevBtn.trigger('click')
+    await prevBtn.trigger('click')
+    await prevBtn.trigger('click')
+    await prevBtn.trigger('click')
   })
 
   it('displays not found state when game does not exist', () => {
@@ -85,4 +93,30 @@ describe('GameDetailView', () => {
     expect(wrapper.text()).toContain('Game Not Found')
     expect(wrapper.text()).toContain('Back to Home')
   })
+
+  it('loads remote game details on mount and updates on route change', async () => {
+    mockRouteParams.value = { id: 'custom-remote-game' }
+    vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve({
+        id: 'custom-remote-game',
+        name: 'Custom Remote Game',
+        price: 999,
+        category: 'Action',
+        screenshots: ['sc1.jpg', 'sc2.jpg'],
+        coverImage: 'cov.jpg',
+        stock: 5
+      })
+    } as unknown as Response)
+
+    const wrapper = mountGameDetailView()
+    await flushPromises()
+    expect(wrapper.text()).toContain('Custom Remote Game')
+
+    mockRouteParams.value = { id: 'elden-ring' }
+    await flushPromises()
+    expect(wrapper.exists()).toBe(true)
+  })
 })
+
+

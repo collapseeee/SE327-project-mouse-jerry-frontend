@@ -156,4 +156,22 @@ describe('Navbar', () => {
     expect(cartLink.exists()).toBe(true)
     expect(cartLink.text()).toContain('2')
   })
+
+  it('updates categories on mount when fetchCategories returns remote list', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve([
+        { id: 99, name: 'Sci-Fi', slug: 'Sci-Fi', isVisible: true }
+      ])
+    } as unknown as Response)
+
+    const wrapper = mountNavbar()
+    await Promise.resolve()
+    await Promise.resolve()
+
+    const categoryBtn = wrapper.find('#category-dropdown-btn')
+    await categoryBtn.trigger('click')
+    expect(wrapper.text()).toContain('Sci-Fi')
+  })
 })
+

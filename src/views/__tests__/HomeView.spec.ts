@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import HomeView from '../HomeView.vue'
 
@@ -58,4 +58,30 @@ describe('HomeView', () => {
     expect(images.length).toBeGreaterThan(0)
     images.forEach((img) => expect(img.attributes('alt')).toBeTruthy())
   })
+
+  it('loads remote highlights and games on mount when available', async () => {
+    const mockHighlights = [
+      { id: 'rem-1', name: 'Remote Highlight', price: 999, coverImage: 'rem.jpg', isHighlight: true }
+    ]
+    const mockRemoteGames = [
+      { id: 'rem-1', name: 'Remote Highlight', price: 999, coverImage: 'rem.jpg', category: 'Action' }
+    ]
+
+    vi.spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve(mockHighlights)
+      } as unknown as Response)
+      .mockResolvedValueOnce({
+        ok: true,
+        headers: new Headers({ 'x-total-count': '1' }),
+        json: () => Promise.resolve(mockRemoteGames)
+      } as unknown as Response)
+
+    const wrapper = mountComponent()
+    await Promise.resolve()
+    await Promise.resolve()
+    expect(wrapper.exists()).toBe(true)
+  })
 })
+

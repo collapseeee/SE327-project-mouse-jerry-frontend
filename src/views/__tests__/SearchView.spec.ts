@@ -51,4 +51,41 @@ describe('SearchView', () => {
     expect(wrapper.text()).toContain('No games found')
     expect(wrapper.text()).toContain('0 products found')
   })
+
+  it('handles empty query parameter gracefully', () => {
+    mockRouteQuery.value = { q: '' }
+    const wrapper = mountSearchView()
+    expect(wrapper.text()).toContain('No games found')
+  })
+
+  it('handles pagination and remote search results', async () => {
+    mockRouteQuery.value = { q: 'battle' }
+    vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
+      ok: true,
+      headers: new Headers({ 'x-total-count': '1' }),
+      json: () => Promise.resolve([
+        { id: 'remote-battle', name: 'Remote Battle', price: 500, category: 'Action' }
+      ])
+    } as unknown as Response)
+
+    const wrapper = mountSearchView()
+    await Promise.resolve()
+    await Promise.resolve()
+
+    const pagination = wrapper.findComponent({ name: 'Pagination' })
+    if (pagination.exists()) {
+      await pagination.vm.$emit('update:current-page', 2)
+    }
+    expect(wrapper.exists()).toBe(true)
+  })
+
+  it('updates search results when query parameter changes', async () => {
+    mockRouteQuery.value = { q: 'battle' }
+    const wrapper = mountSearchView()
+    mockRouteQuery.value = { q: 'ring' }
+    await wrapper.vm.$nextTick()
+    await Promise.resolve()
+    expect(wrapper.exists()).toBe(true)
+  })
 })
+

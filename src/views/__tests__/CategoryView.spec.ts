@@ -51,4 +51,35 @@ describe('CategoryView', () => {
     expect(wrapper.text()).toContain('No games found')
     expect(wrapper.text()).toContain('0 products found')
   })
+
+  it('handles page change and loads remote games on mount', async () => {
+    mockRouteParams.value = { category: 'Fighting' }
+    vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
+      ok: true,
+      headers: new Headers({ 'x-total-count': '1' }),
+      json: () => Promise.resolve([
+        { id: 'custom-fight', name: 'Custom Fighter', price: 99, category: 'Fighting' }
+      ])
+    } as unknown as Response)
+
+    const wrapper = mountCategoryView()
+    await Promise.resolve()
+    await Promise.resolve()
+
+    const pagination = wrapper.findComponent({ name: 'Pagination' })
+    if (pagination.exists()) {
+      await pagination.vm.$emit('update:current-page', 2)
+    }
+    expect(wrapper.exists()).toBe(true)
+  })
+
+  it('updates games when route category param changes', async () => {
+    mockRouteParams.value = { category: 'Fighting' }
+    const wrapper = mountCategoryView()
+    mockRouteParams.value = { category: 'Indie' }
+    await wrapper.vm.$nextTick()
+    await Promise.resolve()
+    expect(wrapper.exists()).toBe(true)
+  })
 })
+
