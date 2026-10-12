@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import HighlightCarousel, { type HighlightItem } from '../components/HighlightCarousel.vue'
 import GameCard from '../components/GameCard.vue'
 import Pagination from '../components/Pagination.vue'
 import { getAllGames } from '@/data/games'
+import { fetchGames, fetchHighlights } from '@/services/gameApi'
 import type { Game } from '@/types/game'
 
 // Carousel highlights matching the baseline Swiper Coverflow
@@ -38,12 +39,6 @@ const highlights = ref<HighlightItem[]>([
   }
 ])
 
-// Preferred ordering for Home page 1 matching Screenshot 3:
-// 1. Battlefield 3: Premium Edition (1969 Baht)
-// 2. Headquarters World War II (1277 Baht)
-// 3. FiveM (837 Baht)
-// 4. Clone Drone in the Hyperdome (1702 Baht)
-// 5. Tropico 4: Modern Times (243 Baht)
 const homeGameOrder = [
   'battlefield-3',
   'headquarters-wwii',
@@ -53,23 +48,55 @@ const homeGameOrder = [
 ]
 const homeGameOrderSet = new Set(homeGameOrder)
 
-const allGames = getAllGames()
+const allGames = ref<Game[]>(getAllGames())
+
 const sortedGames = computed<Game[]>(() => {
   const page1Games: Game[] = []
   const remainingGames: Game[] = []
 
   for (const id of homeGameOrder) {
-    const found = allGames.find((g) => g.id === id)
+    const found = allGames.value.find((g) => g.id === id)
     if (found) page1Games.push(found)
   }
 
-  for (const g of allGames) {
+  for (const g of allGames.value) {
     if (!homeGameOrderSet.has(g.id)) {
       remainingGames.push(g)
     }
   }
 
   return [...page1Games, ...remainingGames]
+})
+
+const mapHighlightColor = (index: number): string => {
+  const colors = [
+    'var(--color-accent-green)',
+    'var(--color-accent-red)',
+    'var(--color-accent-yellow)',
+    'var(--color-secondary)'
+  ]
+  return colors[index % colors.length]
+}
+
+onMounted(async () => {
+  const [remoteHighlights, remoteGames] = await Promise.all([
+    fetchHighlights(),
+    fetchGames({ size: 100 })
+  ])
+
+  if (remoteHighlights.length > 0) {
+    highlights.value = remoteHighlights.map((item, index) => ({
+      id: `h-${item.id}`,
+      gameId: item.id,
+      name: item.name,
+      customImage: item.coverImage,
+      buttonColor: mapHighlightColor(index)
+    }))
+  }
+
+  if (remoteGames.games.length > 0) {
+    allGames.value = remoteGames.games
+  }
 })
 
 const currentPage = ref(1)

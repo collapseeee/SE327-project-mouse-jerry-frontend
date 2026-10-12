@@ -3,7 +3,9 @@ import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import logoImg from '@/assets/logo.png'
 import { getAllCategories } from '@/data/games'
+import { fetchCategories } from '@/services/categoryApi'
 import { useAuthStore } from '@/stores/auth'
+import type { CategoryItem } from '@/types/game'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -15,7 +17,7 @@ const categoryDropdownRef = ref<HTMLElement | null>(null)
 const isUserDropdownOpen = ref(false)
 const userDropdownRef = ref<HTMLElement | null>(null)
 
-const categories = getAllCategories()
+const categories = ref<CategoryItem[]>(getAllCategories())
 
 const toggleCategoryDropdown = () => {
   isCategoryDropdownOpen.value = !isCategoryDropdownOpen.value
@@ -64,6 +66,13 @@ const handleClickOutside = (event: MouseEvent) => {
 
 onMounted(() => {
   document.addEventListener('click', handleClickOutside)
+  fetchCategories().then((remoteCategories) => {
+    if (remoteCategories.length > 0) {
+      categories.value = remoteCategories
+    }
+  }).catch(() => {
+    // Keep local fallback
+  })
 })
 
 onUnmounted(() => {

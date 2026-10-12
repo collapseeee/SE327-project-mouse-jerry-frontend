@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { searchGames } from '@/data/games'
+import { fetchGames } from '@/services/gameApi'
 import GameCard from '@/components/GameCard.vue'
 import Pagination from '@/components/Pagination.vue'
 import type { Game } from '@/types/game'
@@ -16,10 +17,7 @@ const searchQuery = computed(() => {
   return ''
 })
 
-const searchResults = computed<Game[]>(() => {
-  if (!searchQuery.value) return []
-  return searchGames(searchQuery.value)
-})
+const searchResults = ref<Game[]>(searchGames(searchQuery.value))
 
 const totalPages = computed(() => {
   return Math.ceil(searchResults.value.length / pageSize.value) || 1
@@ -30,10 +28,28 @@ const paginatedResults = computed(() => {
   return searchResults.value.slice(start, start + pageSize.value)
 })
 
+const loadSearchResults = async (queryParam: string) => {
+  if (!queryParam) {
+    searchResults.value = []
+    return
+  }
+  const res = await fetchGames({ search: queryParam })
+  if (res.games.length > 0) {
+    searchResults.value = res.games
+  }
+}
+
+onMounted(() => {
+  loadSearchResults(searchQuery.value)
+})
+
 watch(
   () => route.query.q,
-  () => {
+  (newQ) => {
     currentPage.value = 1
+    const queryStr = typeof newQ === 'string' ? newQ.trim() : ''
+    searchResults.value = searchGames(queryStr)
+    loadSearchResults(queryStr)
   }
 )
 

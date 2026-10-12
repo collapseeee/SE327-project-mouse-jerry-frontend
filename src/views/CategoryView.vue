@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { getGamesByCategory } from '@/data/games'
+import { fetchGames } from '@/services/gameApi'
 import GameCard from '@/components/GameCard.vue'
 import Pagination from '@/components/Pagination.vue'
 import type { Game } from '@/types/game'
@@ -17,10 +18,7 @@ const rawCategory = computed(() => {
 
 const categoryTitle = computed(() => rawCategory.value || 'Category')
 
-const filteredGames = computed<Game[]>(() => {
-  if (!rawCategory.value) return []
-  return getGamesByCategory(rawCategory.value)
-})
+const filteredGames = ref<Game[]>(getGamesByCategory(rawCategory.value))
 
 const totalPages = computed(() => {
   return Math.ceil(filteredGames.value.length / pageSize.value) || 1
@@ -31,10 +29,28 @@ const paginatedGames = computed(() => {
   return filteredGames.value.slice(start, start + pageSize.value)
 })
 
+const loadCategoryGames = async (cat: string) => {
+  if (!cat) {
+    filteredGames.value = []
+    return
+  }
+  const res = await fetchGames({ category: cat })
+  if (res.games.length > 0) {
+    filteredGames.value = res.games
+  }
+}
+
+onMounted(() => {
+  loadCategoryGames(rawCategory.value)
+})
+
 watch(
   () => route.params.category,
-  () => {
+  (newCat) => {
     currentPage.value = 1
+    const catStr = typeof newCat === 'string' ? decodeURIComponent(newCat) : ''
+    filteredGames.value = getGamesByCategory(catStr)
+    loadCategoryGames(catStr)
   }
 )
 

@@ -1,7 +1,9 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { getGameById } from '@/data/games'
+import { fetchGameById } from '@/services/gameApi'
+import type { Game } from '@/types/game'
 
 const route = useRoute()
 
@@ -10,9 +12,30 @@ const gameId = computed(() => {
   return typeof id === 'string' ? id : ''
 })
 
-const game = computed(() => {
-  return getGameById(gameId.value)
+const game = ref<Game | null>(getGameById(gameId.value) ?? null)
+
+const loadGameDetail = async (id: string) => {
+  if (!id) return
+  const remoteGame = await fetchGameById(id)
+  if (remoteGame) {
+    game.value = remoteGame
+  }
+}
+
+onMounted(() => {
+  loadGameDetail(gameId.value)
 })
+
+watch(
+  () => route.params.id,
+  (newId) => {
+    if (typeof newId === 'string') {
+      const fallback = getGameById(newId) ?? null
+      game.value = fallback
+      loadGameDetail(newId)
+    }
+  }
+)
 
 // Gallery images: screenshots or fallback to cover
 const galleryImages = computed(() => {
