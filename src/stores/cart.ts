@@ -283,23 +283,23 @@ export const useCartStore = defineStore('cart', () => {
     }
   }
 
-  const executeOrderCheckout = async (): Promise<OrderDTO> => {
-    if (directPurchaseItem.value && authStore.token) {
-      return checkoutOrder(authStore.token, {
+  const executeOrderCheckout = (token: string): Promise<OrderDTO> => {
+    if (directPurchaseItem.value) {
+      return checkoutOrder(token, {
         checkoutType: 'single',
         gameId: directPurchaseItem.value.game.id,
         quantity: directPurchaseItem.value.quantity
       })
     }
-    if (authStore.token) {
-      return checkoutOrder(authStore.token, { checkoutType: 'cart' })
-    }
-    throw new Error('Not authenticated')
+    return checkoutOrder(token, { checkoutType: 'cart' })
   }
 
   const confirmPurchase = async (): Promise<Order | null> => {
     try {
-      const orderDto = await executeOrderCheckout()
+      if (!authStore.token) {
+        throw new Error('Not authenticated')
+      }
+      const orderDto = await executeOrderCheckout(authStore.token)
       const createdOrder = mapOrderDtoToOrder(orderDto)
       latestOrder.value = createdOrder
       orders.value.unshift(createdOrder)
