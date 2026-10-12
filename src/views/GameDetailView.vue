@@ -1,11 +1,17 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { fetchGameById } from '@/services/gameApi'
+import { useAuthStore } from '@/stores/auth'
+import { useCartStore } from '@/stores/cart'
 import type { Game } from '@/types/game'
 
 const route = useRoute()
+const router = useRouter()
+const authStore = useAuthStore()
+const cartStore = useCartStore()
 const isLoading = ref(true)
+const isAddingToCart = ref(false)
 
 const gameId = computed(() => {
   const id = route.params.id
@@ -88,6 +94,48 @@ const incrementQuantity = () => {
   const maxStock = game.value?.stock ?? 99
   if (quantity.value < maxStock) {
     quantity.value++
+  }
+}
+
+const redirectToLogin = () => {
+  router.push({
+    path: '/login',
+    query: { mode: 'login', redirect: route.fullPath }
+  })
+}
+
+const handleAddToCart = async () => {
+  if (!authStore.isAuthenticated) {
+    redirectToLogin()
+    return
+  }
+  if (!game.value || isAddingToCart.value) {
+    return
+  }
+  isAddingToCart.value = true
+  try {
+    await cartStore.addItem(game.value.id, quantity.value)
+  } finally {
+    isAddingToCart.value = false
+  }
+}
+
+const handleBuyNow = async () => {
+  if (!authStore.isAuthenticated) {
+    redirectToLogin()
+    return
+  }
+  if (!game.value || isAddingToCart.value) {
+    return
+  }
+  isAddingToCart.value = true
+  try {
+    const success = await cartStore.addItem(game.value.id, quantity.value)
+    if (success) {
+      router.push('/cart')
+    }
+  } finally {
+    isAddingToCart.value = false
   }
 }
 </script>
@@ -255,14 +303,20 @@ const incrementQuantity = () => {
           <div class="flex flex-col sm:flex-row gap-3 pt-2">
             <button
               type="button"
-              class="flex-1 py-3 px-6 rounded-xl font-bold text-sm bg-accent-yellow hover:bg-accent-yellow-hover text-slate-900 shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer"
+              class="flex-1 py-3 px-6 rounded-xl font-bold text-sm bg-accent-yellow hover:bg-accent-yellow-hover text-slate-900 shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+              :disabled="isAddingToCart"
+              data-test="add-to-cart-btn"
+              @click="handleAddToCart"
             >
               <i class="fa-solid fa-cart-shopping"></i>
               <span>Add to cart</span>
             </button>
             <button
               type="button"
-              class="flex-1 py-3 px-6 rounded-xl font-bold text-sm bg-accent-red hover:bg-red-700 text-white shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer"
+              class="flex-1 py-3 px-6 rounded-xl font-bold text-sm bg-accent-red hover:bg-red-700 text-white shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+              :disabled="isAddingToCart"
+              data-test="buy-now-btn"
+              @click="handleBuyNow"
             >
               <i class="fa-solid fa-bolt"></i>
               <span>Buy now</span>
