@@ -245,4 +245,60 @@ describe('LoginView', () => {
     await flushPromises()
     expect(authCard.props('serverError')).toBe('Registration succeeded, but auto-login failed. Please sign in.')
   })
+
+  it('redirects to redirect query param on successful login when provided', async () => {
+    const vueRouter = await import('vue-router')
+    vi.mocked(vueRouter.useRoute).mockReturnValueOnce({
+      path: '/login',
+      query: { mode: 'login', redirect: '/cart' }
+    } as unknown as ReturnType<typeof vueRouter.useRoute>)
+
+    const authStore = useAuthStore()
+    vi.spyOn(authStore, 'login').mockResolvedValueOnce({
+      success: true,
+      user: { id: 1, username: 'thainchai' }
+    })
+
+    const wrapper = mount(LoginView)
+    const authCard = wrapper.findComponent(AuthCard)
+
+    authCard.vm.$emit('submit', {
+      mode: 'login',
+      username: 'thainchai',
+      password: 'password123'
+    })
+    await flushPromises()
+
+    expect(mockPush).toHaveBeenCalledWith('/cart')
+  })
+
+  it('redirects to redirect query param on successful register auto-login when provided', async () => {
+    const vueRouter = await import('vue-router')
+    vi.mocked(vueRouter.useRoute).mockReturnValueOnce({
+      path: '/register',
+      query: { redirect: '/product/123' }
+    } as unknown as ReturnType<typeof vueRouter.useRoute>)
+
+    const authStore = useAuthStore()
+    vi.spyOn(authStore, 'register').mockResolvedValueOnce({
+      success: true,
+      message: 'OK'
+    })
+    vi.spyOn(authStore, 'login').mockResolvedValueOnce({
+      success: true,
+      user: { id: 1, username: 'newuser' }
+    })
+
+    const wrapper = mount(LoginView)
+    const authCard = wrapper.findComponent(AuthCard)
+
+    authCard.vm.$emit('submit', {
+      mode: 'register',
+      username: 'newuser',
+      password: 'pwd'
+    })
+    await flushPromises()
+
+    expect(mockPush).toHaveBeenCalledWith('/product/123')
+  })
 })

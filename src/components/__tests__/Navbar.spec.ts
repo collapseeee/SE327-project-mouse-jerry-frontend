@@ -3,6 +3,7 @@ import { mount, flushPromises } from '@vue/test-utils'
 import { setActivePinia, createPinia } from 'pinia'
 import Navbar from '../Navbar.vue'
 import { useAuthStore } from '@/stores/auth'
+import { useCartStore } from '@/stores/cart'
 
 const mockPush = vi.fn()
 vi.mock('vue-router', () => ({
@@ -169,12 +170,29 @@ describe('Navbar', () => {
     expect(mockPush).not.toHaveBeenCalled()
   })
 
-  it('renders cart badge with product count', async () => {
+  it('renders cart badge with product count when authenticated with cart items', async () => {
+    const authStore = useAuthStore()
+    authStore.setUserSession({ id: 1, username: 'thainchai' }, 'token-123')
+    const cartStore = useCartStore()
+    vi.spyOn(cartStore, 'loadCart').mockResolvedValue()
+    cartStore.items = [
+      { id: 1, gameId: 'g1', gameTitle: 'Game 1', coverImage: '', unitPrice: 100, quantity: 2, stock: 5, totalPrice: 200 }
+    ]
+
     const wrapper = mountNavbar()
     await flushPromises()
     const cartLink = wrapper.find('a[href="/cart"]')
     expect(cartLink.exists()).toBe(true)
-    expect(cartLink.text()).toContain('2')
+    const badge = wrapper.find('[data-test="navbar-cart-badge"]')
+    expect(badge.exists()).toBe(true)
+    expect(badge.text()).toBe('2')
+  })
+
+  it('does not render cart badge when unauthenticated', async () => {
+    const wrapper = mountNavbar()
+    await flushPromises()
+    const badge = wrapper.find('[data-test="navbar-cart-badge"]')
+    expect(badge.exists()).toBe(false)
   })
 
   it('updates categories on mount when fetchCategories returns remote list', async () => {

@@ -1,12 +1,17 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { fetchGames } from '@/services/gameApi'
+import { useAuthStore } from '@/stores/auth'
+import { useCartStore } from '@/stores/cart'
 import GameCard from '@/components/GameCard.vue'
 import Pagination from '@/components/Pagination.vue'
 import type { Game } from '@/types/game'
 
 const route = useRoute()
+const router = useRouter()
+const authStore = useAuthStore()
+const cartStore = useCartStore()
 const currentPage = ref(1)
 const pageSize = ref(10)
 const totalCount = ref(0)
@@ -61,6 +66,17 @@ const onPageChange = async (page: number): Promise<void> => {
   await loadSearchResults(searchQuery.value, page)
   window.scrollTo({ top: 0, behavior: 'smooth' })
 }
+
+const handleAddToCart = async (game: Game): Promise<void> => {
+  if (!authStore.isAuthenticated) {
+    router.push({
+      path: '/login',
+      query: { mode: 'login', redirect: route.fullPath }
+    })
+    return
+  }
+  await cartStore.addItem(game.id, 1, game.name)
+}
 </script>
 
 <template>
@@ -95,6 +111,7 @@ const onPageChange = async (page: number): Promise<void> => {
         v-for="game in searchResults"
         :key="game.id"
         :game="game"
+        @add-to-cart="handleAddToCart"
       />
     </section>
 
