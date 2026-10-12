@@ -4,8 +4,12 @@ import type { Toast, ToastType } from '@/types/toast'
 
 const DEFAULT_TOAST_DURATION = 3500
 
-const generateToastId = (): string =>
-  `toast-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`
+let toastCounter = 0
+
+const generateToastId = (): string => {
+  toastCounter += 1
+  return `toast-${Date.now()}-${toastCounter}`
+}
 
 export const useToastStore = defineStore('toast', () => {
   const toasts = ref<Toast[]>([])
