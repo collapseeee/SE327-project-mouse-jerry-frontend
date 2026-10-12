@@ -1,7 +1,14 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, beforeEach } from 'vitest'
+import { setActivePinia, createPinia } from 'pinia'
 import router from '../index'
+import { useAuthStore } from '@/stores/auth'
 
 describe('router', () => {
+  beforeEach(() => {
+    localStorage.clear()
+    setActivePinia(createPinia())
+  })
+
   it('resolves / to the Home route', () => {
     const route = router.resolve('/')
     expect(route.name).toBe('Home')
@@ -32,5 +39,26 @@ describe('router', () => {
     const route = router.resolve('/product/vampire-survivors-emergency-meeting')
     expect(route.name).toBe('GameDetail')
     expect(route.params.id).toBe('vampire-survivors-emergency-meeting')
+  })
+
+  it('resolves /cart to the Cart route with requiresAuth meta', () => {
+    const route = router.resolve('/cart')
+    expect(route.name).toBe('Cart')
+    expect(route.meta.requiresAuth).toBe(true)
+  })
+
+  it('redirects unauthenticated user visiting /cart to /login with query', async () => {
+    await router.push('/')
+    await router.push('/cart')
+    expect(router.currentRoute.value.path).toBe('/login')
+    expect(router.currentRoute.value.query.mode).toBe('login')
+    expect(router.currentRoute.value.query.redirect).toBe('/cart')
+  })
+
+  it('allows authenticated user to visit /cart', async () => {
+    const authStore = useAuthStore()
+    authStore.setUserSession({ id: 1, username: 'testuser' }, 'token-xyz')
+    await router.push('/cart')
+    expect(router.currentRoute.value.path).toBe('/cart')
   })
 })

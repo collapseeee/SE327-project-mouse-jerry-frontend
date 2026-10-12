@@ -9,6 +9,7 @@ import CartView from '../views/CartView.vue'
 import PurchaseView from '../views/PurchaseView.vue'
 import SuccessView from '../views/SuccessView.vue'
 import KeysView from '../views/KeysView.vue'
+import { useAuthStore } from '../stores/auth'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -44,31 +45,49 @@ const router = createRouter({
       component: GameDetailView
     },
     {
-      path: '/account',
-      name: 'Account',
-      component: AccountView
-    },
-    {
       path: '/cart',
       name: 'Cart',
-      component: CartView
+      component: CartView,
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/account',
+      name: 'Account',
+      component: AccountView,
+      meta: { requiresAuth: true }
     },
     {
       path: '/purchase-page',
       name: 'Purchase',
-      component: PurchaseView
+      component: PurchaseView,
+      meta: { requiresAuth: true }
     },
     {
       path: '/success',
       name: 'Success',
-      component: SuccessView
+      component: SuccessView,
+      meta: { requiresAuth: true }
     },
     {
       path: '/my-keys',
       name: 'Keys',
-      component: KeysView
+      component: KeysView,
+      meta: { requiresAuth: true }
     }
-  ],
+  ]
+})
+
+router.beforeEach((to) => {
+  if (to.meta.requiresAuth) {
+    const authStore = useAuthStore()
+    if (!authStore.isAuthenticated) {
+      return {
+        path: '/login',
+        query: { mode: 'login', redirect: to.fullPath }
+      }
+    }
+  }
+  return true
 })
 
 export default router

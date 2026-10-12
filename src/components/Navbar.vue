@@ -1,13 +1,15 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import logoImg from '@/assets/logo.png'
 import { fetchCategories } from '@/services/categoryApi'
 import { useAuthStore } from '@/stores/auth'
+import { useCartStore } from '@/stores/cart'
 import type { CategoryItem } from '@/types/game'
 
 const router = useRouter()
 const authStore = useAuthStore()
+const cartStore = useCartStore()
 
 const searchQuery = ref('')
 const isCategoryDropdownOpen = ref(false)
@@ -36,6 +38,7 @@ const closeUserDropdown = () => {
 
 const handleLogout = async () => {
   closeUserDropdown()
+  cartStore.reset()
   await authStore.logout()
   router.push('/login?mode=login')
 }
@@ -75,7 +78,21 @@ const loadCategories = async (): Promise<void> => {
 onMounted(() => {
   document.addEventListener('click', handleClickOutside)
   loadCategories()
+  if (authStore.isAuthenticated) {
+    cartStore.loadCart()
+  }
 })
+
+watch(
+  () => authStore.isAuthenticated,
+  (isAuth) => {
+    if (isAuth) {
+      cartStore.loadCart()
+    } else {
+      cartStore.reset()
+    }
+  }
+)
 
 onUnmounted(() => {
   document.removeEventListener('click', handleClickOutside)
@@ -181,12 +198,15 @@ onUnmounted(() => {
           to="/cart"
           class="relative text-white hover:text-accent-yellow transition-colors p-1"
           title="Shopping Cart"
+          data-test="navbar-cart-link"
         >
           <i class="fa-solid fa-cart-shopping text-lg"></i>
           <span
+            v-if="authStore.isAuthenticated && cartStore.totalItems > 0"
             class="absolute -top-1 -right-1 bg-accent-red text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center leading-none"
+            data-test="navbar-cart-badge"
           >
-            2
+            {{ cartStore.totalItems }}
           </span>
         </router-link>
 

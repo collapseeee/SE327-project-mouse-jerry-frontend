@@ -1,12 +1,16 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import HighlightCarousel, { type HighlightItem } from '../components/HighlightCarousel.vue'
 import GameCard from '../components/GameCard.vue'
 import Pagination from '../components/Pagination.vue'
 import { fetchGames, fetchHighlights } from '@/services/gameApi'
+import { useAuthStore } from '@/stores/auth'
 import { useCartStore } from '@/stores/cart'
 import type { Game } from '@/types/game'
 
+const router = useRouter()
+const authStore = useAuthStore()
 const cartStore = useCartStore()
 
 const highlights = ref<HighlightItem[]>([])
@@ -71,6 +75,17 @@ const onPageChange = async (page: number): Promise<void> => {
   await loadPageGames(page)
   window.scrollTo({ top: 0, behavior: 'smooth' })
 }
+
+const handleAddToCart = async (game: Game): Promise<void> => {
+  if (!authStore.isAuthenticated) {
+    router.push({
+      path: '/login',
+      query: { mode: 'login', redirect: '/' }
+    })
+    return
+  }
+  await cartStore.addItem(game.id, 1, game.name)
+}
 </script>
 
 <template>
@@ -96,7 +111,7 @@ const onPageChange = async (page: number): Promise<void> => {
         v-for="game in catalogGames"
         :key="game.id"
         :game="game"
-        @add-to-cart="cartStore.addToCart($event)"
+        @add-to-cart="handleAddToCart"
       />
     </section>
 

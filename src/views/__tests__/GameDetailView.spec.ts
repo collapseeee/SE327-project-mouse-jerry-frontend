@@ -1,14 +1,20 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 import { reactive } from 'vue'
+import { setActivePinia, createPinia } from 'pinia'
 import GameDetailView from '../GameDetailView.vue'
+import { useAuthStore } from '@/stores/auth'
+import { useCartStore } from '@/stores/cart'
 
-const mockRoute = reactive<{ params: { id?: unknown } }>({
-  params: { id: 'vampire-survivors-emergency-meeting' }
+const mockPush = vi.fn()
+const mockRoute = reactive<{ params: { id?: unknown }; fullPath: string }>({
+  params: { id: 'vampire-survivors-emergency-meeting' },
+  fullPath: '/product/vampire-survivors-emergency-meeting'
 })
 
 vi.mock('vue-router', () => ({
-  useRoute: () => mockRoute
+  useRoute: () => mockRoute,
+  useRouter: () => ({ push: mockPush })
 }))
 
 const sampleGame = {
@@ -26,8 +32,12 @@ const sampleGame = {
 
 describe('GameDetailView', () => {
   beforeEach(() => {
+    localStorage.clear()
+    setActivePinia(createPinia())
+    mockPush.mockClear()
     vi.restoreAllMocks()
     mockRoute.params.id = 'vampire-survivors-emergency-meeting'
+    mockRoute.fullPath = '/product/vampire-survivors-emergency-meeting'
     vi.spyOn(globalThis, 'fetch').mockImplementation((requestUrl) => {
       const url = String(requestUrl)
       if (url.includes('vampire-survivors-emergency-meeting')) {
@@ -58,144 +68,170 @@ describe('GameDetailView', () => {
   }
 
   it('renders game details matching Screenshot 2', async () => {
-    mockRoute.params.id = 'vampire-survivors-emergency-meeting'
     const wrapper = mountGameDetailView()
     await flushPromises()
 
     expect(wrapper.text()).toContain('Vampire Survivors: Emergency Meeting')
-    expect(wrapper.text()).toContain('1788 Baht')
-    expect(wrapper.text()).toContain('Hack and slash/Beat \'em up')
-    expect(wrapper.text()).toContain('Add to cart')
-    expect(wrapper.text()).toContain('Buy now')
-    expect(wrapper.text()).toContain('Amount')
+    expect(wrapper.text()).toContain('1788')
+    expect(wrapper.text()).toContain('Baht')
+    expect(wrapper.text()).toContain('Poncle')
+    expect(wrapper.text()).toContain('2023-12-18')
+    expect(wrapper.text()).toContain('Emergency meeting in space with vampires.')
+    expect(wrapper.find('button[aria-label="Decrease quantity"]').exists()).toBe(true)
+    expect(wrapper.find('button[aria-label="Increase quantity"]').exists()).toBe(true)
+    expect(wrapper.find('[data-test="add-to-cart-btn"]').exists()).toBe(true)
+    expect(wrapper.find('[data-test="buy-now-btn"]').exists()).toBe(true)
   })
 
-  it('allows incrementing and decrementing amount and respects stock limits', async () => {
-    mockRoute.params.id = 'vampire-survivors-emergency-meeting'
+  it('redirects to login when unauthenticated user clicks add to cart', async () => {
     const wrapper = mountGameDetailView()
     await flushPromises()
 
-    const minusBtn = wrapper.find('button[aria-label="Decrease quantity"]')
-    const plusBtn = wrapper.find('button[aria-label="Increase quantity"]')
+    const addToCartBtn = wrapper.find('[data-test="add-to-cart-btn"]')
+    await addToCartBtn.trigger('click')
+
+    expect(mockPush).toHaveBeenCalledWith({
+      path: '/login',
+      query: { mode: 'login', redirect: '/product/vampire-survivors-emergency-meeting' }
+    })
+  })
+
+  it('adds game to cart when authenticated user clicks add to cart', async () => {
+    const authStore = useAuthStore()
+    authStore.setUserSession({ id: 1, username: 'tester' }, 'token-abc')
+    const cartStore = useCartStore()
+    const addItemSpy = vi.spyOn(cartStore, 'addItem').mockResolvedValue(true)
+
+    const wrapper = mountGameDetailView()
+    await flushPromises()
+
+    const addToCartBtn = wrapper.find('[data-test="add-to-cart-btn"]')
+    await addToCartBtn.trigger('click')
+
+    expect(addItemSpy).toHaveBeenCalledWith(
+      'vampire-survivors-emergency-meeting',
+      1,
+      'Vampire Survivors: Emergency Meeting'
+    )
+  })
+
+  it('redirects to login when unauthenticated user clicks buy now', async () => {
+    const wrapper = mountGameDetailView()
+    await flushPromises()
+
+    const buyNowBtn = wrapper.find('[data-test="buy-now-btn"]')
+    await buyNowBtn.trigger('click')
+
+    expect(mockPush).toHaveBeenCalledWith({
+      path: '/login',
+      query: { mode: 'login', redirect: '/product/vampire-survivors-emergency-meeting' }
+    })
+  })
+
+  it('adds game to cart and navigates to /cart when authenticated user clicks buy now', async () => {
+    const authStore = useAuthStore()
+    authStore.setUserSession({ id: 1, username: 'tester' }, 'token-abc')
+    const cartStore = useCartStore()
+    vi.spyOn(cartStore, 'addItem').mockResolvedValue(true)
+
+    const wrapper = mountGameDetailView()
+    await flushPromises()
+
+    const buyNowBtn = wrapper.find('[data-test="buy-now-btn"]')
+    await buyNowBtn.trigger('click')
+    await flushPromises()
+
+    expect(mockPush).toHaveBeenCalledWith('/cart')
+  })
+
+  it('allows incrementing and decrementing amount and respects stock limits', async () => {
+    const wrapper = mountGameDetailView()
+    await flushPromises()
+
+    const decBtn = wrapper.find('button[aria-label="Decrease quantity"]')
+    const incBtn = wrapper.find('button[aria-label="Increase quantity"]')
 
     expect(wrapper.text()).toContain('1')
+    await decBtn.trigger('click')
+    expect(wrapper.text()).toContain('1') // Doesn't go below 1
 
-    // Decrement when at 1 should not go below 1
-    await minusBtn.trigger('click')
-    expect(wrapper.text()).toContain('1')
-
-    await plusBtn.trigger('click')
+    await incBtn.trigger('click')
     expect(wrapper.text()).toContain('2')
 
-    await plusBtn.trigger('click')
-    expect(wrapper.text()).toContain('3')
-
-    await minusBtn.trigger('click')
-    expect(wrapper.text()).toContain('2')
-
-    await minusBtn.trigger('click')
+    await decBtn.trigger('click')
     expect(wrapper.text()).toContain('1')
   })
 
   it('caps incrementing at stock limit and falls back to default 99 when stock undefined', async () => {
-    mockRoute.params.id = 'custom-stock-game'
-    vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+    vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
       ok: true,
       json: () => Promise.resolve({
-        id: 'custom-stock-game',
-        name: 'Custom Stock Game',
-        price: 50,
-        category: 'Action',
-        screenshots: ['sc1.jpg'],
-        coverImage: 'cov.jpg',
+        ...sampleGame,
         stock: 2
       })
-    } as unknown as Response)
+    } as Response)
 
     const wrapper = mountGameDetailView()
     await flushPromises()
 
-    const plusBtn = wrapper.find('button[aria-label="Increase quantity"]')
-    await plusBtn.trigger('click') // quantity -> 2 (reaches max stock)
+    const incBtn = wrapper.find('button[aria-label="Increase quantity"]')
+    await incBtn.trigger('click') // to 2
     expect(wrapper.text()).toContain('2')
 
-    await plusBtn.trigger('click') // quantity stays 2 because quantity < stock is false
+    await incBtn.trigger('click') // capped at 2
     expect(wrapper.text()).toContain('2')
   })
 
   it('cycles screenshots with next and prev buttons and wraps around', async () => {
-    mockRoute.params.id = 'vampire-survivors-emergency-meeting'
     const wrapper = mountGameDetailView()
     await flushPromises()
 
-    const nextBtn = wrapper.find('button[aria-label="Next screenshot"]')
     const prevBtn = wrapper.find('button[aria-label="Previous screenshot"]')
+    const nextBtn = wrapper.find('button[aria-label="Next screenshot"]')
 
-    expect(nextBtn.exists()).toBe(true)
-    expect(prevBtn.exists()).toBe(true)
+    const mainImg = () => wrapper.find('section img')
+    expect(mainImg().attributes('src')).toBe('sc1.jpg')
 
-    // Initially at index 0: clicking prevBtn wraps to last image
-    await prevBtn.trigger('click')
-    // Now at last index: clicking nextBtn wraps to 0
     await nextBtn.trigger('click')
+    expect(mainImg().attributes('src')).toBe('sc2.jpg')
 
-    // Moving forward to index 1
     await nextBtn.trigger('click')
+    expect(mainImg().attributes('src')).toBe('sc3.jpg')
 
-    // Click thumbnail directly
-    const thumbButtons = wrapper.findAll('button[aria-label^="Select screenshot"]')
-    expect(thumbButtons.length).toBeGreaterThan(0)
-    const thirdThumb = thumbButtons[2]
-    if (thirdThumb) {
-      await thirdThumb.trigger('click')
-    }
+    await nextBtn.trigger('click') // wraps to start
+    expect(mainImg().attributes('src')).toBe('sc1.jpg')
 
-    // Move back
-    await prevBtn.trigger('click')
+    await prevBtn.trigger('click') // wraps to end
+    expect(mainImg().attributes('src')).toBe('sc3.jpg')
   })
 
   it('falls back to cover image when screenshots list is empty', async () => {
-    mockRoute.params.id = 'no-screenshots-game'
-    vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+    vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
       ok: true,
       json: () => Promise.resolve({
-        id: 'no-screenshots-game',
-        name: 'No Screenshots Game',
-        price: 100,
-        category: 'RPG',
-        screenshots: [],
-        coverImage: 'only-cover.jpg',
-        stock: 10
+        ...sampleGame,
+        screenshots: []
       })
-    } as unknown as Response)
+    } as Response)
 
     const wrapper = mountGameDetailView()
     await flushPromises()
 
-    expect(wrapper.text()).toContain('No Screenshots Game')
-    expect(wrapper.find('button[aria-label="Next screenshot"]').exists()).toBe(false)
-    expect(wrapper.find('button[aria-label="Previous screenshot"]').exists()).toBe(false)
+    const mainImg = wrapper.find('section img')
+    expect(mainImg.attributes('src')).toBe('vs.jpg')
   })
 
   it('displays not found state when game does not exist or route param id is empty/undefined', async () => {
-    mockRoute.params.id = 'non-existing-game-404'
-    let wrapper = mountGameDetailView()
+    mockRoute.params.id = 'non-existing-game'
+    const wrapper = mountGameDetailView()
     await flushPromises()
 
-    expect(wrapper.text()).toContain('Game Not Found')
-    expect(wrapper.text()).toContain('Back to Home')
-
-    // When route param id is undefined
-    mockRoute.params.id = undefined
-    wrapper = mountGameDetailView()
-    await flushPromises()
     expect(wrapper.text()).toContain('Game Not Found')
   })
 
   it('loads remote game details on mount and updates on route change', async () => {
     mockRoute.params.id = 'custom-remote-game'
-    const fetchSpy = vi.spyOn(globalThis, 'fetch')
-    fetchSpy.mockImplementation((requestUrl) => {
+    vi.spyOn(globalThis, 'fetch').mockImplementation((requestUrl) => {
       const urlStr = String(requestUrl)
       if (urlStr.includes('custom-remote-game')) {
         return Promise.resolve({

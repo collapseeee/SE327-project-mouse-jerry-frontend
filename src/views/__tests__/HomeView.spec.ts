@@ -1,6 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
+import { setActivePinia, createPinia } from 'pinia'
 import HomeView from '../HomeView.vue'
+import { useAuthStore } from '@/stores/auth'
+import { useCartStore } from '@/stores/cart'
+
+const mockPush = vi.fn()
+vi.mock('vue-router', () => ({
+  useRouter: () => ({ push: mockPush })
+}))
 
 const sampleHighlights = [
   { id: '1', name: 'Battlefield 3', price: 1969, coverImage: 'bf3.jpg', isHighlight: true, screenshots: ['bf3-sc.jpg'] },
@@ -17,6 +25,8 @@ const sampleGames = [
 
 describe('HomeView', () => {
   beforeEach(() => {
+    setActivePinia(createPinia())
+    mockPush.mockClear()
     vi.restoreAllMocks()
     vi.spyOn(globalThis, 'fetch').mockImplementation((requestUrl) => {
       const url = String(requestUrl)
@@ -67,6 +77,35 @@ describe('HomeView', () => {
     expect(wrapper.text()).toContain('1969 Baht')
     expect(wrapper.text()).toContain('FiveM')
     expect(wrapper.text()).toContain('837 Baht')
+  })
+
+  it('redirects to login when unauthenticated user adds game to cart', async () => {
+    const wrapper = mountComponent()
+    await flushPromises()
+
+    const addButtons = wrapper.findAll('button[title="Add to Cart"]')
+    expect(addButtons.length).toBeGreaterThan(0)
+    await addButtons[0].trigger('click')
+
+    expect(mockPush).toHaveBeenCalledWith({
+      path: '/login',
+      query: { mode: 'login', redirect: '/' }
+    })
+  })
+
+  it('adds game to cart when authenticated user clicks add to cart', async () => {
+    const authStore = useAuthStore()
+    authStore.setUserSession({ id: 1, username: 'tester' }, 'token-abc')
+    const cartStore = useCartStore()
+    const addItemSpy = vi.spyOn(cartStore, 'addItem').mockResolvedValue(true)
+
+    const wrapper = mountComponent()
+    await flushPromises()
+
+    const addButtons = wrapper.findAll('button[title="Add to Cart"]')
+    await addButtons[0].trigger('click')
+
+    expect(addItemSpy).toHaveBeenCalledWith('1', 1, 'Battlefield 3: Premium Edition')
   })
 
   it('navigates through pages using pagination', async () => {

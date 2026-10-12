@@ -2,11 +2,16 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { fetchGameById } from '@/services/gameApi'
+import { useAuthStore } from '@/stores/auth'
 import { useCartStore } from '@/stores/cart'
 import type { Game } from '@/types/game'
 
 const route = useRoute()
+const router = useRouter()
+const authStore = useAuthStore()
+const cartStore = useCartStore()
 const isLoading = ref(true)
+const isAddingToCart = ref(false)
 
 const gameId = computed(() => {
   const id = route.params.id
@@ -92,24 +97,45 @@ const incrementQuantity = () => {
   }
 }
 
-const cartStore = useCartStore()
-const router = useRouter()
-const addedNotification = ref(false)
+const redirectToLogin = () => {
+  router.push({
+    path: '/login',
+    query: { mode: 'login', redirect: route.fullPath }
+  })
+}
 
-const handleAddToCart = () => {
-  if (game.value) {
-    cartStore.addToCart(game.value, quantity.value)
-    addedNotification.value = true
-    setTimeout(() => {
-      addedNotification.value = false
-    }, 2500)
+const handleAddToCart = async () => {
+  if (!authStore.isAuthenticated) {
+    redirectToLogin()
+    return
+  }
+  if (!game.value || isAddingToCart.value) {
+    return
+  }
+  isAddingToCart.value = true
+  try {
+    await cartStore.addItem(game.value.id, quantity.value, game.value.name)
+  } finally {
+    isAddingToCart.value = false
   }
 }
 
-const handleBuyNow = () => {
-  if (game.value) {
-    cartStore.setDirectPurchase(game.value, quantity.value)
-    router.push('/purchase-page')
+const handleBuyNow = async () => {
+  if (!authStore.isAuthenticated) {
+    redirectToLogin()
+    return
+  }
+  if (!game.value || isAddingToCart.value) {
+    return
+  }
+  isAddingToCart.value = true
+  try {
+    const success = await cartStore.addItem(game.value.id, quantity.value, game.value.name)
+    if (success) {
+      router.push('/cart')
+    }
+  } finally {
+    isAddingToCart.value = false
   }
 }
 </script>
@@ -277,15 +303,19 @@ const handleBuyNow = () => {
           <div class="flex flex-col sm:flex-row gap-3 pt-2">
             <button
               type="button"
-              class="flex-1 py-3 px-6 rounded-xl font-bold text-sm bg-accent-yellow hover:bg-accent-yellow-hover text-slate-900 shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer"
+              class="flex-1 py-3 px-6 rounded-xl font-bold text-sm bg-accent-yellow hover:bg-accent-yellow-hover text-slate-900 shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+              :disabled="isAddingToCart"
+              data-test="add-to-cart-btn"
               @click="handleAddToCart"
             >
               <i class="fa-solid fa-cart-shopping"></i>
-              <span>{{ addedNotification ? 'Added to Cart!' : 'Add to cart' }}</span>
+              <span>Add to cart</span>
             </button>
             <button
               type="button"
-              class="flex-1 py-3 px-6 rounded-xl font-bold text-sm bg-accent-red hover:bg-red-700 text-white shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer"
+              class="flex-1 py-3 px-6 rounded-xl font-bold text-sm bg-accent-red hover:bg-red-700 text-white shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+              :disabled="isAddingToCart"
+              data-test="buy-now-btn"
               @click="handleBuyNow"
             >
               <i class="fa-solid fa-bolt"></i>
