@@ -1,16 +1,27 @@
+<script lang="ts">
+export default {
+  name: 'AccountView'
+}
+</script>
+
 <script setup lang="ts">
+import { onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useCartStore } from '@/stores/cart'
-import { useRouter } from 'vue-router'
 
 const authStore = useAuthStore()
 const cartStore = useCartStore()
 const router = useRouter()
 
-const handleLogout = async () => {
+const handleLogout = async (): Promise<void> => {
   await authStore.logout()
   router.push('/login?mode=login')
 }
+
+onMounted(async () => {
+  await cartStore.loadOrders()
+})
 </script>
 
 <template>
@@ -30,10 +41,10 @@ const handleLogout = async () => {
         <!-- User Information -->
         <div class="flex flex-col gap-1">
           <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-            {{ authStore.currentUsername || 'thainchai' }}
+            {{ authStore.currentUsername || 'User' }}
           </h1>
           <p class="text-sm text-slate-500 font-medium">
-            {{ authStore.user?.email || 'teanchai029@gmail.com' }}
+            {{ authStore.user?.email || 'user@example.com' }}
           </p>
           <div class="mt-1">
             <span

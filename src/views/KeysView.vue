@@ -1,5 +1,11 @@
+<script lang="ts">
+export default {
+  name: 'KeysView'
+}
+</script>
+
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useCartStore, type OrderKeyItem } from '@/stores/cart'
 
 const cartStore = useCartStore()
@@ -11,13 +17,13 @@ const displayedKeys = computed<OrderKeyItem[]>(() => {
     return cartStore.latestOrder.items
   }
   const all: OrderKeyItem[] = []
-  for (const o of cartStore.orders) {
-    all.push(...o.items)
+  for (const order of cartStore.orders) {
+    all.push(...order.items)
   }
   return all
 })
 
-const copyKey = async (keyText: string, index: number) => {
+const copyKey = async (keyText: string, index: number): Promise<void> => {
   try {
     await navigator.clipboard.writeText(keyText)
     copiedIndex.value = index
@@ -34,6 +40,12 @@ const copyKey = async (keyText: string, index: number) => {
     }, 2000)
   }
 }
+
+onMounted(async () => {
+  if (cartStore.orders.length === 0) {
+    await cartStore.loadOrders()
+  }
+})
 </script>
 
 <template>

@@ -1,11 +1,17 @@
+<script lang="ts">
+export default {
+  name: 'SuccessView'
+}
+</script>
+
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useCartStore } from '@/stores/cart'
 
 const cartStore = useCartStore()
 
-const orderId = computed(() => {
-  return cartStore.latestOrder?.id || 'ORD-8I5A2T'
+const orderId = computed<string>(() => {
+  return String(cartStore.latestOrder?.orderNumber || cartStore.latestOrder?.id || 'ORD-8I5A2T')
 })
 </script>
 

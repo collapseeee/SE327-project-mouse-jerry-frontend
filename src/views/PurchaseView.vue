@@ -1,38 +1,73 @@
+<script lang="ts">
+export default {
+  name: 'PurchaseView'
+}
+</script>
+
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useCartStore } from '@/stores/cart'
+
+interface PurchaseDisplayItem {
+  game: {
+    id: string
+    name: string
+    price: number
+    coverImage: string
+  }
+  quantity: number
+}
 
 const cartStore = useCartStore()
 const router = useRouter()
 
 // Determine items to display: If directPurchaseItem is set, ONLY show that item.
-// Otherwise, show items from cartStore.items.
-const purchaseItems = computed(() => {
+// Otherwise, show normalized items from cartStore.items.
+const purchaseItems = computed<PurchaseDisplayItem[]>(() => {
   if (cartStore.directPurchaseItem) {
     return [cartStore.directPurchaseItem]
   }
-  return cartStore.items
+  return cartStore.items.map((item) => ({
+    game: {
+      id: item.gameId,
+      name: item.gameTitle,
+      price: item.unitPrice,
+      coverImage: item.coverImage
+    },
+    quantity: item.quantity
+  }))
 })
 
-const totalAmount = computed(() => {
+const totalAmount = computed<number>(() => {
   return purchaseItems.value.reduce(
-    (sum, item) => sum + item.game.price * item.quantity,
+    (sum: number, item: PurchaseDisplayItem) => sum + item.game.price * item.quantity,
     0
   )
 })
 
-const totalItemCount = computed(() => {
-  return purchaseItems.value.reduce((sum, item) => sum + item.quantity, 0)
+const totalItemCount = computed<number>(() => {
+  return purchaseItems.value.reduce(
+    (sum: number, item: PurchaseDisplayItem) => sum + item.quantity,
+    0
+  )
 })
 
-const handleConfirm = () => {
-  if (purchaseItems.value.length === 0) return
-  const order = cartStore.confirmPurchase()
+const handleConfirm = async (): Promise<void> => {
+  if (purchaseItems.value.length === 0) {
+    return
+  }
+  const order = await cartStore.confirmPurchase()
   if (order) {
     router.push('/success')
   }
 }
+
+onMounted(async () => {
+  if (!cartStore.directPurchaseItem && cartStore.items.length === 0) {
+    await cartStore.loadCart()
+  }
+})
 </script>
 
 <template>
