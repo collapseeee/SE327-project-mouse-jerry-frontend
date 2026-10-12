@@ -229,7 +229,7 @@ onUnmounted(() => {
               data-test="navbar-user-btn"
               @click="toggleUserDropdown"
             >
-              <i class="fa-regular fa-circle-user text-xl text-accent-yellow"></i>
+              <i class="fa-regular fa-circle-user text-xl transition-colors"></i>
               <span class="text-sm font-medium hidden sm:inline-block" data-test="navbar-username">
                 {{ authStore.currentUsername }}
               </span>

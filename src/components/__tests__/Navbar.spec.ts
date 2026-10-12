@@ -64,6 +64,8 @@ describe('Navbar', () => {
     const userBtn = wrapper.find('[data-test="navbar-user-btn"]')
     expect(userBtn.exists()).toBe(true)
     expect(wrapper.find('[data-test="navbar-username"]').text()).toBe('thainchai')
+    expect(userBtn.find('i.fa-regular.fa-circle-user').exists()).toBe(true)
+    expect(userBtn.find('i.fa-regular.fa-circle-user').classes()).not.toContain('text-accent-yellow')
 
     // Initially dropdown closed
     expect(wrapper.find('[data-test="navbar-user-dropdown"]').exists()).toBe(false)
