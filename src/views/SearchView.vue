@@ -17,30 +17,35 @@ const searchQuery = computed(() => {
   return ''
 })
 
-const searchResults = ref<Game[]>(searchGames(searchQuery.value))
+const initialLocal = searchGames(searchQuery.value)
+const totalCount = ref(initialLocal.length)
+const searchResults = ref<Game[]>(initialLocal.slice(0, 10))
 
 const totalPages = computed(() => {
-  return Math.ceil(searchResults.value.length / pageSize.value) || 1
+  return Math.ceil(totalCount.value / pageSize.value) || 1
 })
 
-const paginatedResults = computed(() => {
-  const start = (currentPage.value - 1) * pageSize.value
-  return searchResults.value.slice(start, start + pageSize.value)
-})
-
-const loadSearchResults = async (queryParam: string) => {
+const loadSearchResults = async (queryParam: string, page: number): Promise<void> => {
   if (!queryParam) {
     searchResults.value = []
+    totalCount.value = 0
     return
   }
-  const res = await fetchGames({ search: queryParam })
-  if (res.games.length > 0) {
+  const res = await fetchGames({ search: queryParam, page, size: pageSize.value })
+  if (res.games.length > 0 || res.totalCount > 0) {
     searchResults.value = res.games
+    totalCount.value = res.totalCount
+    return
   }
+  // Local fallback if offline
+  const local = searchGames(queryParam)
+  totalCount.value = local.length
+  const start = (page - 1) * pageSize.value
+  searchResults.value = local.slice(start, start + pageSize.value)
 }
 
 onMounted(() => {
-  loadSearchResults(searchQuery.value)
+  loadSearchResults(searchQuery.value, currentPage.value)
 })
 
 watch(
@@ -48,13 +53,16 @@ watch(
   (newQ) => {
     currentPage.value = 1
     const queryStr = typeof newQ === 'string' ? newQ.trim() : ''
-    searchResults.value = searchGames(queryStr)
-    loadSearchResults(queryStr)
+    const local = searchGames(queryStr)
+    totalCount.value = local.length
+    searchResults.value = local.slice(0, pageSize.value)
+    loadSearchResults(queryStr, 1)
   }
 )
 
-const onPageChange = (page: number) => {
+const onPageChange = async (page: number): Promise<void> => {
   currentPage.value = page
+  await loadSearchResults(searchQuery.value, page)
   window.scrollTo({ top: 0, behavior: 'smooth' })
 }
 </script>
@@ -78,17 +86,17 @@ const onPageChange = (page: number) => {
         Search Results for: "{{ searchQuery }}" Games
       </h1>
       <span class="text-sm text-text-muted font-medium pb-1">
-        {{ searchResults.length }} products found
+        {{ totalCount }} products found
       </span>
     </div>
 
     <!-- Product Grid -->
     <section
-      v-if="paginatedResults.length > 0"
+      v-if="searchResults.length > 0"
       class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-5 mb-10"
     >
       <GameCard
-        v-for="game in paginatedResults"
+        v-for="game in searchResults"
         :key="game.id"
         :game="game"
       />
@@ -117,7 +125,7 @@ const onPageChange = (page: number) => {
       v-if="totalPages > 1"
       :current-page="currentPage"
       :total-pages="totalPages"
-      @update:current-page="onPageChange"
+      @page-change="onPageChange"
     />
   </main>
 </template>

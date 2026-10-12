@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { mount } from '@vue/test-utils'
+import { mount, flushPromises } from '@vue/test-utils'
 import { ref } from 'vue'
 import CategoryView from '../CategoryView.vue'
 
@@ -52,25 +52,27 @@ describe('CategoryView', () => {
     expect(wrapper.text()).toContain('0 products found')
   })
 
-  it('handles page change and loads remote games on mount', async () => {
+  it('handles page change and loads remote games from backend with pagination params', async () => {
     mockRouteParams.value = { category: 'Fighting' }
-    vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue({
       ok: true,
-      headers: new Headers({ 'x-total-count': '1' }),
+      headers: new Headers({ 'x-total-count': '25' }),
       json: () => Promise.resolve([
-        { id: 'custom-fight', name: 'Custom Fighter', price: 99, category: 'Fighting' }
+        { id: 'custom-fight-p2', name: 'Custom Fighter Page 2', price: 99, category: 'Fighting' }
       ])
     } as unknown as Response)
 
     const wrapper = mountCategoryView()
-    await Promise.resolve()
-    await Promise.resolve()
+    await flushPromises()
 
     const pagination = wrapper.findComponent({ name: 'Pagination' })
     if (pagination.exists()) {
-      await pagination.vm.$emit('update:current-page', 2)
+      await pagination.vm.$emit('page-change', 2)
+      await flushPromises()
     }
-    expect(wrapper.exists()).toBe(true)
+    expect(fetchSpy).toHaveBeenCalledWith(expect.stringContaining('page=2'))
+    expect(fetchSpy).toHaveBeenCalledWith(expect.stringContaining('category=Fighting'))
+    expect(wrapper.text()).toContain('Custom Fighter Page 2')
   })
 
   it('updates games when route category param changes', async () => {
@@ -78,8 +80,7 @@ describe('CategoryView', () => {
     const wrapper = mountCategoryView()
     mockRouteParams.value = { category: 'Indie' }
     await wrapper.vm.$nextTick()
-    await Promise.resolve()
+    await flushPromises()
     expect(wrapper.exists()).toBe(true)
   })
 })
-

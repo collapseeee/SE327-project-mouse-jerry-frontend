@@ -18,30 +18,35 @@ const rawCategory = computed(() => {
 
 const categoryTitle = computed(() => rawCategory.value || 'Category')
 
-const filteredGames = ref<Game[]>(getGamesByCategory(rawCategory.value))
+const initialLocal = getGamesByCategory(rawCategory.value)
+const totalCount = ref(initialLocal.length)
+const categoryGames = ref<Game[]>(initialLocal.slice(0, 10))
 
 const totalPages = computed(() => {
-  return Math.ceil(filteredGames.value.length / pageSize.value) || 1
+  return Math.ceil(totalCount.value / pageSize.value) || 1
 })
 
-const paginatedGames = computed(() => {
-  const start = (currentPage.value - 1) * pageSize.value
-  return filteredGames.value.slice(start, start + pageSize.value)
-})
-
-const loadCategoryGames = async (cat: string) => {
+const loadCategoryGames = async (cat: string, page: number): Promise<void> => {
   if (!cat) {
-    filteredGames.value = []
+    categoryGames.value = []
+    totalCount.value = 0
     return
   }
-  const res = await fetchGames({ category: cat })
-  if (res.games.length > 0) {
-    filteredGames.value = res.games
+  const res = await fetchGames({ category: cat, page, size: pageSize.value })
+  if (res.games.length > 0 || res.totalCount > 0) {
+    categoryGames.value = res.games
+    totalCount.value = res.totalCount
+    return
   }
+  // Local fallback if offline
+  const local = getGamesByCategory(cat)
+  totalCount.value = local.length
+  const start = (page - 1) * pageSize.value
+  categoryGames.value = local.slice(start, start + pageSize.value)
 }
 
 onMounted(() => {
-  loadCategoryGames(rawCategory.value)
+  loadCategoryGames(rawCategory.value, currentPage.value)
 })
 
 watch(
@@ -49,13 +54,16 @@ watch(
   (newCat) => {
     currentPage.value = 1
     const catStr = typeof newCat === 'string' ? decodeURIComponent(newCat) : ''
-    filteredGames.value = getGamesByCategory(catStr)
-    loadCategoryGames(catStr)
+    const local = getGamesByCategory(catStr)
+    totalCount.value = local.length
+    categoryGames.value = local.slice(0, pageSize.value)
+    loadCategoryGames(catStr, 1)
   }
 )
 
-const onPageChange = (page: number) => {
+const onPageChange = async (page: number): Promise<void> => {
   currentPage.value = page
+  await loadCategoryGames(rawCategory.value, page)
   window.scrollTo({ top: 0, behavior: 'smooth' })
 }
 </script>
@@ -77,17 +85,17 @@ const onPageChange = (page: number) => {
         {{ categoryTitle }} Games
       </h1>
       <span class="text-sm text-text-muted font-medium pb-1">
-        {{ filteredGames.length }} products found
+        {{ totalCount }} products found
       </span>
     </div>
 
     <!-- Product Grid -->
     <section
-      v-if="paginatedGames.length > 0"
+      v-if="categoryGames.length > 0"
       class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-5 mb-10"
     >
       <GameCard
-        v-for="game in paginatedGames"
+        v-for="game in categoryGames"
         :key="game.id"
         :game="game"
       />
@@ -116,7 +124,7 @@ const onPageChange = (page: number) => {
       v-if="totalPages > 1"
       :current-page="currentPage"
       :total-pages="totalPages"
-      @update:current-page="onPageChange"
+      @page-change="onPageChange"
     />
   </main>
 </template>

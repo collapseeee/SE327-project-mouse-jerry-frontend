@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { mount } from '@vue/test-utils'
+import { mount, flushPromises } from '@vue/test-utils'
 import { ref } from 'vue'
 import SearchView from '../SearchView.vue'
 
@@ -58,25 +58,27 @@ describe('SearchView', () => {
     expect(wrapper.text()).toContain('No games found')
   })
 
-  it('handles pagination and remote search results', async () => {
+  it('handles backend search querying and pagination params', async () => {
     mockRouteQuery.value = { q: 'battle' }
-    vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue({
       ok: true,
-      headers: new Headers({ 'x-total-count': '1' }),
+      headers: new Headers({ 'x-total-count': '15' }),
       json: () => Promise.resolve([
-        { id: 'remote-battle', name: 'Remote Battle', price: 500, category: 'Action' }
+        { id: 'remote-battle-p2', name: 'Remote Battle Page 2', price: 500, category: 'Action' }
       ])
     } as unknown as Response)
 
     const wrapper = mountSearchView()
-    await Promise.resolve()
-    await Promise.resolve()
+    await flushPromises()
 
     const pagination = wrapper.findComponent({ name: 'Pagination' })
     if (pagination.exists()) {
-      await pagination.vm.$emit('update:current-page', 2)
+      await pagination.vm.$emit('page-change', 2)
+      await flushPromises()
     }
-    expect(wrapper.exists()).toBe(true)
+    expect(fetchSpy).toHaveBeenCalledWith(expect.stringContaining('search=battle'))
+    expect(fetchSpy).toHaveBeenCalledWith(expect.stringContaining('page=2'))
+    expect(wrapper.text()).toContain('Remote Battle Page 2')
   })
 
   it('updates search results when query parameter changes', async () => {
@@ -84,8 +86,7 @@ describe('SearchView', () => {
     const wrapper = mountSearchView()
     mockRouteQuery.value = { q: 'ring' }
     await wrapper.vm.$nextTick()
-    await Promise.resolve()
+    await flushPromises()
     expect(wrapper.exists()).toBe(true)
   })
 })
-

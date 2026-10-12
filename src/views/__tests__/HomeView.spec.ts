@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { mount } from '@vue/test-utils'
+import { mount, flushPromises } from '@vue/test-utils'
 import HomeView from '../HomeView.vue'
 
 describe('HomeView', () => {
@@ -45,6 +45,7 @@ describe('HomeView', () => {
     expect(page2Btn).toBeDefined()
     if (page2Btn) {
       await page2Btn.trigger('click')
+      await flushPromises()
     }
 
     expect(wrapper.text()).toContain('Towerfall Ascension: Dark World')
@@ -79,9 +80,28 @@ describe('HomeView', () => {
       } as unknown as Response)
 
     const wrapper = mountComponent()
-    await Promise.resolve()
-    await Promise.resolve()
+    await flushPromises()
     expect(wrapper.exists()).toBe(true)
   })
-})
 
+  it('loads requested page from backend when page changes', async () => {
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: true,
+      headers: new Headers({ 'x-total-count': '20' }),
+      json: () => Promise.resolve([
+        { id: 'bg-p2', name: 'Backend Page 2 Game', price: 100, coverImage: 'test.jpg' }
+      ])
+    } as unknown as Response)
+
+    const wrapper = mountComponent()
+    await flushPromises()
+
+    const pagination = wrapper.findComponent({ name: 'Pagination' })
+    expect(pagination.exists()).toBe(true)
+    await pagination.vm.$emit('page-change', 2)
+    await flushPromises()
+
+    expect(fetchSpy).toHaveBeenCalledWith(expect.stringContaining('page=2'))
+    expect(wrapper.text()).toContain('Backend Page 2 Game')
+  })
+})

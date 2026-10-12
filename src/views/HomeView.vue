@@ -39,35 +39,6 @@ const highlights = ref<HighlightItem[]>([
   }
 ])
 
-const homeGameOrder = [
-  'battlefield-3',
-  'headquarters-wwii',
-  'fivem',
-  'clone-drone',
-  'tropico-4'
-]
-const homeGameOrderSet = new Set(homeGameOrder)
-
-const allGames = ref<Game[]>(getAllGames())
-
-const sortedGames = computed<Game[]>(() => {
-  const page1Games: Game[] = []
-  const remainingGames: Game[] = []
-
-  for (const id of homeGameOrder) {
-    const found = allGames.value.find((g) => g.id === id)
-    if (found) page1Games.push(found)
-  }
-
-  for (const g of allGames.value) {
-    if (!homeGameOrderSet.has(g.id)) {
-      remainingGames.push(g)
-    }
-  }
-
-  return [...page1Games, ...remainingGames]
-})
-
 const mapHighlightColor = (index: number): string => {
   const colors = [
     'var(--color-accent-green)',
@@ -78,12 +49,34 @@ const mapHighlightColor = (index: number): string => {
   return colors[index % colors.length]
 }
 
-onMounted(async () => {
-  const [remoteHighlights, remoteGames] = await Promise.all([
-    fetchHighlights(),
-    fetchGames({ size: 100 })
-  ])
+const getInitialHomeGames = (): Game[] => {
+  const all = getAllGames()
+  const homeOrder = ['battlefield-3', 'headquarters-wwii', 'fivem', 'clone-drone', 'tropico-4']
+  const homeSet = new Set(homeOrder)
+  const p1: Game[] = []
+  const rest: Game[] = []
+  for (const id of homeOrder) {
+    const found = all.find((g) => g.id === id)
+    if (found) p1.push(found)
+  }
+  for (const g of all) {
+    if (!homeSet.has(g.id)) rest.push(g)
+  }
+  return [...p1, ...rest]
+}
 
+const initialAll = getInitialHomeGames()
+const currentPage = ref(1)
+const pageSize = ref(5)
+const totalCount = ref(initialAll.length)
+const catalogGames = ref<Game[]>(initialAll.slice(0, 5))
+
+const totalPages = computed(() => {
+  return Math.ceil(totalCount.value / pageSize.value) || 1
+})
+
+const loadHighlights = async (): Promise<void> => {
+  const remoteHighlights = await fetchHighlights()
   if (remoteHighlights.length > 0) {
     highlights.value = remoteHighlights.map((item, index) => ({
       id: `h-${item.id}`,
@@ -93,26 +86,31 @@ onMounted(async () => {
       buttonColor: mapHighlightColor(index)
     }))
   }
+}
 
-  if (remoteGames.games.length > 0) {
-    allGames.value = remoteGames.games
+const loadPageGames = async (page: number): Promise<void> => {
+  const remote = await fetchGames({ page, size: pageSize.value })
+  if (remote.games.length > 0 || remote.totalCount > 0) {
+    catalogGames.value = remote.games
+    totalCount.value = remote.totalCount
+    return
   }
+  const all = getInitialHomeGames()
+  totalCount.value = all.length
+  const start = (page - 1) * pageSize.value
+  catalogGames.value = all.slice(start, start + pageSize.value)
+}
+
+onMounted(async () => {
+  await Promise.all([
+    loadHighlights(),
+    loadPageGames(currentPage.value)
+  ])
 })
 
-const currentPage = ref(1)
-const pageSize = ref(5)
-
-const totalPages = computed(() => {
-  return Math.ceil(sortedGames.value.length / pageSize.value) || 1
-})
-
-const paginatedGames = computed(() => {
-  const start = (currentPage.value - 1) * pageSize.value
-  return sortedGames.value.slice(start, start + pageSize.value)
-})
-
-const onPageChange = (page: number) => {
+const onPageChange = async (page: number): Promise<void> => {
   currentPage.value = page
+  await loadPageGames(page)
 }
 </script>
 
@@ -133,7 +131,7 @@ const onPageChange = (page: number) => {
     <!-- Product Grid matching Screenshot 3 -->
     <section class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-5 mb-8">
       <GameCard
-        v-for="game in paginatedGames"
+        v-for="game in catalogGames"
         :key="game.id"
         :game="game"
       />
@@ -143,7 +141,7 @@ const onPageChange = (page: number) => {
     <Pagination
       :current-page="currentPage"
       :total-pages="totalPages"
-      @update:current-page="onPageChange"
+      @page-change="onPageChange"
     />
   </main>
 </template>
