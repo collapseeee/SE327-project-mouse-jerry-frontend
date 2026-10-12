@@ -2,9 +2,18 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { setActivePinia, createPinia } from 'pinia'
 import { useCartStore } from '../cart'
 import { useAuthStore } from '../auth'
-import * as cartApi from '@/services/cartApi'
-import * as gameApi from '@/services/gameApi'
+import {
+  fetchCart,
+  addToCart,
+  updateCartItemQuantity,
+  removeCartItem,
+  clearCart
+} from '@/services/cartApi'
+import { fetchGameById } from '@/services/gameApi'
 import type { CartDTO, CartItem } from '@/types/cart'
+
+vi.mock('@/services/cartApi')
+vi.mock('@/services/gameApi')
 
 describe('useCartStore', () => {
   beforeEach(() => {
@@ -43,12 +52,10 @@ describe('useCartStore', () => {
 
   describe('loadCart', () => {
     it('does not load cart if user is not authenticated', async () => {
-      const fetchSpy = vi.spyOn(cartApi, 'fetchCart')
       const store = useCartStore()
-
       await store.loadCart()
 
-      expect(fetchSpy).not.toHaveBeenCalled()
+      expect(vi.mocked(fetchCart)).not.toHaveBeenCalled()
       expect(store.items).toEqual([])
     })
 
@@ -56,12 +63,12 @@ describe('useCartStore', () => {
       const authStore = useAuthStore()
       authStore.setUserSession({ id: 1, username: 'testuser' }, 'mock-token')
 
-      vi.spyOn(cartApi, 'fetchCart').mockResolvedValueOnce({
+      vi.mocked(fetchCart).mockResolvedValueOnce({
         items: [{ ...sampleCartItem, category: undefined }],
         totalItems: 1,
         totalAmount: 1788
       })
-      vi.spyOn(gameApi, 'fetchGameById').mockResolvedValueOnce({
+      vi.mocked(fetchGameById).mockResolvedValueOnce({
         id: 'vs-1',
         name: 'Vampire Survivors',
         price: 1788,
@@ -82,7 +89,7 @@ describe('useCartStore', () => {
     it('sets error when loadCart fails', async () => {
       const authStore = useAuthStore()
       authStore.setUserSession({ id: 1, username: 'testuser' }, 'mock-token')
-      vi.spyOn(cartApi, 'fetchCart').mockRejectedValueOnce(new Error('Backend error'))
+      vi.mocked(fetchCart).mockRejectedValueOnce(new Error('Backend error'))
 
       const store = useCartStore()
       await store.loadCart()
@@ -104,7 +111,7 @@ describe('useCartStore', () => {
     it('successfully adds item and enriches category when authenticated', async () => {
       const authStore = useAuthStore()
       authStore.setUserSession({ id: 1, username: 'testuser' }, 'mock-token')
-      vi.spyOn(cartApi, 'addToCart').mockResolvedValueOnce(sampleCartDto)
+      vi.mocked(addToCart).mockResolvedValueOnce(sampleCartDto)
 
       const store = useCartStore()
       const success = await store.addItem('vs-1', 2)
@@ -117,7 +124,7 @@ describe('useCartStore', () => {
     it('returns false when addToCart service fails', async () => {
       const authStore = useAuthStore()
       authStore.setUserSession({ id: 1, username: 'testuser' }, 'mock-token')
-      vi.spyOn(cartApi, 'addToCart').mockRejectedValueOnce(new Error('Out of stock'))
+      vi.mocked(addToCart).mockRejectedValueOnce(new Error('Out of stock'))
 
       const store = useCartStore()
       const success = await store.addItem('vs-1')
@@ -154,7 +161,7 @@ describe('useCartStore', () => {
         totalItems: 3,
         totalAmount: 5364
       }
-      vi.spyOn(cartApi, 'updateCartItemQuantity').mockResolvedValueOnce(updatedDto)
+      vi.mocked(updateCartItemQuantity).mockResolvedValueOnce(updatedDto)
 
       const store = useCartStore()
       store.items = [sampleCartItem]
@@ -168,7 +175,7 @@ describe('useCartStore', () => {
     it('returns false and sets error when updateQuantity API fails', async () => {
       const authStore = useAuthStore()
       authStore.setUserSession({ id: 1, username: 'testuser' }, 'mock-token')
-      vi.spyOn(cartApi, 'updateCartItemQuantity').mockRejectedValueOnce(new Error('Network drop'))
+      vi.mocked(updateCartItemQuantity).mockRejectedValueOnce(new Error('Network drop'))
 
       const store = useCartStore()
       store.items = [sampleCartItem]
@@ -190,7 +197,7 @@ describe('useCartStore', () => {
       const authStore = useAuthStore()
       authStore.setUserSession({ id: 1, username: 'testuser' }, 'mock-token')
 
-      vi.spyOn(cartApi, 'removeCartItem').mockResolvedValueOnce({
+      vi.mocked(removeCartItem).mockResolvedValueOnce({
         items: [],
         totalItems: 0,
         totalAmount: 0
@@ -208,7 +215,7 @@ describe('useCartStore', () => {
     it('returns false when removeCartItem service fails', async () => {
       const authStore = useAuthStore()
       authStore.setUserSession({ id: 1, username: 'testuser' }, 'mock-token')
-      vi.spyOn(cartApi, 'removeCartItem').mockRejectedValueOnce(new Error('Cannot delete'))
+      vi.mocked(removeCartItem).mockRejectedValueOnce(new Error('Cannot delete'))
 
       const store = useCartStore()
       store.items = [sampleCartItem]
@@ -232,21 +239,21 @@ describe('useCartStore', () => {
     it('calls clearCart API when authenticated', async () => {
       const authStore = useAuthStore()
       authStore.setUserSession({ id: 1, username: 'testuser' }, 'mock-token')
-      const clearSpy = vi.spyOn(cartApi, 'clearCart').mockResolvedValueOnce()
+      vi.mocked(clearCart).mockResolvedValueOnce()
 
       const store = useCartStore()
       store.items = [sampleCartItem]
 
       const result = await store.clear()
       expect(result).toBe(true)
-      expect(clearSpy).toHaveBeenCalledWith('mock-token')
+      expect(vi.mocked(clearCart)).toHaveBeenCalledWith('mock-token')
       expect(store.items).toEqual([])
     })
 
     it('handles clear failure gracefully', async () => {
       const authStore = useAuthStore()
       authStore.setUserSession({ id: 1, username: 'testuser' }, 'mock-token')
-      vi.spyOn(cartApi, 'clearCart').mockRejectedValueOnce(new Error('Clear failed'))
+      vi.mocked(clearCart).mockRejectedValueOnce(new Error('Clear failed'))
 
       const store = useCartStore()
       const result = await store.clear()

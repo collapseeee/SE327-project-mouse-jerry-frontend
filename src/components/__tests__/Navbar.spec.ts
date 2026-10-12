@@ -174,7 +174,7 @@ describe('Navbar', () => {
     const authStore = useAuthStore()
     authStore.setUserSession({ id: 1, username: 'thainchai' }, 'token-123')
     const cartStore = useCartStore()
-    vi.spyOn(cartStore, 'loadCart').mockImplementation(async () => {})
+    vi.spyOn(cartStore, 'loadCart').mockResolvedValue()
     cartStore.items = [
       { id: 1, gameId: 'g1', gameTitle: 'Game 1', coverImage: '', unitPrice: 100, quantity: 2, stock: 5, totalPrice: 200 }
     ]
