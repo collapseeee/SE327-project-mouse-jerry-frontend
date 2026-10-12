@@ -136,4 +136,17 @@ describe('AuthCard', () => {
 
     expect(wrapper.find('[data-test="success-msg"]').text()).toBe('Account created successfully!')
   })
+
+  it('handles serverError clearing to empty string in watch handler', async () => {
+    const wrapper = mount(AuthCard, {
+      props: {
+        serverError: 'Initial error'
+      }
+    })
+
+    expect(wrapper.find('[data-test="error-msg"]').text()).toBe('Initial error')
+
+    await wrapper.setProps({ serverError: '' })
+    expect(wrapper.find('[data-test="error-msg"]').exists()).toBe(false)
+  })
 })

@@ -183,4 +183,66 @@ describe('LoginView', () => {
     const authCard = wrapper.findComponent(AuthCard)
     expect(authCard.props('initialMode')).toBe('login')
   })
+
+  it('handles login failure without error message and falls back to default message', async () => {
+    const authStore = useAuthStore()
+    vi.spyOn(authStore, 'login').mockResolvedValueOnce({
+      success: false,
+      error: ''
+    })
+
+    const wrapper = mount(LoginView)
+    const authCard = wrapper.findComponent(AuthCard)
+
+    authCard.vm.$emit('submit', {
+      mode: 'login',
+      username: 'user',
+      password: 'pwd'
+    })
+    await flushPromises()
+    expect(authCard.props('serverError')).toBe('Login failed. Please check your credentials.')
+  })
+
+  it('handles registration without email and confirmPassword, with default error fallbacks', async () => {
+    const authStore = useAuthStore()
+    vi.spyOn(authStore, 'register').mockResolvedValueOnce({
+      success: false,
+      error: ''
+    })
+
+    const wrapper = mount(LoginView)
+    const authCard = wrapper.findComponent(AuthCard)
+
+    authCard.vm.$emit('submit', {
+      mode: 'register',
+      username: 'user2',
+      password: 'pwd'
+    })
+    await flushPromises()
+    expect(authStore.register).toHaveBeenCalledWith({
+      username: 'user2',
+      email: '',
+      password: 'pwd',
+      confirmPassword: 'pwd'
+    })
+    expect(authCard.props('serverError')).toBe('Registration failed.')
+
+    // Also test autoLogin failure without error message
+    vi.spyOn(authStore, 'register').mockResolvedValueOnce({
+      success: true,
+      message: 'OK'
+    })
+    vi.spyOn(authStore, 'login').mockResolvedValueOnce({
+      success: false,
+      error: ''
+    })
+
+    authCard.vm.$emit('submit', {
+      mode: 'register',
+      username: 'user3',
+      password: 'pwd'
+    })
+    await flushPromises()
+    expect(authCard.props('serverError')).toBe('Registration succeeded, but auto-login failed. Please sign in.')
+  })
 })

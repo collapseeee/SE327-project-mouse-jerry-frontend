@@ -2,8 +2,9 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import logoImg from '@/assets/logo.png'
-import { getAllCategories } from '@/data/games'
+import { fetchCategories } from '@/services/categoryApi'
 import { useAuthStore } from '@/stores/auth'
+import type { CategoryItem } from '@/types/game'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -15,7 +16,7 @@ const categoryDropdownRef = ref<HTMLElement | null>(null)
 const isUserDropdownOpen = ref(false)
 const userDropdownRef = ref<HTMLElement | null>(null)
 
-const categories = getAllCategories()
+const categories = ref<CategoryItem[]>([])
 
 const toggleCategoryDropdown = () => {
   isCategoryDropdownOpen.value = !isCategoryDropdownOpen.value
@@ -62,8 +63,18 @@ const handleClickOutside = (event: MouseEvent) => {
   }
 }
 
+const loadCategories = async (): Promise<void> => {
+  try {
+    const remoteCategories = await fetchCategories()
+    categories.value = remoteCategories
+  } catch {
+    categories.value = []
+  }
+}
+
 onMounted(() => {
   document.addEventListener('click', handleClickOutside)
+  loadCategories()
 })
 
 onUnmounted(() => {
@@ -128,6 +139,12 @@ onUnmounted(() => {
                 >
                   {{ cat.name }}
                 </router-link>
+                <div
+                  v-if="categories.length === 0"
+                  class="px-4 py-2.5 text-xs text-slate-400 italic"
+                >
+                  No categories found
+                </div>
               </div>
             </transition>
           </div>

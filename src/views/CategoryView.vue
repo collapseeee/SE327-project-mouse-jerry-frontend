@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
-import { getGamesByCategory } from '@/data/games'
+import { fetchGames } from '@/services/gameApi'
 import GameCard from '@/components/GameCard.vue'
 import Pagination from '@/components/Pagination.vue'
 import type { Game } from '@/types/game'
@@ -9,6 +9,9 @@ import type { Game } from '@/types/game'
 const route = useRoute()
 const currentPage = ref(1)
 const pageSize = ref(10)
+const totalCount = ref(0)
+const categoryGames = ref<Game[]>([])
+const isLoading = ref(true)
 
 const rawCategory = computed(() => {
   const cat = route.params.category
@@ -17,29 +20,46 @@ const rawCategory = computed(() => {
 
 const categoryTitle = computed(() => rawCategory.value || 'Category')
 
-const filteredGames = computed<Game[]>(() => {
-  if (!rawCategory.value) return []
-  return getGamesByCategory(rawCategory.value)
-})
-
 const totalPages = computed(() => {
-  return Math.ceil(filteredGames.value.length / pageSize.value) || 1
+  return Math.ceil(totalCount.value / pageSize.value) || 1
 })
 
-const paginatedGames = computed(() => {
-  const start = (currentPage.value - 1) * pageSize.value
-  return filteredGames.value.slice(start, start + pageSize.value)
+const loadCategoryGames = async (categoryName: string, page: number): Promise<void> => {
+  if (!categoryName) {
+    categoryGames.value = []
+    totalCount.value = 0
+    isLoading.value = false
+    return
+  }
+  isLoading.value = true
+  try {
+    const res = await fetchGames({ category: categoryName, page, size: pageSize.value })
+    categoryGames.value = res.games
+    totalCount.value = res.totalCount
+  } catch {
+    categoryGames.value = []
+    totalCount.value = 0
+  } finally {
+    isLoading.value = false
+  }
+}
+
+onMounted(() => {
+  loadCategoryGames(rawCategory.value, currentPage.value)
 })
 
 watch(
   () => route.params.category,
-  () => {
+  (newCategory) => {
     currentPage.value = 1
+    const categoryStr = typeof newCategory === 'string' ? decodeURIComponent(newCategory) : ''
+    loadCategoryGames(categoryStr, 1)
   }
 )
 
-const onPageChange = (page: number) => {
+const onPageChange = async (page: number): Promise<void> => {
   currentPage.value = page
+  await loadCategoryGames(rawCategory.value, page)
   window.scrollTo({ top: 0, behavior: 'smooth' })
 }
 </script>
@@ -61,17 +81,17 @@ const onPageChange = (page: number) => {
         {{ categoryTitle }} Games
       </h1>
       <span class="text-sm text-text-muted font-medium pb-1">
-        {{ filteredGames.length }} products found
+        {{ totalCount }} products found
       </span>
     </div>
 
     <!-- Product Grid -->
     <section
-      v-if="paginatedGames.length > 0"
+      v-if="categoryGames.length > 0"
       class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-5 mb-10"
     >
       <GameCard
-        v-for="game in paginatedGames"
+        v-for="game in categoryGames"
         :key="game.id"
         :game="game"
       />
@@ -79,28 +99,30 @@ const onPageChange = (page: number) => {
 
     <!-- Empty State -->
     <div
-      v-else
-      class="py-16 text-center bg-white rounded-2xl border border-slate-100 shadow-sm my-6"
+      v-else-if="!isLoading"
+      class="py-16 text-center bg-white rounded-2xl border border-slate-100 shadow-sm mb-10"
     >
-      <i class="fa-solid fa-gamepad text-5xl text-slate-300 mb-4 block"></i>
-      <h2 class="text-xl font-bold text-slate-700 mb-2">No games found</h2>
-      <p class="text-slate-500 text-sm max-w-md mx-auto mb-6">
-        We currently don't have any games in the "{{ categoryTitle }}" category.
+      <i class="fa-solid fa-gamepad text-4xl text-slate-300 mb-3 block"></i>
+      <h2 class="text-lg font-bold text-slate-700 mb-1">No games found</h2>
+      <p class="text-slate-500 text-sm">
+        We couldn't find any games under {{ categoryTitle }}.
       </p>
-      <router-link
-        to="/"
-        class="inline-block px-5 py-2.5 bg-primary text-white text-sm font-semibold rounded-lg hover:bg-primary-hover transition-colors"
-      >
-        Back to Home
-      </router-link>
     </div>
 
-    <!-- Pagination -->
+    <!-- Loading State -->
+    <div
+      v-else
+      class="py-16 text-center mb-10"
+    >
+      <i class="fa-solid fa-circle-notch fa-spin text-3xl text-primary mb-3 block"></i>
+      <p class="text-slate-500 text-sm">Loading category games...</p>
+    </div>
+
+    <!-- Pagination matching Screenshot 5 -->
     <Pagination
-      v-if="totalPages > 1"
       :current-page="currentPage"
       :total-pages="totalPages"
-      @update:current-page="onPageChange"
+      @page-change="onPageChange"
     />
   </main>
 </template>
