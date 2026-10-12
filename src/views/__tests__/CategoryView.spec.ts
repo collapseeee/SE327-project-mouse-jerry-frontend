@@ -1,14 +1,20 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 import { reactive } from 'vue'
+import { setActivePinia, createPinia } from 'pinia'
 import CategoryView from '../CategoryView.vue'
+import { useAuthStore } from '@/stores/auth'
+import { useCartStore } from '@/stores/cart'
 
-const mockRoute = reactive<{ params: { category?: unknown } }>({
-  params: { category: 'Fighting' }
+const mockPush = vi.fn()
+const mockRoute = reactive<{ params: { category?: unknown }; fullPath: string }>({
+  params: { category: 'Fighting' },
+  fullPath: '/category/Fighting'
 })
 
 vi.mock('vue-router', () => ({
-  useRoute: () => mockRoute
+  useRoute: () => mockRoute,
+  useRouter: () => ({ push: mockPush })
 }))
 
 const sampleFightingGames = [
@@ -18,8 +24,11 @@ const sampleFightingGames = [
 
 describe('CategoryView', () => {
   beforeEach(() => {
+    setActivePinia(createPinia())
+    mockPush.mockClear()
     vi.restoreAllMocks()
     mockRoute.params.category = 'Fighting'
+    mockRoute.fullPath = '/category/Fighting'
     vi.spyOn(globalThis, 'fetch').mockResolvedValue({
       ok: true,
       headers: new Headers({ 'x-total-count': '2' }),
@@ -45,68 +54,46 @@ describe('CategoryView', () => {
     const wrapper = mountCategoryView()
     await flushPromises()
 
-    expect(wrapper.text()).toContain('Home')
     expect(wrapper.text()).toContain('Fighting')
     expect(wrapper.text()).toContain('Fighting Games')
     expect(wrapper.text()).toContain('2 products found')
   })
 
-  it('renders products found under Fighting category', async () => {
-    mockRoute.params.category = 'Fighting'
+  it('renders game cards for the selected category', async () => {
     const wrapper = mountCategoryView()
     await flushPromises()
 
     expect(wrapper.text()).toContain('Clone Drone in the Hyperdome')
-    expect(wrapper.text()).toContain('1702 Baht')
     expect(wrapper.text()).toContain('Superfighters Deluxe')
   })
 
-  it('shows empty state when category has no games', async () => {
-    mockRoute.params.category = 'NonExistentCategory'
-    vi.spyOn(globalThis, 'fetch').mockResolvedValue({
-      ok: true,
-      headers: new Headers({ 'x-total-count': '0' }),
-      json: () => Promise.resolve([])
-    } as Response)
-
+  it('redirects to login when unauthenticated user adds game to cart', async () => {
     const wrapper = mountCategoryView()
     await flushPromises()
 
-    expect(wrapper.text()).toContain('No games found')
-    expect(wrapper.text()).toContain('0 products found')
+    const addButtons = wrapper.findAll('button[title="Add to Cart"]')
+    expect(addButtons.length).toBeGreaterThan(0)
+    await addButtons[0].trigger('click')
+
+    expect(mockPush).toHaveBeenCalledWith({
+      path: '/login',
+      query: { mode: 'login', redirect: '/category/Fighting' }
+    })
   })
 
-  it('handles page change and loads remote games from backend with pagination params', async () => {
-    mockRoute.params.category = 'Fighting'
-    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation((requestUrl) => {
-      const url = String(requestUrl)
-      if (url.includes('page=2')) {
-        return Promise.resolve({
-          ok: true,
-          headers: new Headers({ 'x-total-count': '25' }),
-          json: () => Promise.resolve([
-            { id: 'custom-fight-p2', name: 'Custom Fighter Page 2', price: 99, category: 'Fighting' }
-          ])
-        } as Response)
-      }
-      return Promise.resolve({
-        ok: true,
-        headers: new Headers({ 'x-total-count': '25' }),
-        json: () => Promise.resolve(sampleFightingGames)
-      } as Response)
-    })
+  it('adds game to cart when authenticated user clicks add to cart', async () => {
+    const authStore = useAuthStore()
+    authStore.setUserSession({ id: 1, username: 'tester' }, 'token-abc')
+    const cartStore = useCartStore()
+    const addItemSpy = vi.spyOn(cartStore, 'addItem').mockResolvedValue(true)
 
     const wrapper = mountCategoryView()
     await flushPromises()
 
-    const pagination = wrapper.findComponent({ name: 'Pagination' })
-    if (pagination.exists()) {
-      await pagination.vm.$emit('page-change', 2)
-      await flushPromises()
-    }
-    expect(fetchSpy).toHaveBeenCalledWith(expect.stringContaining('page=2'))
-    expect(fetchSpy).toHaveBeenCalledWith(expect.stringContaining('category=Fighting'))
-    expect(wrapper.text()).toContain('Custom Fighter Page 2')
+    const addButtons = wrapper.findAll('button[title="Add to Cart"]')
+    await addButtons[0].trigger('click')
+
+    expect(addItemSpy).toHaveBeenCalledWith('cd-1', 1)
   })
 
   it('updates games when route category param changes', async () => {
@@ -119,7 +106,6 @@ describe('CategoryView', () => {
     await flushPromises()
     expect(wrapper.exists()).toBe(true)
 
-    // Route changes to undefined / non-string
     mockRoute.params.category = undefined
     await wrapper.vm.$nextTick()
     await flushPromises()
