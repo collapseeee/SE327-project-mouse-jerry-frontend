@@ -63,14 +63,14 @@ describe('orderApi', () => {
       ]
     }
 
-    global.fetch = vi.fn().mockResolvedValue({
+    vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
       ok: true,
       json: async () => mockOrder
-    })
+    } as unknown as Response)
 
     const result = await checkoutOrder('mock-token')
     expect(result.orderNumber).toBe('ORD-12345')
-    expect(global.fetch).toHaveBeenCalledWith('/api/v1/orders/checkout', expect.objectContaining({
+    expect(globalThis.fetch).toHaveBeenCalledWith('/api/v1/orders/checkout', expect.objectContaining({
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -80,7 +80,7 @@ describe('orderApi', () => {
   })
 
   it('sends checkout request for single item purchase', async () => {
-    global.fetch = vi.fn().mockResolvedValue({
+    vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
       ok: true,
       json: async () => ({
         id: 2,
@@ -88,7 +88,7 @@ describe('orderApi', () => {
         totalAmount: 500,
         items: []
       })
-    })
+    } as unknown as Response)
 
     const result = await checkoutOrder('mock-token', {
       checkoutType: 'single',
@@ -99,11 +99,11 @@ describe('orderApi', () => {
   })
 
   it('throws error when checkout request fails with response message', async () => {
-    global.fetch = vi.fn().mockResolvedValue({
+    vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
       ok: false,
       status: 400,
       json: async () => ({ error: 'Insufficient stock available' })
-    })
+    } as unknown as Response)
 
     await expect(checkoutOrder('mock-token')).rejects.toThrow('Insufficient stock available')
   })
@@ -118,10 +118,10 @@ describe('orderApi', () => {
       }
     ]
 
-    global.fetch = vi.fn().mockResolvedValue({
+    vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
       ok: true,
       json: async () => mockList
-    })
+    } as unknown as Response)
 
     const orders = await fetchOrderHistory('mock-token')
     expect(orders).toHaveLength(1)
@@ -129,20 +129,20 @@ describe('orderApi', () => {
   })
 
   it('throws error when fetch order history fails', async () => {
-    global.fetch = vi.fn().mockResolvedValue({
+    vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
       ok: false,
       status: 401,
       statusText: 'Unauthorized',
       json: async () => {
         throw new Error('Not JSON')
       }
-    })
+    } as unknown as Response)
 
     await expect(fetchOrderHistory('mock-token')).rejects.toThrow('Unauthorized')
   })
 
   it('fetches order by number successfully', async () => {
-    global.fetch = vi.fn().mockResolvedValue({
+    vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
       ok: true,
       json: async () => ({
         id: 5,
@@ -150,41 +150,41 @@ describe('orderApi', () => {
         totalAmount: 250,
         items: []
       })
-    })
+    } as unknown as Response)
 
     const order = await fetchOrderByNumber('mock-token', 'ORD-FIND')
     expect(order.orderNumber).toBe('ORD-FIND')
   })
 
   it('throws error when order is not found by number', async () => {
-    global.fetch = vi.fn().mockResolvedValue({
+    vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
       ok: false,
       status: 404,
       json: async () => ({ message: 'Order not found' })
-    })
+    } as unknown as Response)
 
     await expect(fetchOrderByNumber('mock-token', 'ORD-404')).rejects.toThrow('Order not found')
   })
 
   it('returns empty array when order history is not an array', async () => {
-    global.fetch = vi.fn().mockResolvedValue({
+    vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
       ok: true,
       json: async () => ({ not: 'an-array' })
-    })
+    } as unknown as Response)
 
     const orders = await fetchOrderHistory('mock-token')
     expect(orders).toEqual([])
   })
 
   it('falls back to statusText or default message on checkout failure', async () => {
-    global.fetch = vi.fn().mockResolvedValue({
+    vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
       ok: false,
       status: 500,
       statusText: 'Server Error',
       json: async () => {
         throw new Error('Not JSON')
       }
-    })
+    } as unknown as Response)
 
     await expect(checkoutOrder('mock-token')).rejects.toThrow('Server Error')
   })
