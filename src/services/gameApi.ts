@@ -6,6 +6,22 @@ const isRecord = (val: unknown): val is Record<string, unknown> => typeof val ==
 
 const isNonEmptyString = (val: unknown): val is string => typeof val === 'string' && Boolean(val.trim())
 
+const isValidGameRecord = (item: unknown): item is Record<string, unknown> & { name: string } =>
+  isRecord(item) && isNonEmptyString(item.name)
+
+const parseStringField = (val: unknown, fallback = ''): string =>
+  isNonEmptyString(val) ? val : fallback
+
+const parseOptionalString = (val: unknown): string | undefined =>
+  isNonEmptyString(val) ? val : undefined
+
+const resolveGameId = (val: unknown, fallback: string): string => {
+  if (typeof val === 'string' || typeof val === 'number') {
+    return String(val)
+  }
+  return fallback
+}
+
 const parseNumericField = (val: unknown, fallback: number): number => {
   if (typeof val === 'number' && !Number.isNaN(val)) {
     return val
@@ -25,33 +41,28 @@ const parseStringArray = (val: unknown): string[] => {
 }
 
 const mapToGame = (item: unknown): Game | null => {
-  if (!isRecord(item)) {
+  if (!isValidGameRecord(item)) {
     return null
   }
-  const idValue = item.id
-  const nameValue = item.name
-
-  if (!isNonEmptyString(nameValue)) {
-    return null
-  }
-
-  const gameId = typeof idValue === 'string' || typeof idValue === 'number' ? String(idValue) : nameValue
-  const categoryStr = isNonEmptyString(item.category) ? item.category : 'General'
-  const coverImageStr = isNonEmptyString(item.coverImage) ? item.coverImage : ''
-
   return {
-    id: gameId,
-    name: nameValue,
+    id: resolveGameId(item.id, item.name),
+    name: item.name,
     price: parseNumericField(item.price, 0),
-    coverImage: coverImageStr,
-    category: categoryStr,
+    coverImage: parseStringField(item.coverImage),
+    category: parseStringField(item.category, 'General'),
     categories: parseStringArray(item.categories),
-    description: isNonEmptyString(item.description) ? item.description : '',
+    description: parseStringField(item.description),
     screenshots: parseStringArray(item.screenshots),
-    publisher: isNonEmptyString(item.publisher) ? item.publisher : undefined,
-    releaseDate: isNonEmptyString(item.releaseDate) ? item.releaseDate : undefined,
+    publisher: parseOptionalString(item.publisher),
+    releaseDate: parseOptionalString(item.releaseDate),
     stock: parseNumericField(item.stock, 0),
     isHighlight: item.isHighlight === true
+  }
+}
+
+const appendParamIfPresent = (params: URLSearchParams, key: string, value: unknown): void => {
+  if (typeof value === 'number' || isNonEmptyString(value)) {
+    params.set(key, String(value))
   }
 }
 
@@ -60,26 +71,29 @@ const buildGamesQuery = (params?: FetchGamesParams): string => {
     return ''
   }
   const searchParams = new URLSearchParams()
-  if (isNonEmptyString(params.category)) {
-    searchParams.set('category', params.category)
-  }
-  if (isNonEmptyString(params.search)) {
-    searchParams.set('search', params.search)
-  }
-  if (typeof params.page === 'number') {
-    searchParams.set('page', String(params.page))
-  }
-  if (typeof params.size === 'number') {
-    searchParams.set('size', String(params.size))
-  }
-  if (isNonEmptyString(params.sort)) {
-    searchParams.set('sort', params.sort)
-  }
-  if (isNonEmptyString(params.direction)) {
-    searchParams.set('direction', params.direction)
-  }
+  appendParamIfPresent(searchParams, 'category', params.category)
+  appendParamIfPresent(searchParams, 'search', params.search)
+  appendParamIfPresent(searchParams, 'page', params.page)
+  appendParamIfPresent(searchParams, 'size', params.size)
+  appendParamIfPresent(searchParams, 'sort', params.sort)
+  appendParamIfPresent(searchParams, 'direction', params.direction)
   const queryStr = searchParams.toString()
   return queryStr ? `?${queryStr}` : ''
+}
+
+const parseGamesList = (rawData: unknown): Game[] => {
+  if (!Array.isArray(rawData)) {
+    return []
+  }
+  return rawData.map(mapToGame).filter((game): game is Game => game !== null)
+}
+
+const extractTotalCount = (response: Response, fallbackCount: number): number => {
+  const header = response.headers.get('x-total-count') ?? response.headers.get('X-Total-Count')
+  if (!header) {
+    return fallbackCount
+  }
+  return parseNumericField(header, fallbackCount)
 }
 
 export const fetchGames = async (params?: FetchGamesParams): Promise<GamesResponse> => {
@@ -89,18 +103,11 @@ export const fetchGames = async (params?: FetchGamesParams): Promise<GamesRespon
     if (!response.ok) {
       return { games: [], totalCount: 0 }
     }
-    const totalCountHeader = response.headers.get('x-total-count') ?? response.headers.get('X-Total-Count')
     const rawData: unknown = await response.json()
-    if (!Array.isArray(rawData)) {
-      return { games: [], totalCount: 0 }
-    }
-    const gamesList = rawData.map(mapToGame).filter((game): game is Game => game !== null)
-    const fallbackCount = gamesList.length
-    const totalCount = totalCountHeader ? parseNumericField(totalCountHeader, fallbackCount) : fallbackCount
-
+    const games = parseGamesList(rawData)
     return {
-      games: gamesList,
-      totalCount
+      games,
+      totalCount: extractTotalCount(response, games.length)
     }
   } catch {
     return { games: [], totalCount: 0 }
@@ -127,10 +134,7 @@ export const fetchHighlights = async (): Promise<Game[]> => {
       return []
     }
     const rawData: unknown = await response.json()
-    if (!Array.isArray(rawData)) {
-      return []
-    }
-    return rawData.map(mapToGame).filter((game): game is Game => game !== null)
+    return parseGamesList(rawData)
   } catch {
     return []
   }

@@ -6,27 +6,38 @@ const isRecord = (val: unknown): val is Record<string, unknown> => typeof val ==
 
 const isNonEmptyString = (val: unknown): val is string => typeof val === 'string' && Boolean(val.trim())
 
+const isValidCategoryRecord = (item: unknown): item is Record<string, unknown> & { name: string } =>
+  isRecord(item) && isNonEmptyString(item.name)
+
+const resolveCategoryId = (id: unknown, fallback: string): string | number => {
+  if (typeof id === 'number' || typeof id === 'string') {
+    return id
+  }
+  return fallback
+}
+
+const resolveCategorySlug = (slug: unknown, fallback: string): string =>
+  isNonEmptyString(slug) ? slug : fallback
+
 const mapToCategoryItem = (item: unknown): CategoryItem | null => {
-  if (!isRecord(item)) {
+  if (!isValidCategoryRecord(item)) {
     return null
   }
-  const idValue = item.id
-  const nameValue = item.name
-  const slugValue = item.slug
-
-  if (!isNonEmptyString(nameValue)) {
-    return null
-  }
-
-  const validId = typeof idValue === 'number' || typeof idValue === 'string' ? idValue : String(nameValue)
-  const validSlug = isNonEmptyString(slugValue) ? slugValue : String(nameValue)
-
   return {
-    id: validId,
-    name: nameValue,
-    slug: validSlug,
+    id: resolveCategoryId(item.id, item.name),
+    name: item.name,
+    slug: resolveCategorySlug(item.slug, item.name),
     isVisible: item.isVisible !== false
   }
+}
+
+const parseCategoriesList = (data: unknown): CategoryItem[] => {
+  if (!Array.isArray(data)) {
+    return []
+  }
+  return data
+    .map(mapToCategoryItem)
+    .filter((cat): cat is CategoryItem => cat !== null)
 }
 
 export const fetchCategories = async (): Promise<CategoryItem[]> => {
@@ -36,12 +47,7 @@ export const fetchCategories = async (): Promise<CategoryItem[]> => {
       return []
     }
     const data: unknown = await response.json()
-    if (!Array.isArray(data)) {
-      return []
-    }
-    return data
-      .map(mapToCategoryItem)
-      .filter((cat): cat is CategoryItem => cat !== null)
+    return parseCategoriesList(data)
   } catch {
     return []
   }
