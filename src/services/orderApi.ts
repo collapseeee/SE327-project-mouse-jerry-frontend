@@ -33,18 +33,24 @@ const buildAuthHeaders = (token: string): HeadersInit => ({
   Authorization: `Bearer ${token}`
 })
 
+const extractErrorMessage = (errData: unknown): string | null => {
+  if (!isRecord(errData)) {
+    return null
+  }
+  if (isNonEmptyString(errData.error)) {
+    return errData.error
+  }
+  if (isNonEmptyString(errData.message)) {
+    return errData.message
+  }
+  return null
+}
+
 const parseResponseError = async (response: Response, fallback: string): Promise<string> => {
   try {
     const errData = await response.json()
-    if (isRecord(errData)) {
-      if (isNonEmptyString(errData.error)) {
-        return errData.error
-      }
-      if (isNonEmptyString(errData.message)) {
-        return errData.message
-      }
-    }
-    return response.statusText || fallback
+    const extracted = extractErrorMessage(errData)
+    return extracted ?? (response.statusText || fallback)
   } catch {
     return response.statusText || fallback
   }
@@ -68,11 +74,7 @@ const mapRawOrderItem = (raw: unknown): OrderItemKeyDTO | null => {
   }
 }
 
-const mapRawOrderDTO = (raw: unknown): OrderDTO => {
-  if (!isRecord(raw)) {
-    return { id: 0, orderNumber: '', totalAmount: 0, items: [] }
-  }
-  const rawItems = Array.isArray(raw.items) ? raw.items : []
+const mapRawOrderItemsList = (rawItems: unknown[]): OrderItemKeyDTO[] => {
   const items: OrderItemKeyDTO[] = []
   for (const item of rawItems) {
     const parsed = mapRawOrderItem(item)
@@ -80,6 +82,14 @@ const mapRawOrderDTO = (raw: unknown): OrderDTO => {
       items.push(parsed)
     }
   }
+  return items
+}
+
+const mapRawOrderDTO = (raw: unknown): OrderDTO => {
+  if (!isRecord(raw)) {
+    return { id: 0, orderNumber: '', totalAmount: 0, items: [] }
+  }
+  const rawItems = Array.isArray(raw.items) ? raw.items : []
   return {
     id: parseNumericField(raw.id, 0),
     orderNumber: parseStringField(raw.orderNumber, ''),
@@ -87,7 +97,7 @@ const mapRawOrderDTO = (raw: unknown): OrderDTO => {
     username: isNonEmptyString(raw.username) ? raw.username : undefined,
     totalAmount: parseNumericField(raw.totalAmount, 0),
     purchaseDate: isNonEmptyString(raw.purchaseDate) ? raw.purchaseDate : undefined,
-    items
+    items: mapRawOrderItemsList(rawItems)
   }
 }
 
