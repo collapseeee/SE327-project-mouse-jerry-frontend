@@ -21,6 +21,14 @@ const notifyCartItemAdded = (gameTitle?: string): void => {
   toastStore.showSuccess('Item added to cart!')
 }
 
+const isAuthMissing = (isAuthenticated: boolean, token: string | null): boolean =>
+  !isAuthenticated || !token
+
+const findCartItemTitle = (cartItems: CartItem[], targetGameId: string): string | undefined => {
+  const matched = cartItems.find((it) => it.gameId === targetGameId)
+  return matched ? matched.gameTitle : undefined
+}
+
 const categoryCache = new Map<string, string>()
 
 const resolveGameCategory = async (gameId: string): Promise<string> => {
@@ -98,7 +106,7 @@ export const useCartStore = defineStore('cart', () => {
     quantity = 1,
     gameTitle?: string
   ): Promise<boolean> => {
-    if (!authStore.isAuthenticated || !authStore.token) {
+    if (isAuthMissing(authStore.isAuthenticated, authStore.token)) {
       error.value = 'User must be authenticated to add to cart'
       return false
     }
@@ -106,10 +114,9 @@ export const useCartStore = defineStore('cart', () => {
     isLoading.value = true
     error.value = null
     try {
-      const cartDto = await addToCart(authStore.token, { gameId, quantity })
+      const cartDto = await addToCart(authStore.token as string, { gameId, quantity })
       items.value = await enrichItemsWithCategory(cartDto.items)
-      const resolvedTitle =
-        gameTitle || items.value.find((it) => it.gameId === gameId)?.gameTitle
+      const resolvedTitle = gameTitle ?? findCartItemTitle(items.value, gameId)
       notifyCartItemAdded(resolvedTitle)
       return true
     } catch (err: unknown) {
