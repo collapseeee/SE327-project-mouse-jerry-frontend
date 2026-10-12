@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { fetchGameById } from '@/services/gameApi'
+import { useCartStore } from '@/stores/cart'
 import type { Game } from '@/types/game'
 
 const route = useRoute()
@@ -88,6 +89,27 @@ const incrementQuantity = () => {
   const maxStock = game.value?.stock ?? 99
   if (quantity.value < maxStock) {
     quantity.value++
+  }
+}
+
+const cartStore = useCartStore()
+const router = useRouter()
+const addedNotification = ref(false)
+
+const handleAddToCart = () => {
+  if (game.value) {
+    cartStore.addToCart(game.value, quantity.value)
+    addedNotification.value = true
+    setTimeout(() => {
+      addedNotification.value = false
+    }, 2500)
+  }
+}
+
+const handleBuyNow = () => {
+  if (game.value) {
+    cartStore.setDirectPurchase(game.value, quantity.value)
+    router.push('/purchase-page')
   }
 }
 </script>
@@ -256,13 +278,15 @@ const incrementQuantity = () => {
             <button
               type="button"
               class="flex-1 py-3 px-6 rounded-xl font-bold text-sm bg-accent-yellow hover:bg-accent-yellow-hover text-slate-900 shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer"
+              @click="handleAddToCart"
             >
               <i class="fa-solid fa-cart-shopping"></i>
-              <span>Add to cart</span>
+              <span>{{ addedNotification ? 'Added to Cart!' : 'Add to cart' }}</span>
             </button>
             <button
               type="button"
               class="flex-1 py-3 px-6 rounded-xl font-bold text-sm bg-accent-red hover:bg-red-700 text-white shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer"
+              @click="handleBuyNow"
             >
               <i class="fa-solid fa-bolt"></i>
               <span>Buy now</span>

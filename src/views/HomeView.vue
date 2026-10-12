@@ -4,7 +4,10 @@ import HighlightCarousel, { type HighlightItem } from '../components/HighlightCa
 import GameCard from '../components/GameCard.vue'
 import Pagination from '../components/Pagination.vue'
 import { fetchGames, fetchHighlights } from '@/services/gameApi'
+import { useCartStore } from '@/stores/cart'
 import type { Game } from '@/types/game'
+
+const cartStore = useCartStore()
 
 const highlights = ref<HighlightItem[]>([])
 const currentPage = ref(1)
@@ -93,6 +96,7 @@ const onPageChange = async (page: number): Promise<void> => {
         v-for="game in catalogGames"
         :key="game.id"
         :game="game"
+        @add-to-cart="cartStore.addToCart($event)"
       />
     </section>
 

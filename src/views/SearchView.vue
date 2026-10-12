@@ -2,10 +2,12 @@
 import { ref, computed, watch, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { fetchGames } from '@/services/gameApi'
+import { useCartStore } from '@/stores/cart'
 import GameCard from '@/components/GameCard.vue'
 import Pagination from '@/components/Pagination.vue'
 import type { Game } from '@/types/game'
 
+const cartStore = useCartStore()
 const route = useRoute()
 const currentPage = ref(1)
 const pageSize = ref(10)
@@ -95,6 +97,7 @@ const onPageChange = async (page: number): Promise<void> => {
         v-for="game in searchResults"
         :key="game.id"
         :game="game"
+        @add-to-cart="cartStore.addToCart($event)"
       />
     </section>
 
