@@ -111,7 +111,7 @@ describe('adminSaleApi', () => {
 
       mockFetch.mockResolvedValueOnce({
         ok: true,
-        json: async () => mockRawOrders
+        json: () => Promise.resolve(mockRawOrders)
       })
 
       const sales = await fetchAdminSaleHistory('admin-token')
@@ -127,7 +127,7 @@ describe('adminSaleApi', () => {
     it('returns empty array when primary endpoint returns non-array', async () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
-        json: async () => ({ message: 'empty' })
+        json: () => Promise.resolve({ message: 'empty' })
       })
 
       const sales = await fetchAdminSaleHistory('admin-token')
@@ -140,11 +140,11 @@ describe('adminSaleApi', () => {
           ok: false,
           status: 404,
           statusText: 'Not Found',
-          json: async () => ({ message: 'Not found' })
+          json: () => Promise.resolve({ message: 'Not found' })
         })
         .mockResolvedValueOnce({
           ok: true,
-          json: async () => [
+          json: () => Promise.resolve([
             {
               id: 2,
               orderNumber: 'ORD-777',
@@ -152,7 +152,7 @@ describe('adminSaleApi', () => {
               totalAmount: 500,
               items: []
             }
-          ]
+          ])
         })
 
       const sales = await fetchAdminSaleHistory('admin-token')
@@ -168,13 +168,13 @@ describe('adminSaleApi', () => {
           ok: false,
           status: 404,
           statusText: 'Not Found',
-          json: async () => ({ message: 'Not found' })
+          json: () => Promise.resolve({ message: 'Not found' })
         })
         .mockResolvedValueOnce({
           ok: false,
           status: 500,
           statusText: 'Internal Server Error',
-          json: async () => ({ message: 'Database connection failed' })
+          json: () => Promise.resolve({ message: 'Database connection failed' })
         })
 
       await expect(fetchAdminSaleHistory('admin-token')).rejects.toThrow('Database connection failed')
@@ -185,7 +185,7 @@ describe('adminSaleApi', () => {
         ok: false,
         status: 403,
         statusText: 'Forbidden',
-        json: async () => ({ message: 'Access denied' })
+        json: () => Promise.resolve({ message: 'Access denied' })
       })
 
       await expect(fetchAdminSaleHistory('admin-token')).rejects.toThrow('Access denied')
@@ -194,7 +194,7 @@ describe('adminSaleApi', () => {
     it('skips invalid items in raw items list and handles malformed order records', async () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
-        json: async () => [
+        json: () => Promise.resolve([
           null,
           {
             id: 'not-a-number',
@@ -204,7 +204,7 @@ describe('adminSaleApi', () => {
               { gameId: 'g1', price: 'invalid' }
             ]
           }
-        ]
+        ])
       })
 
       const sales = await fetchAdminSaleHistory('admin-token')
