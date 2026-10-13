@@ -3,6 +3,7 @@ import { mount, flushPromises } from '@vue/test-utils'
 import { setActivePinia, createPinia } from 'pinia'
 import { reactive } from 'vue'
 import AdminGamesView from '../AdminGamesView.vue'
+import Pagination from '@/components/Pagination.vue'
 import { useAuthStore } from '@/stores/auth'
 import { fetchAdminGames, deleteAdminGame } from '@/services/adminGameApi'
 
@@ -134,10 +135,15 @@ describe('AdminGamesView', () => {
   })
 
   it('opens confirmation modal and deletes game on confirm', async () => {
-    vi.mocked(fetchAdminGames).mockResolvedValueOnce({
-      games: sampleGames,
-      totalCount: 2
-    })
+    vi.mocked(fetchAdminGames)
+      .mockResolvedValueOnce({
+        games: sampleGames,
+        totalCount: 2
+      })
+      .mockResolvedValueOnce({
+        games: [sampleGames[1]],
+        totalCount: 1
+      })
     vi.mocked(deleteAdminGame).mockResolvedValueOnce()
 
     const wrapper = mount(AdminGamesView)
@@ -193,6 +199,65 @@ describe('AdminGamesView', () => {
     mockRoute.query = { search: 'Hollow' }
     await flushPromises()
 
-    expect(fetchAdminGames).toHaveBeenCalledWith('mock-token', expect.objectContaining({ search: 'Hollow' }))
+    expect(fetchAdminGames).toHaveBeenCalledWith('mock-token', expect.objectContaining({ search: 'Hollow', page: 1, size: 15 }))
+  })
+
+  it('renders Pagination and changes page when pagination event fires', async () => {
+    vi.mocked(fetchAdminGames)
+      .mockResolvedValueOnce({
+        games: sampleGames,
+        totalCount: 30
+      })
+      .mockResolvedValueOnce({
+        games: [sampleGames[0]],
+        totalCount: 30
+      })
+
+    const wrapper = mount(AdminGamesView)
+    await flushPromises()
+
+    const pagination = wrapper.findComponent(Pagination)
+    expect(pagination.exists()).toBe(true)
+
+    // Trigger page change to 2
+    pagination.vm.$emit('page-change', 2)
+    await flushPromises()
+
+    expect(fetchAdminGames).toHaveBeenLastCalledWith('mock-token', expect.objectContaining({ page: 2, size: 15 }))
+  })
+
+  it('reloads previous page when deleting the last item on page > 1', async () => {
+    vi.mocked(fetchAdminGames)
+      .mockResolvedValueOnce({
+        games: sampleGames,
+        totalCount: 30
+      })
+      .mockResolvedValueOnce({
+        games: [sampleGames[0]],
+        totalCount: 16
+      })
+      .mockResolvedValueOnce({
+        games: sampleGames,
+        totalCount: 15
+      })
+    vi.mocked(deleteAdminGame).mockResolvedValueOnce()
+
+    const wrapper = mount(AdminGamesView)
+    await flushPromises()
+
+    // Go to page 2
+    const pagination = wrapper.findComponent(Pagination)
+    pagination.vm.$emit('page-change', 2)
+    await flushPromises()
+
+    // Delete item when only 1 item was on page 2
+    const deleteBtn = wrapper.find('[data-test="delete-btn-hollow-knight"]')
+    await deleteBtn.trigger('click')
+
+    const confirmBtn = wrapper.find('[data-test="confirm-delete-btn"]')
+    await confirmBtn.trigger('click')
+    await flushPromises()
+
+    expect(fetchAdminGames).toHaveBeenLastCalledWith('mock-token', expect.objectContaining({ page: 1, size: 15 }))
   })
 })
