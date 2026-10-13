@@ -194,7 +194,9 @@ describe('AdminSaleHistoryView', () => {
     // Switch to page 2
     const page2Btn = pagination.findAll('button').find((btn) => btn.text() === '2')
     expect(page2Btn).toBeDefined()
-    await page2Btn!.trigger('click')
+    if (page2Btn) {
+      await page2Btn.trigger('click')
+    }
     await flushPromises()
 
     // Page 2 should render 16th and 17th sales

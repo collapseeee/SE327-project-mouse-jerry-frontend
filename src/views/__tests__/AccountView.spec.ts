@@ -169,7 +169,9 @@ describe('AccountView', () => {
     // Switch to page 2
     const page2Btn = pagination.findAll('button').find((btn) => btn.text() === '2')
     expect(page2Btn).toBeDefined()
-    await page2Btn!.trigger('click')
+    if (page2Btn) {
+      await page2Btn.trigger('click')
+    }
     await flushPromises()
 
     // Page 2 should show 16th and 17th orders
