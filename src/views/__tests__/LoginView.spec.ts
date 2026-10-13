@@ -304,9 +304,9 @@ describe('LoginView', () => {
 
   it('redirects admin user directly to /admin/games on successful login', async () => {
     const authStore = useAuthStore()
-    vi.spyOn(authStore, 'login').mockImplementationOnce(async () => {
+    vi.spyOn(authStore, 'login').mockImplementationOnce(() => {
       authStore.user = { id: 1, username: 'admin', role: 'ROLE_ADMIN' }
-      return { success: true, user: authStore.user }
+      return Promise.resolve({ success: true, user: authStore.user })
     })
 
     const wrapper = mount(LoginView)
@@ -330,9 +330,9 @@ describe('LoginView', () => {
     } as unknown as ReturnType<typeof vueRouter.useRoute>)
 
     const authStore = useAuthStore()
-    vi.spyOn(authStore, 'login').mockImplementationOnce(async () => {
+    vi.spyOn(authStore, 'login').mockImplementationOnce(() => {
       authStore.user = { id: 1, username: 'admin', role: 'ROLE_ADMIN' }
-      return { success: true, user: authStore.user }
+      return Promise.resolve({ success: true, user: authStore.user })
     })
 
     const wrapper = mount(LoginView)
@@ -356,9 +356,9 @@ describe('LoginView', () => {
     } as unknown as ReturnType<typeof vueRouter.useRoute>)
 
     const authStore = useAuthStore()
-    vi.spyOn(authStore, 'login').mockImplementationOnce(async () => {
+    vi.spyOn(authStore, 'login').mockImplementationOnce(() => {
       authStore.user = { id: 2, username: 'customer', role: 'ROLE_CUSTOMER' }
-      return { success: true, user: authStore.user }
+      return Promise.resolve({ success: true, user: authStore.user })
     })
 
     const wrapper = mount(LoginView)
