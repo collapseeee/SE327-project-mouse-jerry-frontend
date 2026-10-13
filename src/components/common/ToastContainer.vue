@@ -17,11 +17,10 @@ const toastStore = useToastStore()
     aria-label="Notifications"
   >
     <TransitionGroup name="toast" tag="div" class="flex flex-col gap-3">
-      <div
+      <output
         v-for="toast in toastStore.toasts"
         :key="toast.id"
         class="pointer-events-auto bg-bg-surface text-text-dark border border-gray-200/90 shadow-2xl rounded-2xl p-4 flex items-center gap-3.5 backdrop-blur-md"
-        role="status"
         :data-test="`toast-${toast.id}`"
       >
         <!-- Icon badge -->
@@ -98,7 +97,7 @@ const toastStore = useToastStore()
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
           </svg>
         </button>
-      </div>
+      </output>
     </TransitionGroup>
   </aside>
 </template>

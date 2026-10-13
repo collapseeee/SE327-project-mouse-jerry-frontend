@@ -157,7 +157,7 @@ const mapCustomHighlightItem = (item: unknown): (Game & { buttonColor?: string; 
   }
   const name = resolveHighlightName(item)
   const gameId = resolveHighlightGameId(item)
-  const finalId = gameId ? gameId : name
+  const finalId = gameId || name
   if (!finalId) {
     return null
   }

@@ -11,7 +11,7 @@ const resolveString = (val: unknown, fallback = ''): string => (isNonEmptyString
 
 const resolveOptionalString = (val: unknown): string | undefined => {
   const str = resolveString(val)
-  return str ? str : undefined
+  return str || undefined
 }
 
 const resolveId = (val: unknown): string | number => {

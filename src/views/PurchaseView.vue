@@ -165,11 +165,11 @@ onMounted(async () => {
     </div>
 
     <!-- Processing Popup Modal -->
-    <div
+    <dialog
       v-if="isProcessing"
-      class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-fade-in"
+      open
+      class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-fade-in w-full h-full max-w-none max-h-none border-none m-0"
       data-test="processing-popup"
-      role="dialog"
       aria-modal="true"
       aria-label="Processing your order"
     >
@@ -195,7 +195,7 @@ onMounted(async () => {
           <div class="bg-gradient-to-r from-primary to-secondary h-full rounded-full animate-pulse w-full"></div>
         </div>
       </div>
-    </div>
+    </dialog>
   </main>
 </template>
 

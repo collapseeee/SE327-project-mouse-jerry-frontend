@@ -298,11 +298,9 @@ onUnmounted(() => {
         </router-link>
 
         <!-- 
-          CRITICAL AGENT INSTRUCTION - DO NOT REMOVE OR HARDCODE USERNAME:
-          The login / user profile element below is DYNAMIC based on authentication state (authStore.isAuthenticated).
-          - Unauthenticated: Renders the original baseline icon-only login button (<i class="fa-solid fa-user"></i>) without any text, matching the original baseline design.
-          - Authenticated: Renders the active user's username (<i class="fa-regular fa-circle-user"></i> + {{ authStore.currentUsername }}).
-          DO NOT hardcode 'thainchai' or any static username here to match baseline UI screenshots/mockups.
+          User profile element is dynamically rendered based on authentication state:
+          When unauthenticated, renders baseline icon-only user button.
+          When authenticated, renders active username with circle user icon.
         -->
         <template v-if="authStore.isAuthenticated">
           <router-link
