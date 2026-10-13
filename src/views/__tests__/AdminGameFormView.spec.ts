@@ -4,8 +4,14 @@ import { setActivePinia, createPinia } from 'pinia'
 import { reactive } from 'vue'
 import AdminGameFormView from '../AdminGameFormView.vue'
 import { useAuthStore } from '@/stores/auth'
-import * as adminGameApi from '@/services/adminGameApi'
-import * as categoryApi from '@/services/categoryApi'
+import {
+  fetchAdminGameById,
+  createAdminGame,
+  updateAdminGame,
+  uploadGameImage
+} from '@/services/adminGameApi'
+import { fetchCategories } from '@/services/categoryApi'
+import type { Game } from '@/types/game'
 
 const mockPush = vi.fn()
 const mockRoute = reactive({
@@ -16,6 +22,17 @@ const mockRoute = reactive({
 vi.mock('vue-router', () => ({
   useRouter: () => ({ push: mockPush }),
   useRoute: () => mockRoute
+}))
+
+vi.mock('@/services/adminGameApi', () => ({
+  fetchAdminGameById: vi.fn(),
+  createAdminGame: vi.fn(),
+  updateAdminGame: vi.fn(),
+  uploadGameImage: vi.fn()
+}))
+
+vi.mock('@/services/categoryApi', () => ({
+  fetchCategories: vi.fn()
 }))
 
 const mockCategories = [
@@ -34,7 +51,7 @@ describe('AdminGameFormView', () => {
     const authStore = useAuthStore()
     authStore.setUserSession({ id: 1, username: 'admin', role: 'ROLE_ADMIN' }, 'mock-token')
 
-    vi.spyOn(categoryApi, 'fetchCategories').mockResolvedValue(mockCategories)
+    vi.mocked(fetchCategories).mockResolvedValue(mockCategories)
   })
 
   describe('Add New Game Mode', () => {
@@ -120,8 +137,7 @@ describe('AdminGameFormView', () => {
     })
 
     it('handles S3 file upload in image modal', async () => {
-      const uploadSpy = vi.spyOn(adminGameApi, 'uploadGameImage')
-        .mockResolvedValueOnce('https://s3.amazonaws.com/games/uploaded.png')
+      vi.mocked(uploadGameImage).mockResolvedValueOnce('https://s3.amazonaws.com/games/uploaded.png')
 
       const wrapper = mount(AdminGameFormView)
       await flushPromises()
@@ -137,7 +153,7 @@ describe('AdminGameFormView', () => {
       await fileInput.trigger('change')
       await flushPromises()
 
-      expect(uploadSpy).toHaveBeenCalledWith('mock-token', file)
+      expect(uploadGameImage).toHaveBeenCalledWith('mock-token', file)
       const urlInput = wrapper.find('[data-test="modal-url-input"]')
       expect((urlInput.element as HTMLInputElement).value).toBe('https://s3.amazonaws.com/games/uploaded.png')
     })
@@ -153,12 +169,15 @@ describe('AdminGameFormView', () => {
     })
 
     it('submits valid game creation with system requirements', async () => {
-      const createSpy = vi.spyOn(adminGameApi, 'createAdminGame').mockResolvedValueOnce({
+      const mockCreatedGame: Game = {
         id: 'cyberpunk',
         name: 'Cyberpunk 2077',
         price: 1399,
-        stock: 25
-      } as any)
+        stock: 25,
+        coverImage: '',
+        category: 'RPG'
+      }
+      vi.mocked(createAdminGame).mockResolvedValueOnce(mockCreatedGame)
 
       const wrapper = mount(AdminGameFormView)
       await flushPromises()
@@ -178,7 +197,7 @@ describe('AdminGameFormView', () => {
       await form.trigger('submit')
       await flushPromises()
 
-      expect(createSpy).toHaveBeenCalledWith(
+      expect(createAdminGame).toHaveBeenCalledWith(
         'mock-token',
         expect.objectContaining({
           name: 'Cyberpunk 2077',
@@ -197,8 +216,6 @@ describe('AdminGameFormView', () => {
     })
 
     it('prevents submission if game name is blank', async () => {
-      const createSpy = vi.spyOn(adminGameApi, 'createAdminGame')
-
       const wrapper = mount(AdminGameFormView)
       await flushPromises()
 
@@ -207,7 +224,7 @@ describe('AdminGameFormView', () => {
       await form.trigger('submit')
       await flushPromises()
 
-      expect(createSpy).not.toHaveBeenCalled()
+      expect(createAdminGame).not.toHaveBeenCalled()
     })
   })
 
@@ -217,7 +234,7 @@ describe('AdminGameFormView', () => {
     })
 
     it('loads existing game data into form fields', async () => {
-      vi.spyOn(adminGameApi, 'fetchAdminGameById').mockResolvedValueOnce({
+      vi.mocked(fetchAdminGameById).mockResolvedValueOnce({
         id: 'elden-ring',
         name: 'Elden Ring',
         price: 1790,
@@ -248,7 +265,7 @@ describe('AdminGameFormView', () => {
     })
 
     it('submits game update on submit in edit mode', async () => {
-      vi.spyOn(adminGameApi, 'fetchAdminGameById').mockResolvedValueOnce({
+      vi.mocked(fetchAdminGameById).mockResolvedValueOnce({
         id: 'elden-ring',
         name: 'Elden Ring',
         price: 1790,
@@ -256,13 +273,14 @@ describe('AdminGameFormView', () => {
         coverImage: '',
         category: 'Action'
       })
-      const updateSpy = vi.spyOn(adminGameApi, 'updateAdminGame').mockResolvedValueOnce({
+      const mockUpdatedGame: Game = {
         id: 'elden-ring',
         name: 'Elden Ring Deluxe',
         price: 1990,
         coverImage: '',
         category: 'Action'
-      })
+      }
+      vi.mocked(updateAdminGame).mockResolvedValueOnce(mockUpdatedGame)
 
       const wrapper = mount(AdminGameFormView)
       await flushPromises()
@@ -274,7 +292,7 @@ describe('AdminGameFormView', () => {
       await form.trigger('submit')
       await flushPromises()
 
-      expect(updateSpy).toHaveBeenCalledWith(
+      expect(updateAdminGame).toHaveBeenCalledWith(
         'mock-token',
         'elden-ring',
         expect.objectContaining({
@@ -286,7 +304,7 @@ describe('AdminGameFormView', () => {
     })
 
     it('redirects to /admin/games if loading game data fails', async () => {
-      vi.spyOn(adminGameApi, 'fetchAdminGameById').mockRejectedValueOnce(new Error('Game not found'))
+      vi.mocked(fetchAdminGameById).mockRejectedValueOnce(new Error('Game not found'))
 
       mount(AdminGameFormView)
       await flushPromises()

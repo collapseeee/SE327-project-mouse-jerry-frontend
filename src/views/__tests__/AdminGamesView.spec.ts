@@ -4,7 +4,7 @@ import { setActivePinia, createPinia } from 'pinia'
 import { reactive } from 'vue'
 import AdminGamesView from '../AdminGamesView.vue'
 import { useAuthStore } from '@/stores/auth'
-import * as adminGameApi from '@/services/adminGameApi'
+import { fetchAdminGames, deleteAdminGame } from '@/services/adminGameApi'
 
 const mockPush = vi.fn()
 const mockRoute = reactive({
@@ -15,6 +15,11 @@ const mockRoute = reactive({
 vi.mock('vue-router', () => ({
   useRouter: () => ({ push: mockPush }),
   useRoute: () => mockRoute
+}))
+
+vi.mock('@/services/adminGameApi', () => ({
+  fetchAdminGames: vi.fn(),
+  deleteAdminGame: vi.fn()
 }))
 
 const sampleGames = [
@@ -49,7 +54,7 @@ describe('AdminGamesView', () => {
   })
 
   it('renders page title and loads games into the table', async () => {
-    vi.spyOn(adminGameApi, 'fetchAdminGames').mockResolvedValueOnce({
+    vi.mocked(fetchAdminGames).mockResolvedValueOnce({
       games: sampleGames,
       totalCount: 2
     })
@@ -68,7 +73,7 @@ describe('AdminGamesView', () => {
   })
 
   it('renders empty state when no games exist', async () => {
-    vi.spyOn(adminGameApi, 'fetchAdminGames').mockResolvedValueOnce({
+    vi.mocked(fetchAdminGames).mockResolvedValueOnce({
       games: [],
       totalCount: 0
     })
@@ -80,7 +85,7 @@ describe('AdminGamesView', () => {
   })
 
   it('handles load error and allows retry', async () => {
-    const fetchSpy = vi.spyOn(adminGameApi, 'fetchAdminGames')
+    vi.mocked(fetchAdminGames)
       .mockRejectedValueOnce(new Error('Network error'))
       .mockResolvedValueOnce({ games: sampleGames, totalCount: 2 })
 
@@ -94,12 +99,12 @@ describe('AdminGamesView', () => {
     await retryBtn.trigger('click')
     await flushPromises()
 
-    expect(fetchSpy).toHaveBeenCalledTimes(2)
+    expect(fetchAdminGames).toHaveBeenCalledTimes(2)
     expect(wrapper.text()).toContain('Hollow Knight')
   })
 
   it('navigates to edit game on Edit click', async () => {
-    vi.spyOn(adminGameApi, 'fetchAdminGames').mockResolvedValueOnce({
+    vi.mocked(fetchAdminGames).mockResolvedValueOnce({
       games: sampleGames,
       totalCount: 2
     })
@@ -114,7 +119,7 @@ describe('AdminGamesView', () => {
   })
 
   it('navigates to add game on floating action button click', async () => {
-    vi.spyOn(adminGameApi, 'fetchAdminGames').mockResolvedValueOnce({
+    vi.mocked(fetchAdminGames).mockResolvedValueOnce({
       games: sampleGames,
       totalCount: 2
     })
@@ -129,11 +134,11 @@ describe('AdminGamesView', () => {
   })
 
   it('opens confirmation modal and deletes game on confirm', async () => {
-    vi.spyOn(adminGameApi, 'fetchAdminGames').mockResolvedValueOnce({
+    vi.mocked(fetchAdminGames).mockResolvedValueOnce({
       games: sampleGames,
       totalCount: 2
     })
-    const deleteSpy = vi.spyOn(adminGameApi, 'deleteAdminGame').mockResolvedValueOnce()
+    vi.mocked(deleteAdminGame).mockResolvedValueOnce()
 
     const wrapper = mount(AdminGamesView)
     await flushPromises()
@@ -152,16 +157,15 @@ describe('AdminGamesView', () => {
     await confirmBtn.trigger('click')
     await flushPromises()
 
-    expect(deleteSpy).toHaveBeenCalledWith('mock-token', 'hollow-knight')
+    expect(deleteAdminGame).toHaveBeenCalledWith('mock-token', 'hollow-knight')
     expect(wrapper.find('[data-test="game-row-hollow-knight"]').exists()).toBe(false)
   })
 
   it('cancels deletion when clicking Cancel in delete modal', async () => {
-    vi.spyOn(adminGameApi, 'fetchAdminGames').mockResolvedValueOnce({
+    vi.mocked(fetchAdminGames).mockResolvedValueOnce({
       games: sampleGames,
       totalCount: 2
     })
-    const deleteSpy = vi.spyOn(adminGameApi, 'deleteAdminGame')
 
     const wrapper = mount(AdminGamesView)
     await flushPromises()
@@ -173,11 +177,11 @@ describe('AdminGamesView', () => {
     await cancelBtn.trigger('click')
 
     expect(wrapper.find('[data-test="delete-modal"]').exists()).toBe(false)
-    expect(deleteSpy).not.toHaveBeenCalled()
+    expect(deleteAdminGame).not.toHaveBeenCalled()
   })
 
   it('handles route query search filter updates', async () => {
-    const fetchSpy = vi.spyOn(adminGameApi, 'fetchAdminGames').mockResolvedValue({
+    vi.mocked(fetchAdminGames).mockResolvedValue({
       games: [sampleGames[0]],
       totalCount: 1
     })
@@ -189,6 +193,6 @@ describe('AdminGamesView', () => {
     mockRoute.query = { search: 'Hollow' }
     await flushPromises()
 
-    expect(fetchSpy).toHaveBeenCalledWith('mock-token', expect.objectContaining({ search: 'Hollow' }))
+    expect(fetchAdminGames).toHaveBeenCalledWith('mock-token', expect.objectContaining({ search: 'Hollow' }))
   })
 })
