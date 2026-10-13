@@ -164,12 +164,12 @@ const confirmImageModal = (): void => {
   closeImageModal()
 }
 
-const removeCoverImage = (event: MouseEvent): void => {
+const removeCoverImage = (event: Event): void => {
   event.stopPropagation()
   coverImage.value = ''
 }
 
-const removeScreenshot = (index: number, event: MouseEvent): void => {
+const removeScreenshot = (index: number, event: Event): void => {
   event.stopPropagation()
   screenshots.value[index] = ''
 }
@@ -343,8 +343,13 @@ onMounted(async () => {
                 <span
                   class="absolute top-2 right-2 bg-black/60 hover:bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
                   title="Remove cover"
+                  role="button"
+                  tabindex="0"
+                  aria-label="Remove cover image"
                   data-test="remove-cover-btn"
                   @click="removeCoverImage"
+                  @keydown.enter.stop="removeCoverImage"
+                  @keydown.space.stop.prevent="removeCoverImage"
                 >
                   <i class="fa-solid fa-xmark"></i>
                 </span>
@@ -457,8 +462,13 @@ onMounted(async () => {
                 <span
                   class="absolute top-1 right-1 bg-black/60 hover:bg-red-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-[10px] opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
                   title="Remove screenshot"
+                  role="button"
+                  tabindex="0"
+                  :aria-label="`Remove screenshot ${idx + 1}`"
                   :data-test="`remove-screenshot-${idx}`"
                   @click="removeScreenshot(idx, $event)"
+                  @keydown.enter.stop="removeScreenshot(idx, $event)"
+                  @keydown.space.stop.prevent="removeScreenshot(idx, $event)"
                 >
                   <i class="fa-solid fa-xmark"></i>
                 </span>
