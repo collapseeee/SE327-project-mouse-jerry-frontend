@@ -41,11 +41,20 @@ export const useToastStore = defineStore('toast', () => {
     return id
   }
 
-  const showSuccess = (message: string, gameTitle?: string, duration?: number): string =>
-    showToast({ message, gameTitle, type: 'success' }, 'success', duration)
+  const showSuccess = (message: string, title = 'Updated Completed', duration?: number): string =>
+    showToast({ message, title, type: 'success' }, 'success', duration)
 
   const showCartSuccess = (gameTitle: string, duration?: number): string =>
-    showSuccess(`Added "${gameTitle}" to your cart!`, gameTitle, duration)
+    showToast(
+      {
+        message: `Added "${gameTitle}" to your cart!`,
+        title: 'Added to Cart',
+        gameTitle,
+        type: 'success'
+      },
+      'success',
+      duration
+    )
 
   const showError = (message: string, duration?: number): string =>
     showToast({ message, type: 'error' }, 'error', duration)

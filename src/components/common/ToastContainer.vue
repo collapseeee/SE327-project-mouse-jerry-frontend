@@ -60,22 +60,25 @@ const toastStore = useToastStore()
           <p
             v-if="toast.type === 'success'"
             class="text-xs font-bold text-accent-green uppercase tracking-wider"
+            data-test="toast-badge-success"
           >
-            Added to Cart
+            {{ toast.title || (toast.gameTitle ? 'Added to Cart' : 'Updated Completed') }}
           </p>
           <p
             v-else-if="toast.type === 'error'"
             class="text-xs font-bold text-accent-red uppercase tracking-wider"
+            data-test="toast-badge-error"
           >
-            Notification
+            {{ toast.title || 'Notification' }}
           </p>
           <p
             v-else
             class="text-xs font-bold text-primary uppercase tracking-wider"
+            data-test="toast-badge-info"
           >
-            Notice
+            {{ toast.title || 'Notice' }}
           </p>
-          <p class="text-sm font-semibold text-text-dark truncate" :title="toast.gameTitle || toast.message">
+          <p class="text-sm font-semibold text-text-dark truncate" :title="toast.gameTitle ? `&quot;${toast.gameTitle}&quot;` : toast.message">
             {{ toast.gameTitle ? `"${toast.gameTitle}"` : toast.message }}
           </p>
         </div>

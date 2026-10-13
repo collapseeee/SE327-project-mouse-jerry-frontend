@@ -273,10 +273,10 @@ const saveGame = async (payload: GamePayload, cleanName: string): Promise<void> 
   }
   if (isEditMode.value) {
     await updateAdminGame(authStore.token, gameId.value, payload)
-    toastStore.showSuccess(`Game "${cleanName}" updated successfully`)
+    toastStore.showSuccess(`Game "${cleanName}" updated successfully`, 'Updated Completed')
   } else {
     await createAdminGame(authStore.token, payload)
-    toastStore.showSuccess(`Game "${cleanName}" created successfully`)
+    toastStore.showSuccess(`Game "${cleanName}" created successfully`, 'Updated Completed')
   }
 }
 
