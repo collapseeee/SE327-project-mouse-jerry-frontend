@@ -60,3 +60,18 @@ export interface GamesResponse {
   totalCount: number
 }
 
+export interface HighlightRecord {
+  id: string | number
+  gameId: string
+  gameName: string
+  customImage?: string
+  buttonColor: string
+  createdAt?: string
+}
+
+export interface HighlightPayload {
+  gameId: string
+  customImage?: string
+  buttonColor?: string
+}
+
