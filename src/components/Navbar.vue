@@ -158,8 +158,14 @@ onUnmounted(() => {
           SALE HISTORY
         </router-link>
         <router-link
-          to="/account"
-          class="text-white hover:text-accent-yellow transition-colors ml-1 sm:ml-2"
+          to="/admin/profile"
+          class="text-white hover:text-accent-yellow transition-colors pb-1 ml-1 sm:ml-2"
+          :class="{
+            'border-b-2 border-accent-yellow text-accent-yellow':
+              route.path.startsWith('/admin/profile') ||
+              route.path === '/admin/account' ||
+              route.path === '/account'
+          }"
           title="Account"
           data-test="admin-profile-btn"
         >

@@ -220,6 +220,8 @@ describe('Navbar', () => {
     expect(wrapper.text()).toContain('HIGHLIGHT')
     expect(wrapper.text()).toContain('SALE HISTORY')
 
+    expect(wrapper.find('[data-test="admin-profile-btn"]').attributes('href')).toBe('/admin/profile')
+
     // Submit admin search
     const searchInput = wrapper.find('[data-test="admin-navbar-search-input"]')
     await searchInput.setValue('Hollow')
@@ -229,6 +231,16 @@ describe('Navbar', () => {
       path: '/admin/games',
       query: { search: 'Hollow' }
     })
+  })
+
+  it('highlights admin profile button when route is /admin/profile', async () => {
+    mockRoute.path = '/admin/profile'
+    const wrapper = mountNavbar()
+    await flushPromises()
+
+    const profileBtn = wrapper.find('[data-test="admin-profile-btn"]')
+    expect(profileBtn.exists()).toBe(true)
+    expect(profileBtn.classes()).toContain('border-accent-yellow')
   })
 
   it('renders Back Office link in customer navbar when user is admin', async () => {
