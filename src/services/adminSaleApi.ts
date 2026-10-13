@@ -1,11 +1,6 @@
 import type { OrderDTO, OrderItemKeyDTO } from '@/types/order'
-import {
-  isRecord,
-  parseStringField,
-  parseOptionalString,
-  parseNumericField,
-  parseResponseError
-} from './apiHelpers'
+import { parseResponseError } from './apiHelpers'
+import { mapRawOrderDTO } from './orderApi'
 
 const ADMIN_ORDERS_ENDPOINT = '/api/v1/admin/orders'
 const FALLBACK_ORDERS_ENDPOINT = '/api/v1/orders'
@@ -76,51 +71,6 @@ export const aggregateSaleItems = (items?: OrderItemKeyDTO[]): AggregatedSaleIte
     title,
     quantity
   }))
-}
-
-const mapRawOrderItem = (raw: unknown): OrderItemKeyDTO | null => {
-  if (!isRecord(raw)) {
-    return null
-  }
-  const gameId = parseStringField(raw.gameId)
-  if (!gameId) {
-    return null
-  }
-  return {
-    id: typeof raw.id === 'number' ? raw.id : undefined,
-    gameId,
-    gameTitle: parseStringField(raw.gameTitle, 'Unknown Game'),
-    coverImage: parseStringField(raw.coverImage),
-    gameKey: parseStringField(raw.gameKey, 'XXXX-XXXX-XXXX'),
-    price: parseNumericField(raw.price, 0)
-  }
-}
-
-const mapRawOrderItemsList = (rawItems: unknown[]): OrderItemKeyDTO[] => {
-  const items: OrderItemKeyDTO[] = []
-  for (const item of rawItems) {
-    const parsed = mapRawOrderItem(item)
-    if (parsed) {
-      items.push(parsed)
-    }
-  }
-  return items
-}
-
-const mapRawOrderDTO = (raw: unknown): OrderDTO => {
-  if (!isRecord(raw)) {
-    return { id: 0, orderNumber: '', totalAmount: 0, items: [] }
-  }
-  const rawItems = Array.isArray(raw.items) ? raw.items : []
-  return {
-    id: parseNumericField(raw.id, 0),
-    orderNumber: parseStringField(raw.orderNumber, ''),
-    userId: typeof raw.userId === 'number' ? raw.userId : undefined,
-    username: parseOptionalString(raw.username),
-    totalAmount: parseNumericField(raw.totalAmount, 0),
-    purchaseDate: parseOptionalString(raw.purchaseDate),
-    items: mapRawOrderItemsList(rawItems)
-  }
 }
 
 const parseOrdersResponse = async (response: Response): Promise<OrderDTO[]> => {
