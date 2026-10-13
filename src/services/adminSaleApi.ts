@@ -52,15 +52,26 @@ export const formatSaleDateParts = (dateStr?: string): FormattedSaleDate => {
   }
 }
 
-export const aggregateSaleItems = (items?: OrderItemKeyDTO[]): AggregatedSaleItem[] => {
-  if (!Array.isArray(items) || items.length === 0) {
-    return []
-  }
+const resolveItemTitle = (item: OrderItemKeyDTO): string => {
+  const rawTitle = item.gameTitle ? item.gameTitle.trim() : ''
+  return rawTitle.length > 0 ? rawTitle : 'Unknown Game'
+}
+
+const buildCountsMap = (items: OrderItemKeyDTO[]): Map<string, number> => {
   const counts = new Map<string, number>()
   for (const item of items) {
-    const title = item.gameTitle?.trim() || 'Unknown Game'
-    counts.set(title, (counts.get(title) || 0) + 1)
+    const title = resolveItemTitle(item)
+    const current = counts.get(title) ?? 0
+    counts.set(title, current + 1)
   }
+  return counts
+}
+
+export const aggregateSaleItems = (items?: OrderItemKeyDTO[]): AggregatedSaleItem[] => {
+  if (!items || items.length === 0) {
+    return []
+  }
+  const counts = buildCountsMap(items)
   return Array.from(counts.entries()).map(([title, quantity]) => ({
     title,
     quantity

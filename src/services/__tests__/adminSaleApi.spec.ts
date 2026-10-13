@@ -24,11 +24,11 @@ describe('adminSaleApi', () => {
     })
 
     it('falls back to id when orderNumber is omitted', () => {
-      expect(formatSaleOrderId(undefined, 105)).toBe('ID: 105')
+      expect(formatSaleOrderId('', 105)).toBe('ID: 105')
     })
 
     it('returns ID: — when both orderNumber and id are missing', () => {
-      expect(formatSaleOrderId(undefined, undefined)).toBe('ID: —')
+      expect(formatSaleOrderId()).toBe('ID: —')
       expect(formatSaleOrderId('', '')).toBe('ID: —')
     })
   })
@@ -120,7 +120,7 @@ describe('adminSaleApi', () => {
       expect(sales[0].username).toBe('customer')
       expect(sales[0].items[0].gameTitle).toBe('Cyberpunk 2077')
       expect(mockFetch).toHaveBeenCalledWith('/api/v1/admin/orders', expect.objectContaining({
-        headers: expect.objectContaining({ Authorization: 'Bearer ' + 'admin-token' })
+        headers: expect.objectContaining({ Authorization: 'Bearer admin-token' })
       }))
     })
 
