@@ -1,4 +1,4 @@
-import { createRouter, createWebHistory } from 'vue-router'
+import { createRouter, createWebHistory, type RouteLocationNormalized } from 'vue-router'
 import HomeView from '../views/HomeView.vue'
 import LoginView from '../views/LoginView.vue'
 import CategoryView from '../views/CategoryView.vue'
@@ -15,6 +15,7 @@ import AdminGameFormView from '../views/AdminGameFormView.vue'
 import AdminCategoriesView from '../views/AdminCategoriesView.vue'
 import AdminHighlightsView from '../views/AdminHighlightsView.vue'
 import AdminSaleHistoryView from '../views/AdminSaleHistoryView.vue'
+import AdminProfileView from '../views/AdminProfileView.vue'
 import { useAuthStore } from '../stores/auth'
 
 const router = createRouter({
@@ -132,22 +133,46 @@ const router = createRouter({
     {
       path: '/admin/highlight',
       redirect: '/admin/highlights'
+    },
+    {
+      path: '/admin/profile',
+      name: 'AdminProfile',
+      component: AdminProfileView,
+      meta: { requiresAuth: true, requiresAdmin: true }
+    },
+    {
+      path: '/admin/account',
+      redirect: '/admin/profile'
     }
   ]
 })
 
+const shouldRedirectAdminAccount = (to: RouteLocationNormalized, isAdmin: boolean): boolean =>
+  to.path === '/account' && isAdmin
+
+const isUnauthorizedAdminAccess = (to: RouteLocationNormalized, isAdmin: boolean): boolean =>
+  Boolean(to.meta.requiresAdmin) && !isAdmin
+
+const resolveAuthRedirect = (to: RouteLocationNormalized, authStore: ReturnType<typeof useAuthStore>) => {
+  if (!authStore.isAuthenticated) {
+    return {
+      path: '/login',
+      query: { mode: 'login', redirect: to.fullPath }
+    }
+  }
+  if (shouldRedirectAdminAccount(to, authStore.isAdmin)) {
+    return { path: '/admin/profile' }
+  }
+  if (isUnauthorizedAdminAccess(to, authStore.isAdmin)) {
+    return { path: '/' }
+  }
+  return true
+}
+
 router.beforeEach((to) => {
   if (to.meta.requiresAuth) {
     const authStore = useAuthStore()
-    if (!authStore.isAuthenticated) {
-      return {
-        path: '/login',
-        query: { mode: 'login', redirect: to.fullPath }
-      }
-    }
-    if (to.meta.requiresAdmin && !authStore.isAdmin) {
-      return { path: '/' }
-    }
+    return resolveAuthRedirect(to, authStore)
   }
   return true
 })
