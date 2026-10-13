@@ -13,7 +13,7 @@ const router = useRouter()
 const authStore = useAuthStore()
 const cartStore = useCartStore()
 const currentPage = ref(1)
-const pageSize = ref(10)
+const pageSize = ref(15)
 const totalCount = ref(0)
 const categoryGames = ref<Game[]>([])
 const isLoading = ref(true)
@@ -83,7 +83,7 @@ const handleAddToCart = async (game: Game): Promise<void> => {
 <template>
   <main class="max-w-7xl mx-auto px-6 py-6 min-h-[calc(100vh-8rem)]">
     <!-- Breadcrumb matching Screenshot 5 -->
-    <nav class="flex items-center text-sm text-text-muted mb-4" aria-label="Breadcrumb">
+    <nav class="flex items-center text-sm text-text-muted mb-4 animate-fade-in-down" aria-label="Breadcrumb">
       <router-link to="/" class="text-secondary hover:underline font-medium">
         Home
       </router-link>
@@ -92,7 +92,7 @@ const handleAddToCart = async (game: Game): Promise<void> => {
     </nav>
 
     <!-- Header Section with underline and count -->
-    <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-2 border-b-2 border-accent-yellow pb-2 mb-8">
+    <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-2 border-b-2 border-accent-yellow pb-2 mb-8 animate-fade-in-down delay-100">
       <h1 class="text-2xl sm:text-3xl font-extrabold text-primary tracking-tight">
         {{ categoryTitle }} Games
       </h1>
@@ -104,7 +104,7 @@ const handleAddToCart = async (game: Game): Promise<void> => {
     <!-- Product Grid -->
     <section
       v-if="categoryGames.length > 0"
-      class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-5 mb-10"
+      class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-5 mb-10 animate-fade-in-up delay-200"
     >
       <GameCard
         v-for="game in categoryGames"
@@ -117,7 +117,7 @@ const handleAddToCart = async (game: Game): Promise<void> => {
     <!-- Empty State -->
     <div
       v-else-if="!isLoading"
-      class="py-16 text-center bg-white rounded-2xl border border-slate-100 shadow-sm mb-10"
+      class="py-16 text-center bg-white rounded-2xl border border-slate-100 shadow-sm mb-10 animate-card-entrance"
     >
       <i class="fa-solid fa-gamepad text-4xl text-slate-300 mb-3 block"></i>
       <h2 class="text-lg font-bold text-slate-700 mb-1">No games found</h2>
@@ -129,7 +129,7 @@ const handleAddToCart = async (game: Game): Promise<void> => {
     <!-- Loading State -->
     <div
       v-else
-      class="py-16 text-center mb-10"
+      class="py-16 text-center mb-10 animate-fade-in"
     >
       <i class="fa-solid fa-circle-notch fa-spin text-3xl text-primary mb-3 block"></i>
       <p class="text-slate-500 text-sm">Loading category games...</p>

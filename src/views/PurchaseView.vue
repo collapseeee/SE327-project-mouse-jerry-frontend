@@ -79,12 +79,12 @@ onMounted(async () => {
 <template>
   <main class="max-w-4xl mx-auto px-6 py-8 min-h-[calc(100vh-8rem)] relative">
     <!-- Title matching Screenshot 3 -->
-    <h1 class="text-2xl sm:text-3xl font-extrabold text-primary flex items-center gap-2.5 mb-8">
+    <h1 class="text-2xl sm:text-3xl font-extrabold text-primary flex items-center gap-2.5 mb-8 animate-fade-in-down">
       <i class="fa-solid fa-money-check-dollar"></i>
       <span>Complete Your Purchase</span>
     </h1>
 
-    <div v-if="purchaseItems.length > 0" class="flex flex-col gap-6">
+    <div v-if="purchaseItems.length > 0" class="flex flex-col gap-6 animate-fade-in-up">
       <!-- Items Card(s) matching Screenshot 3 -->
       <div
         v-for="item in purchaseItems"
@@ -149,7 +149,7 @@ onMounted(async () => {
     <!-- Empty State -->
     <div
       v-else
-      class="py-20 text-center bg-white rounded-2xl border border-slate-100 shadow-sm"
+      class="py-20 text-center bg-white rounded-2xl border border-slate-100 shadow-sm animate-card-entrance"
     >
       <i class="fa-solid fa-receipt text-5xl text-slate-300 mb-4 block"></i>
       <h2 class="text-xl font-bold text-slate-700 mb-2">No items to purchase</h2>

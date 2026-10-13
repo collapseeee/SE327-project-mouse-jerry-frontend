@@ -91,7 +91,7 @@ const handleSubmit = () => {
 
 <template>
   <div
-    class="w-full max-w-4xl rounded-2xl md:rounded-3xl overflow-hidden shadow-2xl flex flex-col md:flex-row border border-white/10"
+    class="w-full max-w-4xl rounded-2xl md:rounded-3xl border border-white/10 shadow-2xl flex flex-col md:flex-row overflow-hidden animate-card-entrance"
   >
     <!-- Left Hero / Brand Panel -->
     <div

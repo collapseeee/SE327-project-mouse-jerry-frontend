@@ -26,6 +26,27 @@ describe('ToastContainer', () => {
     expect(wrapper.text()).toContain('"Cyberpunk 2077"')
   })
 
+  it('renders an update success toast with Updated Completed title', () => {
+    const toastStore = useToastStore()
+    toastStore.showSuccess('Game "Elden Ring" updated successfully', 'Updated Completed')
+
+    const wrapper = mount(ToastContainer)
+    expect(wrapper.findAll('[role="status"]')).toHaveLength(1)
+    expect(wrapper.find('[data-test="toast-icon-success"]').exists()).toBe(true)
+    expect(wrapper.text()).toContain('Updated Completed')
+    expect(wrapper.text()).toContain('Game "Elden Ring" updated successfully')
+  })
+
+  it('renders Updated Completed as fallback when success toast title is not specified', () => {
+    const toastStore = useToastStore()
+    toastStore.showToast({ message: 'Game updated', type: 'success' })
+
+    const wrapper = mount(ToastContainer)
+    expect(wrapper.text()).toContain('Updated Completed')
+    expect(wrapper.text()).not.toContain('Added to Cart')
+    expect(wrapper.text()).toContain('Game updated')
+  })
+
   it('renders an error toast with error icon', () => {
     const toastStore = useToastStore()
     toastStore.showError('Unable to connect to server')

@@ -94,4 +94,61 @@ describe('router', () => {
     await router.push('/account')
     expect(router.currentRoute.value.path).toBe('/account')
   })
+
+  it('resolves admin routes with requiresAuth and requiresAdmin', () => {
+    const gamesRoute = router.resolve('/admin/games')
+    expect(gamesRoute.name).toBe('AdminGames')
+    expect(gamesRoute.meta.requiresAuth).toBe(true)
+    expect(gamesRoute.meta.requiresAdmin).toBe(true)
+
+    const newRoute = router.resolve('/admin/games/new')
+    expect(newRoute.name).toBe('AdminGameNew')
+    expect(newRoute.meta.requiresAdmin).toBe(true)
+
+    const editRoute = router.resolve('/admin/games/elden-ring/edit')
+    expect(editRoute.name).toBe('AdminGameEdit')
+    expect(editRoute.params.id).toBe('elden-ring')
+    expect(editRoute.meta.requiresAdmin).toBe(true)
+
+    const categoriesRoute = router.resolve('/admin/categories')
+    expect(categoriesRoute.name).toBe('AdminCategories')
+    expect(categoriesRoute.meta.requiresAuth).toBe(true)
+    expect(categoriesRoute.meta.requiresAdmin).toBe(true)
+
+    const salesRoute = router.resolve('/admin/sale-history')
+    expect(salesRoute.name).toBe('AdminSaleHistory')
+    expect(salesRoute.meta.requiresAuth).toBe(true)
+    expect(salesRoute.meta.requiresAdmin).toBe(true)
+
+    const highlightsRoute = router.resolve('/admin/highlights')
+    expect(highlightsRoute.name).toBe('AdminHighlights')
+    expect(highlightsRoute.meta.requiresAuth).toBe(true)
+    expect(highlightsRoute.meta.requiresAdmin).toBe(true)
+
+    const profileRoute = router.resolve('/admin/profile')
+    expect(profileRoute.name).toBe('AdminProfile')
+    expect(profileRoute.meta.requiresAuth).toBe(true)
+    expect(profileRoute.meta.requiresAdmin).toBe(true)
+  })
+
+  it('redirects non-admin user visiting admin route to /', async () => {
+    const authStore = useAuthStore()
+    authStore.setUserSession({ id: 2, username: 'customer', role: 'ROLE_CUSTOMER' }, 'cust-token')
+    await router.push('/')
+    await router.push('/admin/games')
+    expect(router.currentRoute.value.path).toBe('/')
+  })
+
+  it('allows admin user to visit admin routes and redirects /account to /admin/profile', async () => {
+    const authStore = useAuthStore()
+    authStore.setUserSession({ id: 3, username: 'admin', role: 'ROLE_ADMIN' }, 'admin-token')
+    await router.push('/admin/games')
+    expect(router.currentRoute.value.path).toBe('/admin/games')
+
+    await router.push('/admin/profile')
+    expect(router.currentRoute.value.path).toBe('/admin/profile')
+
+    await router.push('/account')
+    expect(router.currentRoute.value.path).toBe('/admin/profile')
+  })
 })

@@ -12,7 +12,7 @@ const emit = defineEmits<{
 
 <template>
   <div
-    class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden flex flex-col hover:shadow-md hover:-translate-y-0.5 transition-all duration-300"
+    class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden flex flex-col hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 animate-fade-in-up"
   >
     <!-- Game Cover Image -->
     <router-link

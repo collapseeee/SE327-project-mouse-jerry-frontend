@@ -1,0 +1,108 @@
+import type { OrderDTO, OrderItemKeyDTO } from '@/types/order'
+import { parseResponseError } from './apiHelpers'
+import { mapRawOrderDTO } from './orderApi'
+
+const ADMIN_ORDERS_ENDPOINT = '/api/v1/admin/orders'
+const FALLBACK_ORDERS_ENDPOINT = '/api/v1/orders'
+
+export interface AggregatedSaleItem {
+  title: string
+  quantity: number
+}
+
+export interface FormattedSaleDate {
+  date: string
+  yearWithComma: string
+  time: string
+}
+
+export const formatSaleOrderId = (orderNumber?: string, id?: number | string): string => {
+  const rawId = orderNumber || (id !== undefined ? String(id) : '')
+  if (!rawId) {
+    return 'ID: —'
+  }
+  if (rawId.length > 8) {
+    return `ID: ${rawId.slice(0, 8)}...`
+  }
+  return `ID: ${rawId}`
+}
+
+export const formatSaleDateParts = (dateStr?: string): FormattedSaleDate => {
+  if (!dateStr) {
+    return { date: '—', yearWithComma: '', time: '' }
+  }
+  const dateObj = new Date(dateStr)
+  if (Number.isNaN(dateObj.getTime())) {
+    return { date: dateStr, yearWithComma: '', time: '' }
+  }
+  const day = dateObj.getDate()
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+  const month = months[dateObj.getMonth()]
+  const hours = String(dateObj.getHours()).padStart(2, '0')
+  const minutes = String(dateObj.getMinutes()).padStart(2, '0')
+  return {
+    date: `${day} ${month}`,
+    yearWithComma: `${dateObj.getFullYear()},`,
+    time: `${hours}:${minutes}`
+  }
+}
+
+const resolveItemTitle = (item: OrderItemKeyDTO): string => {
+  const rawTitle = item.gameTitle ? item.gameTitle.trim() : ''
+  return rawTitle.length > 0 ? rawTitle : 'Unknown Game'
+}
+
+const buildCountsMap = (items: OrderItemKeyDTO[]): Map<string, number> => {
+  const counts = new Map<string, number>()
+  for (const item of items) {
+    const title = resolveItemTitle(item)
+    const current = counts.get(title) ?? 0
+    counts.set(title, current + 1)
+  }
+  return counts
+}
+
+export const aggregateSaleItems = (items?: OrderItemKeyDTO[]): AggregatedSaleItem[] => {
+  if (!items || items.length === 0) {
+    return []
+  }
+  const counts = buildCountsMap(items)
+  return Array.from(counts.entries()).map(([title, quantity]) => ({
+    title,
+    quantity
+  }))
+}
+
+const parseOrdersResponse = async (response: Response): Promise<OrderDTO[]> => {
+  const rawData: unknown = await response.json()
+  if (!Array.isArray(rawData)) {
+    return []
+  }
+  return rawData.map(mapRawOrderDTO)
+}
+
+const requestOrders = (url: string, token: string): Promise<Response> =>
+  fetch(url, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`
+    }
+  })
+
+export const fetchAdminSaleHistory = async (token: string): Promise<OrderDTO[]> => {
+  const primaryResponse = await requestOrders(ADMIN_ORDERS_ENDPOINT, token)
+  if (primaryResponse.ok) {
+    return parseOrdersResponse(primaryResponse)
+  }
+  if (primaryResponse.status === 404) {
+    const fallbackResponse = await requestOrders(FALLBACK_ORDERS_ENDPOINT, token)
+    if (fallbackResponse.ok) {
+      return parseOrdersResponse(fallbackResponse)
+    }
+    const fallbackMsg = await parseResponseError(fallbackResponse, 'Failed to fetch sale history')
+    throw new Error(fallbackMsg)
+  }
+  const errorMsg = await parseResponseError(primaryResponse, 'Failed to fetch sale history')
+  throw new Error(errorMsg)
+}
