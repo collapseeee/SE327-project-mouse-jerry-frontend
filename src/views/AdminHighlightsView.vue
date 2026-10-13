@@ -283,8 +283,9 @@ onMounted(async () => {
               >
                 <!-- Highlight Image Column -->
                 <td class="py-4 px-6">
-                  <div
-                    class="w-28 h-16 rounded-lg overflow-hidden bg-slate-900 border border-slate-200/80 shadow-xs cursor-pointer hover:opacity-90 transition-opacity"
+                  <button
+                    type="button"
+                    class="w-28 h-16 rounded-lg overflow-hidden bg-slate-900 border border-slate-200/80 shadow-xs cursor-pointer hover:opacity-90 transition-opacity block focus:outline-none focus:ring-2 focus:ring-primary/40"
                     title="Click to edit highlight"
                     data-test="highlight-thumbnail-btn"
                     @click="openEditModal(item)"
@@ -295,24 +296,30 @@ onMounted(async () => {
                       class="w-full h-full object-cover"
                       data-test="highlight-thumbnail-img"
                     />
-                  </div>
+                  </button>
                 </td>
 
                 <!-- Target Game Column -->
                 <td class="py-4 px-6">
-                  <span
-                    class="text-sm font-semibold text-slate-800 hover:text-primary cursor-pointer transition-colors"
+                  <button
+                    type="button"
+                    class="text-sm font-semibold text-slate-800 hover:text-primary cursor-pointer transition-colors text-left focus:outline-none focus:underline"
                     title="Click to edit highlight"
                     data-test="highlight-game-name"
                     @click="openEditModal(item)"
                   >
                     {{ item.gameName }}
-                  </span>
+                  </button>
                 </td>
 
                 <!-- Button Color Column matching Screenshot 1 -->
                 <td class="py-4 px-6">
-                  <div class="flex items-center gap-2 cursor-pointer" @click="openEditModal(item)">
+                  <button
+                    type="button"
+                    class="flex items-center gap-2 cursor-pointer focus:outline-none"
+                    title="Click to edit highlight"
+                    @click="openEditModal(item)"
+                  >
                     <span
                       class="w-3.5 h-3.5 rounded-full inline-block shadow-xs shrink-0"
                       :style="{ backgroundColor: item.buttonColor }"
@@ -321,7 +328,7 @@ onMounted(async () => {
                     <span class="text-xs font-mono text-slate-700" data-test="highlight-color-hex">
                       {{ item.buttonColor }}
                     </span>
-                  </div>
+                  </button>
                 </td>
 
                 <!-- Delete Action Column matching Screenshot 1 -->
@@ -427,7 +434,9 @@ onMounted(async () => {
             </div>
 
             <!-- Hidden File Input -->
+            <label for="highlight-file-input" class="sr-only">Upload highlight banner image</label>
             <input
+              id="highlight-file-input"
               ref="fileInputRef"
               type="file"
               accept="image/*"
