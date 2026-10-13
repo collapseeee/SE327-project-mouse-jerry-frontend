@@ -214,6 +214,8 @@ describe('Navbar', () => {
     expect(wrapper.find('[data-test="admin-nav-game"]').exists()).toBe(true)
     expect(wrapper.find('[data-test="admin-nav-category"]').exists()).toBe(true)
     expect(wrapper.find('[data-test="admin-nav-category"]').attributes('href')).toBe('/admin/categories')
+    expect(wrapper.find('[data-test="admin-nav-sale-history"]').exists()).toBe(true)
+    expect(wrapper.find('[data-test="admin-nav-sale-history"]').attributes('href')).toBe('/admin/sale-history')
     expect(wrapper.text()).toContain('CATEGORY')
     expect(wrapper.text()).toContain('HIGHLIGHT')
     expect(wrapper.text()).toContain('SALE HISTORY')
