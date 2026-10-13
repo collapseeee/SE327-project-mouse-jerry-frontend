@@ -128,14 +128,19 @@ onUnmounted(() => {
         <router-link
           to="/admin/games"
           class="text-white hover:text-accent-yellow transition-colors pb-1 uppercase"
-          :class="{ 'border-b-2 border-white': route.path.startsWith('/admin') }"
+          :class="{ 'border-b-2 border-accent-yellow text-accent-yellow': route.path.startsWith('/admin/games') }"
           data-test="admin-nav-game"
         >
           GAME
         </router-link>
-        <span class="text-white/70 hover:text-white cursor-pointer transition-colors uppercase">
+        <router-link
+          to="/admin/categories"
+          class="text-white hover:text-accent-yellow transition-colors pb-1 uppercase"
+          :class="{ 'border-b-2 border-accent-yellow text-accent-yellow': route.path.startsWith('/admin/categories') }"
+          data-test="admin-nav-category"
+        >
           CATEGORY
-        </span>
+        </router-link>
         <span class="text-white/70 hover:text-white cursor-pointer transition-colors uppercase">
           HIGHLIGHT
         </span>
