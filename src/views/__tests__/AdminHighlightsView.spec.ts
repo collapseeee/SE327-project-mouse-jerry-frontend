@@ -4,8 +4,29 @@ import { setActivePinia, createPinia } from 'pinia'
 import AdminHighlightsView from '../AdminHighlightsView.vue'
 import { useAuthStore } from '@/stores/auth'
 import { useToastStore } from '@/stores/toast'
-import * as adminHighlightApi from '@/services/adminHighlightApi'
-import * as gameApi from '@/services/gameApi'
+import {
+  fetchAdminHighlights,
+  createAdminHighlight,
+  updateAdminHighlight,
+  deleteAdminHighlight
+} from '@/services/adminHighlightApi'
+import { fetchGames } from '@/services/gameApi'
+import { uploadGameImage } from '@/services/adminGameApi'
+
+vi.mock('@/services/adminHighlightApi', () => ({
+  fetchAdminHighlights: vi.fn(),
+  createAdminHighlight: vi.fn(),
+  updateAdminHighlight: vi.fn(),
+  deleteAdminHighlight: vi.fn()
+}))
+
+vi.mock('@/services/gameApi', () => ({
+  fetchGames: vi.fn()
+}))
+
+vi.mock('@/services/adminGameApi', () => ({
+  uploadGameImage: vi.fn()
+}))
 
 const sampleHighlights = [
   {
@@ -50,21 +71,22 @@ describe('AdminHighlightsView', () => {
     authStore.setUserSession({ id: 1, username: 'admin', role: 'ROLE_ADMIN' }, 'test-admin-token')
 
     vi.restoreAllMocks()
-    vi.spyOn(adminHighlightApi, 'fetchAdminHighlights').mockResolvedValue(sampleHighlights)
-    vi.spyOn(gameApi, 'fetchGames').mockResolvedValue({ games: sampleStoreGames, totalCount: 2 })
-    vi.spyOn(adminHighlightApi, 'createAdminHighlight').mockResolvedValue({
+    vi.mocked(fetchAdminHighlights).mockResolvedValue(sampleHighlights)
+    vi.mocked(fetchGames).mockResolvedValue({ games: sampleStoreGames, totalCount: 2 })
+    vi.mocked(createAdminHighlight).mockResolvedValue({
       id: 3,
       gameId: 'elden-ring',
       gameName: 'Elden Ring',
       buttonColor: '#8b0000'
     })
-    vi.spyOn(adminHighlightApi, 'updateAdminHighlight').mockResolvedValue({
+    vi.mocked(updateAdminHighlight).mockResolvedValue({
       id: 1,
       gameId: 'elden-ring',
       gameName: 'Elden Ring',
       buttonColor: '#00c853'
     })
-    vi.spyOn(adminHighlightApi, 'deleteAdminHighlight').mockResolvedValue()
+    vi.mocked(deleteAdminHighlight).mockResolvedValue()
+    vi.mocked(uploadGameImage).mockResolvedValue('https://img.test/uploaded-banner.jpg')
   })
 
   it('renders page title and table columns matching Screenshot 1', async () => {
@@ -101,7 +123,7 @@ describe('AdminHighlightsView', () => {
   })
 
   it('displays empty state when no highlights are returned', async () => {
-    vi.spyOn(adminHighlightApi, 'fetchAdminHighlights').mockResolvedValue([])
+    vi.mocked(fetchAdminHighlights).mockResolvedValue([])
 
     const wrapper = mount(AdminHighlightsView)
     await flushPromises()
@@ -111,7 +133,7 @@ describe('AdminHighlightsView', () => {
   })
 
   it('handles fetch error and displays error alert with retry button', async () => {
-    vi.spyOn(adminHighlightApi, 'fetchAdminHighlights').mockRejectedValue(new Error('Network failure'))
+    vi.mocked(fetchAdminHighlights).mockRejectedValue(new Error('Network failure'))
 
     const wrapper = mount(AdminHighlightsView)
     await flushPromises()
@@ -120,7 +142,7 @@ describe('AdminHighlightsView', () => {
     expect(wrapper.text()).toContain('Network failure')
 
     // Retry
-    vi.spyOn(adminHighlightApi, 'fetchAdminHighlights').mockResolvedValue(sampleHighlights)
+    vi.mocked(fetchAdminHighlights).mockResolvedValue(sampleHighlights)
     const retryBtn = wrapper.find('[data-test="error-alert"] button')
     if (retryBtn.exists()) {
       await retryBtn.trigger('click')
@@ -161,7 +183,7 @@ describe('AdminHighlightsView', () => {
     await form.trigger('submit')
     await flushPromises()
 
-    expect(adminHighlightApi.createAdminHighlight).toHaveBeenCalledWith('test-admin-token', {
+    expect(createAdminHighlight).toHaveBeenCalledWith('test-admin-token', {
       gameId: 'elden-ring',
       customImage: 'https://img.test/banner-new.jpg',
       buttonColor: '#8b0000'
@@ -184,7 +206,7 @@ describe('AdminHighlightsView', () => {
     await flushPromises()
 
     expect(errorSpy).toHaveBeenCalledWith('Please select a target game')
-    expect(adminHighlightApi.createAdminHighlight).not.toHaveBeenCalled()
+    expect(createAdminHighlight).not.toHaveBeenCalled()
   })
 
   it('opens Edit Highlight modal prefilled when clicking row item and updates it', async () => {
@@ -207,7 +229,7 @@ describe('AdminHighlightsView', () => {
     await wrapper.find('form').trigger('submit')
     await flushPromises()
 
-    expect(adminHighlightApi.updateAdminHighlight).toHaveBeenCalledWith('test-admin-token', 1, {
+    expect(updateAdminHighlight).toHaveBeenCalledWith('test-admin-token', 1, {
       gameId: 'elden-ring',
       customImage: 'https://img.test/elden-banner.jpg',
       buttonColor: '#00c853'
@@ -251,7 +273,7 @@ describe('AdminHighlightsView', () => {
     await confirmBtn.trigger('click')
     await flushPromises()
 
-    expect(adminHighlightApi.deleteAdminHighlight).toHaveBeenCalledWith('test-admin-token', 1)
+    expect(deleteAdminHighlight).toHaveBeenCalledWith('test-admin-token', 1)
     expect(wrapper.find('[data-test="delete-confirmation-modal"]').exists()).toBe(false)
   })
 
@@ -266,6 +288,62 @@ describe('AdminHighlightsView', () => {
     await cancelBtn.trigger('click')
 
     expect(wrapper.find('[data-test="delete-confirmation-modal"]').exists()).toBe(false)
-    expect(adminHighlightApi.deleteAdminHighlight).not.toHaveBeenCalled()
+    expect(deleteAdminHighlight).not.toHaveBeenCalled()
+  })
+
+  it('triggers file upload when clicking Upload File button and sets uploaded URL', async () => {
+    const wrapper = mount(AdminHighlightsView)
+    await flushPromises()
+
+    await wrapper.find('[data-test="add-highlight-fab"]').trigger('click')
+    await flushPromises()
+
+    const fileInput = wrapper.find<HTMLInputElement>('[data-test="banner-file-input"]')
+    const clickSpy = vi.spyOn(fileInput.element, 'click')
+
+    const uploadTrigger = wrapper.find('[data-test="trigger-upload-btn"]')
+    await uploadTrigger.trigger('click')
+    expect(clickSpy).toHaveBeenCalled()
+
+    const file = new File(['dummy'], 'banner.png', { type: 'image/png' })
+    Object.defineProperty(fileInput.element, 'files', {
+      value: [file],
+      writable: true
+    })
+
+    await fileInput.trigger('change')
+    await flushPromises()
+
+    expect(uploadGameImage).toHaveBeenCalledWith('test-admin-token', file)
+    expect(wrapper.find('[data-test="banner-preview"]').exists()).toBe(true)
+
+    // Remove banner preview
+    const removeBtn = wrapper.find('[data-test="remove-banner-btn"]')
+    await removeBtn.trigger('click')
+    expect(wrapper.find('[data-test="banner-preview"]').exists()).toBe(false)
+  })
+
+  it('shows error toast when file upload fails', async () => {
+    const toastStore = useToastStore()
+    const errorSpy = vi.spyOn(toastStore, 'showError')
+    vi.mocked(uploadGameImage).mockRejectedValueOnce(new Error('S3 upload error'))
+
+    const wrapper = mount(AdminHighlightsView)
+    await flushPromises()
+
+    await wrapper.find('[data-test="add-highlight-fab"]').trigger('click')
+    await flushPromises()
+
+    const fileInput = wrapper.find<HTMLInputElement>('[data-test="banner-file-input"]')
+    const file = new File(['dummy'], 'banner.png', { type: 'image/png' })
+    Object.defineProperty(fileInput.element, 'files', {
+      value: [file],
+      writable: true
+    })
+
+    await fileInput.trigger('change')
+    await flushPromises()
+
+    expect(errorSpy).toHaveBeenCalledWith('S3 upload error')
   })
 })
