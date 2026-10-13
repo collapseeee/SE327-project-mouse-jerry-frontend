@@ -1,3 +1,9 @@
+<script lang="ts">
+export default {
+  name: 'AdminGameFormView'
+}
+</script>
+
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
@@ -10,7 +16,7 @@ import {
 import { fetchCategories } from '@/services/categoryApi'
 import { useAuthStore } from '@/stores/auth'
 import { useToastStore } from '@/stores/toast'
-import type { CategoryItem, GamePayload } from '@/types/game'
+import type { CategoryItem, Game, GamePayload, SystemRequirements } from '@/types/game'
 
 const route = useRoute()
 const router = useRouter()
@@ -53,6 +59,43 @@ const modalImageUrl = ref('')
 const isUploadingImage = ref(false)
 const uploadFileInput = ref<HTMLInputElement | null>(null)
 
+const padScreenshots = (list?: string[]): string[] => {
+  const source = list || []
+  return Array.from({ length: 5 }, (_, i) => source[i] || '')
+}
+
+const populateSysReqs = (sr?: SystemRequirements): void => {
+  if (!sr) {
+    return
+  }
+  reqOs.value = sr.os || ''
+  reqProcessor.value = sr.processor || ''
+  reqMemory.value = sr.memory || ''
+  reqGraphics.value = sr.graphics || ''
+  reqStorage.value = sr.storage || ''
+}
+
+const populateCategories = (game: Game): void => {
+  if (game.categories && game.categories.length > 0) {
+    selectedCategories.value = [...game.categories]
+    return
+  }
+  if (game.category) {
+    selectedCategories.value = [game.category]
+  }
+}
+
+const applyGameData = (game: Game): void => {
+  name.value = game.name
+  price.value = game.price
+  stock.value = game.stock ?? 0
+  coverImage.value = game.coverImage || ''
+  description.value = game.description || ''
+  screenshots.value = padScreenshots(game.screenshots)
+  populateCategories(game)
+  populateSysReqs(game.systemRequirements)
+}
+
 const loadGameData = async (): Promise<void> => {
   if (!isEditMode.value || !authStore.token) {
     return
@@ -60,32 +103,7 @@ const loadGameData = async (): Promise<void> => {
   isLoadingGame.value = true
   try {
     const game = await fetchAdminGameById(authStore.token, gameId.value)
-    name.value = game.name
-    price.value = game.price
-    stock.value = game.stock ?? 0
-    coverImage.value = game.coverImage || ''
-    description.value = game.description || ''
-
-    const loadedScreenshots = game.screenshots || []
-    const paddedScreenshots: string[] = ['', '', '', '', '']
-    for (let i = 0; i < 5; i++) {
-      paddedScreenshots[i] = loadedScreenshots[i] || ''
-    }
-    screenshots.value = paddedScreenshots
-
-    if (game.categories && game.categories.length > 0) {
-      selectedCategories.value = [...game.categories]
-    } else if (game.category) {
-      selectedCategories.value = [game.category]
-    }
-
-    if (game.systemRequirements) {
-      reqOs.value = game.systemRequirements.os || ''
-      reqProcessor.value = game.systemRequirements.processor || ''
-      reqMemory.value = game.systemRequirements.memory || ''
-      reqGraphics.value = game.systemRequirements.graphics || ''
-      reqStorage.value = game.systemRequirements.storage || ''
-    }
+    applyGameData(game)
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : 'Failed to load game'
     toastStore.showError(msg)
@@ -184,7 +202,12 @@ const handleCancel = (): void => {
   router.push('/admin/games')
 }
 
-const validateInputs = (): boolean => {
+const isValidNonNegativeNumber = (val: number | string): boolean => {
+  const parsed = Number(val)
+  return !Number.isNaN(parsed) && parsed >= 0
+}
+
+const validateBasicFields = (): boolean => {
   if (!authStore.token) {
     toastStore.showError('You must be logged in as admin')
     return false
@@ -193,42 +216,53 @@ const validateInputs = (): boolean => {
     toastStore.showError('Please enter game name')
     return false
   }
-  const parsedPrice = typeof price.value === 'number' ? price.value : Number(price.value)
-  if (Number.isNaN(parsedPrice) || parsedPrice < 0) {
+  return true
+}
+
+const validateNumbers = (): boolean => {
+  if (!isValidNonNegativeNumber(price.value)) {
     toastStore.showError('Game price must be a valid non-negative number')
     return false
   }
-  const parsedStock = typeof stock.value === 'number' ? stock.value : Number(stock.value)
-  if (Number.isNaN(parsedStock) || parsedStock < 0) {
+  if (!isValidNonNegativeNumber(stock.value)) {
     toastStore.showError('Game stock must be a valid non-negative integer')
     return false
   }
   return true
 }
 
+const validateInputs = (): boolean => {
+  return validateBasicFields() && validateNumbers()
+}
+
+const trimOrUndefined = (str: string): string | undefined => {
+  const trimmed = str.trim()
+  return trimmed.length > 0 ? trimmed : undefined
+}
+
+const buildSysReqs = (): SystemRequirements => ({
+  os: trimOrUndefined(reqOs.value),
+  processor: trimOrUndefined(reqProcessor.value),
+  memory: trimOrUndefined(reqMemory.value),
+  graphics: trimOrUndefined(reqGraphics.value),
+  storage: trimOrUndefined(reqStorage.value)
+})
+
 const buildPayload = (): GamePayload => {
-  const parsedPrice = typeof price.value === 'number' ? price.value : Number(price.value)
-  const parsedStock = typeof stock.value === 'number' ? stock.value : Number(stock.value)
   const filteredScreenshots = screenshots.value
     .map((s) => s.trim())
     .filter(Boolean)
 
   return {
     name: name.value.trim(),
-    price: parsedPrice,
-    stock: parsedStock,
-    coverImage: coverImage.value.trim() || undefined,
-    description: description.value.trim() || undefined,
-    category: selectedCategories.value[0] || undefined,
+    price: Number(price.value),
+    stock: Number(stock.value),
+    coverImage: trimOrUndefined(coverImage.value),
+    description: trimOrUndefined(description.value),
+    category: selectedCategories.value[0],
     categories: selectedCategories.value.length > 0 ? selectedCategories.value : undefined,
     screenshots: filteredScreenshots,
-    systemRequirements: {
-      os: reqOs.value.trim() || undefined,
-      processor: reqProcessor.value.trim() || undefined,
-      memory: reqMemory.value.trim() || undefined,
-      graphics: reqGraphics.value.trim() || undefined,
-      storage: reqStorage.value.trim() || undefined
-    }
+    systemRequirements: buildSysReqs()
   }
 }
 
