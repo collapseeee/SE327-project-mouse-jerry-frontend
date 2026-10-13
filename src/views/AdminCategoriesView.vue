@@ -67,6 +67,11 @@ const performVisibilityToggle = async (
   toastStore.showSuccess(`Category "${category.name}" visibility updated`)
 }
 
+const reportActionError = (err: unknown, fallbackMessage: string): void => {
+  const msg = err instanceof Error ? err.message : fallbackMessage
+  toastStore.showError(msg)
+}
+
 const handleToggleVisibility = async (category: CategoryItem): Promise<void> => {
   const token = authStore.token
   if (!token) {
@@ -76,8 +81,7 @@ const handleToggleVisibility = async (category: CategoryItem): Promise<void> => 
   try {
     await performVisibilityToggle(token, category, nextVisibleState)
   } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : 'Failed to update visibility'
-    toastStore.showError(msg)
+    reportActionError(err, 'Failed to update visibility')
   }
 }
 
@@ -105,18 +109,20 @@ const performCategoryCreation = async (token: string, name: string): Promise<voi
   await loadCategories()
 }
 
+const isValidAddInput = (token: string | null, name: string): boolean =>
+  Boolean(token && name.trim())
+
 const submitAddCategory = async (): Promise<void> => {
   const token = authStore.token
   const trimmed = newCategoryName.value.trim()
-  if (!token || !trimmed) {
+  if (!isValidAddInput(token, trimmed)) {
     return
   }
   isSavingNew.value = true
   try {
-    await performCategoryCreation(token, trimmed)
+    await performCategoryCreation(token as string, trimmed)
   } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : 'Failed to create category'
-    toastStore.showError(msg)
+    reportActionError(err, 'Failed to create category')
   } finally {
     isSavingNew.value = false
   }
@@ -143,19 +149,24 @@ const performCategoryUpdate = async (
   await loadCategories()
 }
 
+const isValidEditInput = (
+  token: string | null,
+  target: CategoryItem | null,
+  name: string
+): target is CategoryItem => Boolean(token && target && name.trim())
+
 const submitEditCategory = async (): Promise<void> => {
   const token = authStore.token
   const target = editingCategory.value
   const trimmed = editCategoryName.value.trim()
-  if (!token || !target || !trimmed) {
+  if (!isValidEditInput(token, target, trimmed)) {
     return
   }
   isSavingEdit.value = true
   try {
-    await performCategoryUpdate(token, target.id, trimmed)
+    await performCategoryUpdate(token as string, target.id, trimmed)
   } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : 'Failed to update category'
-    toastStore.showError(msg)
+    reportActionError(err, 'Failed to update category')
   } finally {
     isSavingEdit.value = false
   }
@@ -180,18 +191,22 @@ const performCategoryDeletion = async (
   await loadCategories()
 }
 
+const isValidDeleteTarget = (
+  token: string | null,
+  target: CategoryItem | null
+): target is CategoryItem => Boolean(token && target)
+
 const executeDelete = async (): Promise<void> => {
   const token = authStore.token
   const target = categoryToDelete.value
-  if (!token || !target) {
+  if (!isValidDeleteTarget(token, target)) {
     return
   }
   isDeleting.value = true
   try {
-    await performCategoryDeletion(token, target.id, target.name)
+    await performCategoryDeletion(token as string, target.id, target.name)
   } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : 'Failed to delete category'
-    toastStore.showError(msg)
+    reportActionError(err, 'Failed to delete category')
   } finally {
     isDeleting.value = false
   }
