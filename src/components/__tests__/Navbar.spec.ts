@@ -5,11 +5,15 @@ import Navbar from '../Navbar.vue'
 import { useAuthStore } from '@/stores/auth'
 import { useCartStore } from '@/stores/cart'
 
+import { reactive } from 'vue'
+
 const mockPush = vi.fn()
+const mockRoute = reactive({ path: '/' })
 vi.mock('vue-router', () => ({
   useRouter: () => ({
     push: mockPush
-  })
+  }),
+  useRoute: () => mockRoute
 }))
 
 const sampleCategories = [
@@ -23,6 +27,7 @@ describe('Navbar', () => {
     localStorage.clear()
     setActivePinia(createPinia())
     mockPush.mockClear()
+    mockRoute.path = '/'
     vi.restoreAllMocks()
     vi.spyOn(globalThis, 'fetch').mockResolvedValue({
       ok: true,
@@ -55,7 +60,7 @@ describe('Navbar', () => {
     expect(wrapper.find('[data-test="navbar-user-btn"]').exists()).toBe(false)
   })
 
-  it('renders dynamic username when authenticated and toggles dropdown', async () => {
+  it('renders dynamic username when authenticated on non-profile pages and links to /account', async () => {
     const authStore = useAuthStore()
     authStore.setUserSession({ id: 1, username: 'thainchai' }, 'token-123')
 
@@ -63,57 +68,22 @@ describe('Navbar', () => {
     await flushPromises()
     const userBtn = wrapper.find('[data-test="navbar-user-btn"]')
     expect(userBtn.exists()).toBe(true)
+    expect(userBtn.attributes('href')).toBe('/account')
     expect(wrapper.find('[data-test="navbar-username"]').text()).toBe('thainchai')
     expect(userBtn.find('i.fa-regular.fa-circle-user').exists()).toBe(true)
-    expect(userBtn.find('i.fa-regular.fa-circle-user').classes()).not.toContain('text-accent-yellow')
-
-    // Initially dropdown closed
-    expect(wrapper.find('[data-test="navbar-user-dropdown"]').exists()).toBe(false)
-
-    // Open dropdown
-    await userBtn.trigger('click')
-    expect(wrapper.find('[data-test="navbar-user-dropdown"]').exists()).toBe(true)
-    expect(wrapper.text()).toContain('Signed in as thainchai')
-
-    // Close dropdown on click again
-    await userBtn.trigger('click')
-    expect(wrapper.find('[data-test="navbar-user-dropdown"]').exists()).toBe(false)
   })
 
-  it('handles logout and navigates to login page', async () => {
-    const authStore = useAuthStore()
-    authStore.setUserSession({ id: 2, username: 'gamer99' }, 'token-xyz')
-
-    const wrapper = mountNavbar()
-    await flushPromises()
-    const userBtn = wrapper.find('[data-test="navbar-user-btn"]')
-    await userBtn.trigger('click')
-
-    const logoutBtn = wrapper.find('[data-test="navbar-logout-btn"]')
-    expect(logoutBtn.exists()).toBe(true)
-
-    await logoutBtn.trigger('click')
-    await flushPromises()
-
-    expect(authStore.isAuthenticated).toBe(false)
-    expect(mockPush).toHaveBeenCalledWith('/login?mode=login')
-  })
-
-  it('closes dropdowns when clicking outside', async () => {
+  it('hides username text when authenticated on /account profile page', async () => {
+    mockRoute.path = '/account'
     const authStore = useAuthStore()
     authStore.setUserSession({ id: 1, username: 'thainchai' }, 'token-123')
 
     const wrapper = mountNavbar()
     await flushPromises()
     const userBtn = wrapper.find('[data-test="navbar-user-btn"]')
-    await userBtn.trigger('click')
-    expect(wrapper.find('[data-test="navbar-user-dropdown"]').exists()).toBe(true)
-
-    // Simulate clicking outside on document body
-    document.dispatchEvent(new MouseEvent('click', { bubbles: true }))
-    await wrapper.vm.$nextTick()
-
-    expect(wrapper.find('[data-test="navbar-user-dropdown"]').exists()).toBe(false)
+    expect(userBtn.exists()).toBe(true)
+    expect(userBtn.attributes('href')).toBe('/account')
+    expect(wrapper.find('[data-test="navbar-username"]').exists()).toBe(false)
   })
 
   it('renders search input with accessible label and matching id', async () => {
