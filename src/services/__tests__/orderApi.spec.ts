@@ -14,7 +14,7 @@ describe('orderApi', () => {
   })
 
   it('formats date correctly and handles invalid or missing inputs', () => {
-    expect(formatDate(undefined)).toBeDefined()
+    expect(formatDate()).toBeDefined()
     expect(formatDate('')).toBeDefined()
     const formatted = formatDate('2026-10-12T14:30:00Z')
     expect(formatted).toContain('2026')
@@ -65,7 +65,7 @@ describe('orderApi', () => {
 
     vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
       ok: true,
-      json: async () => mockOrder
+      json: () => mockOrder
     } as unknown as Response)
 
     const result = await checkoutOrder('mock-token')
@@ -82,7 +82,7 @@ describe('orderApi', () => {
   it('sends checkout request for single item purchase', async () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
       ok: true,
-      json: async () => ({
+      json: () => ({
         id: 2,
         orderNumber: 'ORD-SINGLE',
         totalAmount: 500,
@@ -102,7 +102,7 @@ describe('orderApi', () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
       ok: false,
       status: 400,
-      json: async () => ({ error: 'Insufficient stock available' })
+      json: () => Promise.resolve({ error: 'Insufficient stock available' })
     } as unknown as Response)
 
     await expect(checkoutOrder('mock-token')).rejects.toThrow('Insufficient stock available')
@@ -120,7 +120,7 @@ describe('orderApi', () => {
 
     vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
       ok: true,
-      json: async () => mockList
+      json: () => mockList
     } as unknown as Response)
 
     const orders = await fetchOrderHistory('mock-token')
@@ -133,9 +133,7 @@ describe('orderApi', () => {
       ok: false,
       status: 401,
       statusText: 'Unauthorized',
-      json: async () => {
-        throw new Error('Not JSON')
-      }
+      json: () => Promise.reject(new Error('Not JSON'))
     } as unknown as Response)
 
     await expect(fetchOrderHistory('mock-token')).rejects.toThrow('Unauthorized')
@@ -144,7 +142,7 @@ describe('orderApi', () => {
   it('fetches order by number successfully', async () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
       ok: true,
-      json: async () => ({
+      json: () => Promise.resolve({
         id: 5,
         orderNumber: 'ORD-FIND',
         totalAmount: 250,
@@ -160,7 +158,7 @@ describe('orderApi', () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
       ok: false,
       status: 404,
-      json: async () => ({ message: 'Order not found' })
+      json: () => Promise.resolve({ message: 'Order not found' })
     } as unknown as Response)
 
     await expect(fetchOrderByNumber('mock-token', 'ORD-404')).rejects.toThrow('Order not found')
@@ -169,7 +167,7 @@ describe('orderApi', () => {
   it('returns empty array when order history is not an array', async () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
       ok: true,
-      json: async () => ({ not: 'an-array' })
+      json: () => Promise.resolve({ not: 'an-array' })
     } as unknown as Response)
 
     const orders = await fetchOrderHistory('mock-token')
@@ -181,8 +179,8 @@ describe('orderApi', () => {
       ok: false,
       status: 500,
       statusText: 'Server Error',
-      json: async () => {
-        throw new Error('Not JSON')
+      json: () => {
+        return Promise.reject(new Error('Not JSON'))
       }
     } as unknown as Response)
 
