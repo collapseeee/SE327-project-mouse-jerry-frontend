@@ -116,7 +116,9 @@ describe('PurchaseView', () => {
   })
 
   it('displays processing popup modal and disables confirm button during checkout', async () => {
-    let resolvePurchase: (order: Order) => void = () => {}
+    let resolvePurchase: (order: Order) => void = () => {
+      // Deferred promise resolver initialization placeholder
+    }
     const deferredPromise = new Promise<Order>((resolve) => {
       resolvePurchase = resolve
     })
