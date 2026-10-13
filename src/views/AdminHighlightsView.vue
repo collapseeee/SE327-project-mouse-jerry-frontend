@@ -13,6 +13,7 @@ import {
   deleteAdminHighlight
 } from '@/services/adminHighlightApi'
 import { fetchGames } from '@/services/gameApi'
+import { uploadGameImage } from '@/services/adminGameApi'
 import { useAuthStore } from '@/stores/auth'
 import { useToastStore } from '@/stores/toast'
 import type { Game, HighlightRecord } from '@/types/game'
@@ -36,6 +37,8 @@ const formGameId = ref('')
 const formCustomImage = ref('')
 const formButtonColor = ref(DEFAULT_COLOR)
 const isSaving = ref(false)
+const fileInputRef = ref<HTMLInputElement | null>(null)
+const isUploadingImage = ref(false)
 
 // Delete Modal State
 const isDeleteModalOpen = ref(false)
@@ -126,6 +129,41 @@ const submitUpdatedHighlight = async (token: string, targetId: string | number):
   }
   await updateAdminHighlight(token, targetId, payload)
   toastStore.showSuccess('Highlight updated successfully')
+}
+
+const triggerFileUpload = (): void => {
+  fileInputRef.value?.click()
+}
+
+const performImageUpload = async (token: string, file: File): Promise<void> => {
+  isUploadingImage.value = true
+  try {
+    const uploadedUrl = await uploadGameImage(token, file)
+    formCustomImage.value = uploadedUrl
+    toastStore.showSuccess('Banner image uploaded successfully')
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Failed to upload image'
+    toastStore.showError(message)
+  } finally {
+    isUploadingImage.value = false
+  }
+}
+
+const handleFileUpload = async (event: Event): Promise<void> => {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
+  if (!file) {
+    return
+  }
+
+  const token = authStore.token
+  if (!token) {
+    toastStore.showError('Authentication required')
+    return
+  }
+
+  await performImageUpload(token, file)
+  input.value = ''
 }
 
 const handleSaveHighlight = async (): Promise<void> => {
@@ -368,12 +406,36 @@ onMounted(async () => {
             </select>
           </div>
 
-          <!-- Field 2: Custom Banner Image URL matching Screenshot 2 -->
+          <!-- Field 2: Custom Banner Image URL & File Upload matching Screenshot 2 -->
           <div class="mb-4">
-            <label for="highlight-custom-image" class="flex items-center gap-1.5 text-xs font-medium text-slate-700 mb-1.5">
-              <i class="fa-solid fa-link text-primary text-xs"></i>
-              <span>Custom Banner Image URL</span>
-            </label>
+            <div class="flex items-center justify-between mb-1.5">
+              <label for="highlight-custom-image" class="flex items-center gap-1.5 text-xs font-medium text-slate-700">
+                <i class="fa-solid fa-link text-primary text-xs"></i>
+                <span>Custom Banner Image URL</span>
+              </label>
+              <button
+                type="button"
+                :disabled="isUploadingImage"
+                class="text-xs font-semibold text-primary hover:text-primary-hover flex items-center gap-1 cursor-pointer transition-colors disabled:opacity-50"
+                data-test="trigger-upload-btn"
+                @click="triggerFileUpload"
+              >
+                <i v-if="isUploadingImage" class="fa-solid fa-spinner fa-spin text-xs"></i>
+                <i v-else class="fa-solid fa-cloud-arrow-up text-xs"></i>
+                <span>{{ isUploadingImage ? 'Uploading...' : 'Upload File' }}</span>
+              </button>
+            </div>
+
+            <!-- Hidden File Input -->
+            <input
+              ref="fileInputRef"
+              type="file"
+              accept="image/*"
+              class="hidden"
+              data-test="banner-file-input"
+              @change="handleFileUpload"
+            />
+
             <input
               id="highlight-custom-image"
               v-model="formCustomImage"
@@ -382,6 +444,29 @@ onMounted(async () => {
               class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
               data-test="custom-image-input"
             />
+
+            <!-- Banner Preview when URL is populated -->
+            <div
+              v-if="formCustomImage.trim()"
+              class="mt-2 relative rounded-lg overflow-hidden border border-slate-200 bg-slate-900 h-24 flex items-center justify-center group"
+              data-test="banner-preview"
+            >
+              <img
+                :src="formCustomImage"
+                alt="Banner preview"
+                class="w-full h-full object-cover"
+              />
+              <button
+                type="button"
+                class="absolute top-2 right-2 bg-black/60 hover:bg-black/80 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs transition-colors cursor-pointer"
+                title="Remove image"
+                data-test="remove-banner-btn"
+                @click="formCustomImage = ''"
+              >
+                <i class="fa-solid fa-xmark"></i>
+              </button>
+            </div>
+
             <p class="text-xs text-slate-400 mt-1 flex items-center gap-1">
               <i class="fa-solid fa-circle-info text-[10px]"></i>
               <span>If left blank, the system will use the game's default cover art.</span>
