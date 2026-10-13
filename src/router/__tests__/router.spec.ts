@@ -124,6 +124,11 @@ describe('router', () => {
     expect(highlightsRoute.name).toBe('AdminHighlights')
     expect(highlightsRoute.meta.requiresAuth).toBe(true)
     expect(highlightsRoute.meta.requiresAdmin).toBe(true)
+
+    const profileRoute = router.resolve('/admin/profile')
+    expect(profileRoute.name).toBe('AdminProfile')
+    expect(profileRoute.meta.requiresAuth).toBe(true)
+    expect(profileRoute.meta.requiresAdmin).toBe(true)
   })
 
   it('redirects non-admin user visiting admin route to /', async () => {
@@ -134,10 +139,16 @@ describe('router', () => {
     expect(router.currentRoute.value.path).toBe('/')
   })
 
-  it('allows admin user to visit admin routes', async () => {
+  it('allows admin user to visit admin routes and redirects /account to /admin/profile', async () => {
     const authStore = useAuthStore()
     authStore.setUserSession({ id: 3, username: 'admin', role: 'ROLE_ADMIN' }, 'admin-token')
     await router.push('/admin/games')
     expect(router.currentRoute.value.path).toBe('/admin/games')
+
+    await router.push('/admin/profile')
+    expect(router.currentRoute.value.path).toBe('/admin/profile')
+
+    await router.push('/account')
+    expect(router.currentRoute.value.path).toBe('/admin/profile')
   })
 })
