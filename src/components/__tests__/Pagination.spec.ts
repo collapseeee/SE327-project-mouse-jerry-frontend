@@ -13,7 +13,7 @@ describe('Pagination', () => {
     expect(wrapper.find('nav').exists()).toBe(false)
   })
 
-  it('renders all page numbers when totalPages <= 5', () => {
+  it('renders all page numbers when totalPages is 4', () => {
     const wrapper = mount(Pagination, {
       props: {
         currentPage: 2,
@@ -26,41 +26,32 @@ describe('Pagination', () => {
     expect(pageButtons).toHaveLength(6)
   })
 
-  it('renders ellipsis when totalPages > 5 near start', () => {
+  it('renders all page numbers when totalPages > 5 matching baseline', () => {
     const wrapper = mount(Pagination, {
       props: {
         currentPage: 1,
-        totalPages: 6
+        totalPages: 7
       }
     })
-    expect(wrapper.text()).toContain('...')
-    expect(wrapper.text()).toContain('1')
-    expect(wrapper.text()).toContain('2')
-    expect(wrapper.text()).toContain('6')
+    expect(wrapper.text()).not.toContain('...')
+    for (let p = 1; p <= 7; p++) {
+      expect(wrapper.text()).toContain(String(p))
+    }
+    const pageButtons = wrapper.findAll('button')
+    // prev + 7 pages + next = 9 buttons
+    expect(pageButtons).toHaveLength(9)
   })
 
-  it('renders ellipsis when totalPages > 5 near end', () => {
+  it('highlights current page with active styling on later pages', () => {
     const wrapper = mount(Pagination, {
       props: {
         currentPage: 6,
-        totalPages: 6
-      }
-    })
-    expect(wrapper.text()).toContain('...')
-    expect(wrapper.text()).toContain('1')
-    expect(wrapper.text()).toContain('5')
-    expect(wrapper.text()).toContain('6')
-  })
-
-  it('renders dual ellipsis when in middle', () => {
-    const wrapper = mount(Pagination, {
-      props: {
-        currentPage: 4,
         totalPages: 8
       }
     })
-    expect(wrapper.text()).toContain('4')
-    expect(wrapper.text()).toContain('8')
+    const activeBtn = wrapper.find('button[aria-current="page"]')
+    expect(activeBtn.exists()).toBe(true)
+    expect(activeBtn.text()).toBe('6')
   })
 
   it('disables previous button on first page and next button on last page', () => {

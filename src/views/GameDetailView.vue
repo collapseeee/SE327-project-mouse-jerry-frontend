@@ -62,6 +62,26 @@ const galleryImages = computed(() => {
 const activeImageIndex = ref(0)
 const quantity = ref(1)
 
+const displayCategories = computed(() => {
+  if (!game.value) return []
+  if (game.value.categories && game.value.categories.length > 0) {
+    return game.value.categories
+  }
+  if (game.value.category) {
+    return [game.value.category]
+  }
+  return []
+})
+
+const primaryCategory = computed(() => {
+  return displayCategories.value[0] || 'Games'
+})
+
+const hasSystemRequirements = computed(() => {
+  const req = game.value?.systemRequirements
+  return Boolean(req && Object.values(req).some(Boolean))
+})
+
 const prevImage = () => {
   if (galleryImages.value.length === 0) return
   if (activeImageIndex.value > 0) {
@@ -141,7 +161,7 @@ const handleBuyNow = async () => {
 </script>
 
 <template>
-  <main class="max-w-7xl mx-auto px-6 py-6 min-h-[calc(100vh-8rem)]">
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 py-6 min-h-[calc(100vh-8rem)]">
     <!-- Loading State -->
     <div
       v-if="isLoading"
@@ -153,52 +173,49 @@ const handleBuyNow = async () => {
 
     <!-- Game Found State -->
     <template v-else-if="game">
-      <!-- Breadcrumb matching Screenshot 2 -->
-      <nav class="flex items-center text-sm text-text-muted mb-6 flex-wrap gap-1" aria-label="Breadcrumb">
+      <!-- Breadcrumb matching Baseline UI & Screenshot -->
+      <nav class="flex items-center text-sm mb-6 flex-wrap gap-1 text-slate-500" aria-label="Breadcrumb">
         <router-link to="/" class="text-secondary hover:underline font-medium">
           Home
         </router-link>
-        <span class="text-slate-400">/</span>
-        <router-link
-          :to="`/category/${encodeURIComponent(game.category)}`"
-          class="text-secondary hover:underline font-medium"
-        >
-          {{ game.category }}
+        <span class="mx-1 text-slate-400">/</span>
+        <router-link :to="'/category/' + encodeURIComponent(primaryCategory)" class="text-secondary hover:underline font-medium">
+          {{ primaryCategory }}
         </router-link>
-        <span class="text-slate-400">/</span>
-        <span class="text-slate-600 font-medium truncate max-w-xs sm:max-w-md">
+        <span class="mx-1 text-slate-400">/</span>
+        <span class="text-slate-600 font-medium" aria-current="page">
           {{ game.name }}
         </span>
       </nav>
 
-      <!-- Main Product Details Card -->
-      <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-        <!-- Gallery Section matching Screenshot 2 -->
-        <section class="lg:col-span-7 flex flex-col gap-4">
-          <!-- Main Preview Window with Next/Prev Arrows -->
-          <div class="relative w-full aspect-video bg-slate-900 rounded-2xl overflow-hidden shadow-md flex items-center justify-center group">
+      <!-- Top Two-Column Grid: Visuals Column (Left) & Purchasing Column (Right) -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 mb-10">
+        <!-- Left Column: Visuals / Custom Slider & Thumbnails -->
+        <section class="lg:col-span-7 flex flex-col">
+          <!-- Main Slider Image Box -->
+          <div class="relative overflow-hidden rounded-xl bg-[#111] shadow-sm mb-3 flex items-center justify-center min-h-[420px] max-h-[460px]">
             <img
-              :src="galleryImages[activeImageIndex]"
-              :alt="game.name"
-              class="w-full h-full object-cover select-none"
+              :src="galleryImages[activeImageIndex] || game.coverImage"
+              :alt="`${game.name} Screenshot`"
+              class="w-full h-[450px] object-contain transition-opacity duration-150 cursor-pointer"
             />
 
-            <!-- Prev arrow (if more than 1 image) -->
+            <!-- Prev Arrow -->
             <button
               v-if="galleryImages.length > 1"
               type="button"
-              class="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/60 hover:bg-black/80 text-white flex items-center justify-center transition-all opacity-80 hover:opacity-100"
+              class="absolute left-3 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-black/60 hover:bg-primary text-white flex items-center justify-center transition-all opacity-80 hover:opacity-100 hover:scale-105 z-10 cursor-pointer"
               aria-label="Previous screenshot"
               @click="prevImage"
             >
               <i class="fa-solid fa-chevron-left text-sm"></i>
             </button>
 
-            <!-- Next arrow (if more than 1 image) -->
+            <!-- Next Arrow -->
             <button
               v-if="galleryImages.length > 1"
               type="button"
-              class="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/60 hover:bg-black/80 text-white flex items-center justify-center transition-all opacity-80 hover:opacity-100"
+              class="absolute right-3 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-black/60 hover:bg-primary text-white flex items-center justify-center transition-all opacity-80 hover:opacity-100 hover:scale-105 z-10 cursor-pointer"
               aria-label="Next screenshot"
               @click="nextImage"
             >
@@ -206,104 +223,55 @@ const handleBuyNow = async () => {
             </button>
           </div>
 
-          <!-- Thumbnail Strip (Screenshot 2 bottom thumbnails) -->
+          <!-- Thumbnail Scroller -->
           <div
             v-if="galleryImages.length > 1"
-            class="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 gap-2"
+            class="flex gap-2 overflow-x-auto py-2"
           >
             <button
               v-for="(img, idx) in galleryImages"
               :key="idx"
               type="button"
               :aria-label="`Select screenshot ${idx + 1}`"
-              class="aspect-video rounded-lg overflow-hidden border-2 transition-all cursor-pointer bg-slate-900"
-              :class="activeImageIndex === idx ? 'border-primary ring-2 ring-primary/30 scale-95' : 'border-transparent opacity-70 hover:opacity-100'"
+              class="w-[120px] h-[68px] flex-shrink-0 rounded-md overflow-hidden border-2 transition-all cursor-pointer bg-slate-900"
+              :class="activeImageIndex === idx ? 'border-primary opacity-100 scale-105 shadow-md' : 'border-transparent opacity-50 hover:opacity-80'"
               @click="selectImage(idx)"
             >
               <img
                 :src="img"
-                :alt="`${game.name} preview ${idx + 1}`"
+                :alt="`Thumbnail ${idx + 1}`"
                 class="w-full h-full object-cover"
               />
             </button>
           </div>
         </section>
 
-        <!-- Right Side: Game Info & Purchasing Section -->
-        <section class="lg:col-span-5 bg-white rounded-2xl border border-slate-100 p-6 shadow-sm flex flex-col gap-6">
-          <div>
-            <!-- Categories / Badges -->
-            <div class="flex items-center gap-2 flex-wrap mb-2">
-              <span class="inline-block px-2.5 py-1 bg-primary/10 text-primary font-semibold text-xs rounded-full">
-                {{ game.category }}
-              </span>
-              <span
-                v-if="game.stock !== undefined && game.stock > 0"
-                class="inline-block px-2.5 py-1 bg-emerald-50 text-emerald-700 font-semibold text-xs rounded-full"
-              >
-                In Stock ({{ game.stock }})
-              </span>
-            </div>
-
-            <!-- Title -->
-            <h1 class="text-2xl sm:text-3xl font-extrabold text-primary tracking-tight leading-snug">
-              {{ game.name }}
-            </h1>
-
-            <!-- Publisher & Release -->
-            <div class="flex items-center gap-4 text-xs text-text-muted mt-2">
-              <span v-if="game.publisher">
-                Publisher: <strong class="text-slate-700">{{ game.publisher }}</strong>
-              </span>
-              <span v-if="game.releaseDate">
-                Release: <strong class="text-slate-700">{{ game.releaseDate }}</strong>
-              </span>
-            </div>
+        <!-- Right Column: Purchasing Section (Matching Screenshot) -->
+        <section class="lg:col-span-5 flex flex-col justify-start">
+          <!-- Game Cover Image with border-primary -->
+          <div class="mb-4">
+            <img
+              :src="game.coverImage"
+              :alt="game.name"
+              class="rounded-lg shadow-sm max-h-[250px] w-auto border-2 border-primary object-cover"
+            />
           </div>
 
-          <!-- Price -->
-          <div class="py-2 border-y border-slate-100">
-            <span class="text-xs text-text-muted uppercase tracking-wider block font-semibold mb-0.5">
-              Price
-            </span>
-            <div class="text-3xl font-extrabold text-primary">
-              {{ game.price }} <span class="text-lg font-bold text-slate-500">Baht</span>
-            </div>
+          <!-- Game Title -->
+          <h1 class="text-3xl sm:text-4xl font-bold text-primary mb-2 tracking-tight leading-tight">
+            {{ game.name }}
+          </h1>
+
+          <!-- Price Tag -->
+          <div class="text-3xl sm:text-4xl font-extrabold text-primary mb-4">
+            {{ game.price }} <span class="text-2xl font-bold">Baht</span>
           </div>
 
-          <!-- Quantity Selector matching Screenshot 2: `[ - ] [ 1 ] [ + ]` -->
-          <div class="flex items-center gap-4">
-            <span class="text-sm font-semibold text-slate-700">Amount</span>
-            <div class="flex items-center border border-slate-300 rounded-lg overflow-hidden bg-slate-50">
-              <button
-                type="button"
-                class="w-9 h-9 flex items-center justify-center text-slate-600 hover:bg-slate-200 transition-colors disabled:opacity-40"
-                aria-label="Decrease quantity"
-                :disabled="quantity <= 1"
-                @click="decrementQuantity"
-              >
-                <i class="fa-solid fa-minus text-xs"></i>
-              </button>
-              <span class="w-12 text-center text-sm font-bold text-slate-800">
-                {{ quantity }}
-              </span>
-              <button
-                type="button"
-                class="w-9 h-9 flex items-center justify-center text-slate-600 hover:bg-slate-200 transition-colors disabled:opacity-40"
-                aria-label="Increase quantity"
-                :disabled="quantity >= (game.stock ?? 99)"
-                @click="incrementQuantity"
-              >
-                <i class="fa-solid fa-plus text-xs"></i>
-              </button>
-            </div>
-          </div>
-
-          <!-- Actions: Add to Cart & Buy Now matching Screenshot 2 -->
-          <div class="flex flex-col sm:flex-row gap-3 pt-2">
+          <!-- Action Buttons: Add to Cart & Buy Now side by side -->
+          <div class="flex items-center gap-3 mb-5">
             <button
               type="button"
-              class="flex-1 py-3 px-6 rounded-xl font-bold text-sm bg-accent-yellow hover:bg-accent-yellow-hover text-slate-900 shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+              class="flex-1 py-2.5 px-4 rounded-lg font-bold text-sm bg-secondary hover:bg-transparent text-white hover:text-secondary border-2 border-secondary transition-all flex items-center justify-center gap-2 cursor-pointer shadow-sm disabled:opacity-50"
               :disabled="isAddingToCart"
               data-test="add-to-cart-btn"
               @click="handleAddToCart"
@@ -313,7 +281,7 @@ const handleBuyNow = async () => {
             </button>
             <button
               type="button"
-              class="flex-1 py-3 px-6 rounded-xl font-bold text-sm bg-accent-red hover:bg-red-700 text-white shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+              class="flex-1 py-2.5 px-4 rounded-lg font-bold text-sm bg-gradient-to-r from-accent-red to-accent-yellow hover:opacity-95 text-white border-none shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
               :disabled="isAddingToCart"
               data-test="buy-now-btn"
               @click="handleBuyNow"
@@ -323,16 +291,117 @@ const handleBuyNow = async () => {
             </button>
           </div>
 
-          <!-- Description / Metadata -->
-          <div v-if="game.description" class="pt-4 border-t border-slate-200">
-            <h2 class="text-sm font-bold text-slate-700 uppercase tracking-wider mb-2">
-              About the Game
-            </h2>
-            <p class="text-sm text-slate-600 leading-relaxed">
-              {{ game.description }}
-            </p>
+          <!-- Amount / Quantity Selector & Stock Info -->
+          <div class="mb-4">
+            <label class="block font-bold text-slate-500 mb-1 text-sm">
+              Amount
+            </label>
+            <div class="flex items-center gap-3">
+              <div class="flex items-center bg-white border-2 border-slate-200 rounded-lg overflow-hidden w-max">
+                <button
+                  type="button"
+                  class="w-9 h-9 flex items-center justify-center bg-slate-50 hover:bg-slate-200 text-primary transition-colors disabled:opacity-40 cursor-pointer"
+                  aria-label="Decrease quantity"
+                  :disabled="quantity <= 1"
+                  @click="decrementQuantity"
+                >
+                  <i class="fa-solid fa-minus text-xs"></i>
+                </button>
+                <span class="w-12 text-center font-bold text-base text-slate-800">
+                  {{ quantity }}
+                </span>
+                <button
+                  type="button"
+                  class="w-9 h-9 flex items-center justify-center bg-slate-50 hover:bg-slate-200 text-primary transition-colors disabled:opacity-40 cursor-pointer"
+                  aria-label="Increase quantity"
+                  :disabled="quantity >= (game.stock ?? 99)"
+                  @click="incrementQuantity"
+                >
+                  <i class="fa-solid fa-plus text-xs"></i>
+                </button>
+              </div>
+              <span class="text-slate-500 text-sm">
+                ({{ game.stock ?? 0 }} available in stock)
+              </span>
+            </div>
+          </div>
+
+          <!-- Metadata: Publisher & Release -->
+          <div v-if="game.publisher || game.releaseDate" class="flex items-center gap-4 text-xs text-text-muted mt-1">
+            <span v-if="game.publisher">
+              Publisher: <strong class="text-slate-700">{{ game.publisher }}</strong>
+            </span>
+            <span v-if="game.releaseDate">
+              Release: <strong class="text-slate-700">{{ game.releaseDate }}</strong>
+            </span>
           </div>
         </section>
+      </div>
+
+      <!-- Bottom Info Column (Matching Baseline Section Titles & Cards) -->
+      <div class="w-full lg:w-8/12 mt-4 space-y-8">
+        <!-- 1. Category Section -->
+        <div class="mb-6">
+          <h3 class="relative text-2xl font-extrabold text-primary pb-2.5 mb-3 after:content-[''] after:absolute after:left-0 after:bottom-0 after:w-12 after:h-1 after:bg-accent-yellow after:rounded">
+            Category
+          </h3>
+          <div class="flex gap-2 flex-wrap mt-3">
+            <router-link
+              v-for="cat in displayCategories"
+              :key="cat"
+              :to="'/category/' + encodeURIComponent(cat)"
+              class="px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-primary border border-slate-300 rounded-full text-sm font-medium transition-colors"
+            >
+              {{ cat }}
+            </router-link>
+          </div>
+        </div>
+
+        <!-- 2. About Game Section -->
+        <div class="mb-6">
+          <h3 class="relative text-2xl font-extrabold text-primary pb-2.5 mb-3 after:content-[''] after:absolute after:left-0 after:bottom-0 after:w-12 after:h-1 after:bg-accent-yellow after:rounded">
+            About Game
+          </h3>
+          <div class="bg-white rounded-xl p-6 sm:p-8 shadow-sm border-l-4 border-secondary mt-3">
+            <p class="leading-relaxed text-slate-700 m-0 text-sm sm:text-base">
+              {{ game.description || 'No description available.' }}
+            </p>
+          </div>
+        </div>
+
+        <!-- 3. System Requirements Section (Rendered strictly if systemRequirements exists) -->
+        <div v-if="hasSystemRequirements" class="mb-6">
+          <h3 class="relative text-2xl font-extrabold text-primary pb-2.5 mb-3 after:content-[''] after:absolute after:left-0 after:bottom-0 after:w-12 after:h-1 after:bg-accent-yellow after:rounded">
+            System Requirements
+          </h3>
+          <div class="bg-white rounded-xl p-6 sm:p-8 shadow-sm border-l-4 border-secondary mt-3 text-slate-700">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div v-if="game.systemRequirements?.os">
+                <span class="text-slate-400 block text-xs font-bold uppercase tracking-wider mb-1">OS</span>
+                <span class="text-sm font-medium text-slate-800">{{ game.systemRequirements.os }}</span>
+              </div>
+              <div v-if="game.systemRequirements?.processor">
+                <span class="text-slate-400 block text-xs font-bold uppercase tracking-wider mb-1">Processor</span>
+                <span class="text-sm font-medium text-slate-800">{{ game.systemRequirements.processor }}</span>
+              </div>
+              <div v-if="game.systemRequirements?.memory">
+                <span class="text-slate-400 block text-xs font-bold uppercase tracking-wider mb-1">Memory</span>
+                <span class="text-sm font-medium text-slate-800">{{ game.systemRequirements.memory }}</span>
+              </div>
+              <div v-if="game.systemRequirements?.graphics">
+                <span class="text-slate-400 block text-xs font-bold uppercase tracking-wider mb-1">Graphics</span>
+                <span class="text-sm font-medium text-slate-800">{{ game.systemRequirements.graphics }}</span>
+              </div>
+              <div v-if="game.systemRequirements?.storage" class="col-span-1 sm:col-span-2 pt-3 border-t border-slate-200">
+                <span class="text-slate-400 block text-xs font-bold uppercase tracking-wider mb-1">Storage</span>
+                <span class="text-sm font-medium text-slate-800 flex items-center">
+                  <i class="fa-solid fa-hard-drive mr-2 text-primary"></i>
+                  {{ game.systemRequirements.storage }}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </template>
 

@@ -15,7 +15,7 @@ const cartStore = useCartStore()
 
 const highlights = ref<HighlightItem[]>([])
 const currentPage = ref(1)
-const pageSize = ref(5)
+const pageSize = ref(15)
 const totalCount = ref(0)
 const catalogGames = ref<Game[]>([])
 const isLoading = ref(true)

@@ -203,4 +203,40 @@ describe('Navbar', () => {
     await wrapper.vm.$nextTick()
     expect(wrapper.find('a[href="/category/Fighting"]').exists()).toBe(false)
   })
+
+  it('renders admin navbar when route path starts with /admin', async () => {
+    mockRoute.path = '/admin/games'
+    const wrapper = mountNavbar()
+    await flushPromises()
+
+    expect(wrapper.find('[data-test="admin-navbar-container"]').exists()).toBe(true)
+    expect(wrapper.find('[data-test="admin-brand-logo"]').text()).toBe('MOUSE JERRY')
+    expect(wrapper.find('[data-test="admin-nav-game"]').exists()).toBe(true)
+    expect(wrapper.text()).toContain('CATEGORY')
+    expect(wrapper.text()).toContain('HIGHLIGHT')
+    expect(wrapper.text()).toContain('SALE HISTORY')
+
+    // Submit admin search
+    const searchInput = wrapper.find('[data-test="admin-navbar-search-input"]')
+    await searchInput.setValue('Hollow')
+    await wrapper.find('form').trigger('submit')
+
+    expect(mockPush).toHaveBeenCalledWith({
+      path: '/admin/games',
+      query: { search: 'Hollow' }
+    })
+  })
+
+  it('renders Back Office link in customer navbar when user is admin', async () => {
+    mockRoute.path = '/'
+    const authStore = useAuthStore()
+    authStore.setUserSession({ id: 9, username: 'admin', role: 'ROLE_ADMIN' }, 'adm-token')
+
+    const wrapper = mountNavbar()
+    await flushPromises()
+
+    const adminLink = wrapper.find('[data-test="navbar-admin-link"]')
+    expect(adminLink.exists()).toBe(true)
+    expect(adminLink.attributes('href')).toBe('/admin/games')
+  })
 })

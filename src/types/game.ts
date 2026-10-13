@@ -1,3 +1,11 @@
+export interface SystemRequirements {
+  os?: string
+  processor?: string
+  memory?: string
+  graphics?: string
+  storage?: string
+}
+
 export interface Game {
   id: string
   name: string
@@ -11,6 +19,24 @@ export interface Game {
   releaseDate?: string
   stock?: number
   isHighlight?: boolean
+  systemRequirements?: SystemRequirements
+}
+
+export interface GamePayload {
+  id?: string
+  name: string
+  price: number
+  coverImage?: string
+  category?: string
+  categoryIds?: number[]
+  categories?: string[]
+  description?: string
+  screenshots?: string[]
+  publisher?: string
+  releaseDate?: string
+  stock?: number
+  isHighlight?: boolean
+  systemRequirements?: SystemRequirements
 }
 
 export interface CategoryItem {
