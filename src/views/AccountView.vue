@@ -45,18 +45,18 @@ onMounted(async () => {
   <main class="max-w-5xl mx-auto px-6 py-10 min-h-[calc(100vh-8rem)]">
     <!-- Profile Card matching Screenshot 1 & 2 -->
     <div
-      class="bg-white rounded-3xl border border-slate-200/80 shadow-sm p-6 sm:p-8 flex flex-col sm:flex-row items-center justify-between gap-6 mb-10"
+      class="bg-white rounded-3xl border border-slate-200/80 shadow-sm p-6 sm:p-8 flex flex-col sm:flex-row items-center justify-between gap-6 mb-10 animate-card-entrance"
     >
       <div class="flex flex-col sm:flex-row items-center gap-6 text-center sm:text-left">
         <!-- Avatar: rounded square with rich purple gradient matching Screenshot 1 -->
         <div
-          class="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-gradient-to-br from-primary via-[#520268] to-[#6d037a] flex items-center justify-center flex-shrink-0 shadow-md"
+          class="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-gradient-to-br from-primary via-[#520268] to-[#6d037a] flex items-center justify-center flex-shrink-0 shadow-md animate-pop-in delay-100"
         >
           <i class="fa-solid fa-user text-3xl sm:text-4xl text-white"></i>
         </div>
 
         <!-- User Information -->
-        <div class="flex flex-col gap-1">
+        <div class="flex flex-col gap-1 animate-fade-in delay-150">
           <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
             {{ authStore.currentUsername || 'User' }}
           </h1>
@@ -76,7 +76,7 @@ onMounted(async () => {
       <!-- Logout Button: pill style, light gray by default, hover red with smooth animation -->
       <button
         type="button"
-        class="px-5 py-2 bg-slate-200/80 text-slate-700 font-semibold text-sm rounded-full transition-all duration-300 ease-in-out hover:bg-accent-red hover:text-white hover:shadow-md hover:scale-105 active:scale-95 flex items-center gap-2 cursor-pointer self-center"
+        class="px-5 py-2 bg-slate-200/80 text-slate-700 font-semibold text-sm rounded-full transition-all duration-300 ease-in-out hover:bg-accent-red hover:text-white hover:shadow-md hover:scale-105 active:scale-95 flex items-center gap-2 cursor-pointer self-center animate-fade-in delay-200"
         data-test="account-logout-btn"
         @click="handleLogout"
       >
@@ -87,7 +87,7 @@ onMounted(async () => {
 
     <!-- My Digital Keys Heading with yellow underline matching Screenshot 1 & 2 -->
     <div class="mb-8">
-      <div class="border-b-2 border-accent-yellow pb-1.5 inline-block mb-6">
+      <div class="border-b-2 border-accent-yellow pb-1.5 inline-block mb-6 animate-fade-in-down delay-200">
         <h2 class="text-2xl font-extrabold text-primary flex items-center gap-2.5">
           <i class="fa-solid fa-key rotate-90 text-primary"></i>
           <span>My Digital Keys</span>
@@ -95,7 +95,7 @@ onMounted(async () => {
       </div>
 
       <!-- Orders List matching Screenshot 2 -->
-      <div v-if="cartStore.orders.length > 0" class="flex flex-col gap-6">
+      <div v-if="cartStore.orders.length > 0" class="flex flex-col gap-6 animate-fade-in-up delay-250">
         <div
           v-for="order in paginatedOrders"
           :key="order.id"
@@ -151,7 +151,7 @@ onMounted(async () => {
       <!-- Empty State matching Screenshot 1: box icon, No purchases yet!, Browse Games button -->
       <div
         v-else
-        class="py-16 text-center bg-white rounded-2xl border border-slate-200/80 shadow-sm"
+        class="py-16 text-center bg-white rounded-2xl border border-slate-200/80 shadow-sm animate-card-entrance"
       >
         <div class="flex justify-center mb-3">
           <i class="fa-solid fa-box-open text-4xl text-slate-600"></i>

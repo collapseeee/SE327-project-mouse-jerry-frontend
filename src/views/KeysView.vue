@@ -51,12 +51,12 @@ onMounted(async () => {
 <template>
   <main class="max-w-4xl mx-auto px-6 py-8 min-h-[calc(100vh-8rem)]">
     <!-- Title matching Screenshot 4 -->
-    <h1 class="text-2xl sm:text-3xl font-extrabold text-primary flex items-center gap-2.5 mb-8">
+    <h1 class="text-2xl sm:text-3xl font-extrabold text-primary flex items-center gap-2.5 mb-8 animate-fade-in-down">
       <i class="fa-solid fa-key rotate-90 text-primary"></i>
       <span>Your Game Keys</span>
     </h1>
 
-    <div v-if="displayedKeys.length > 0" class="flex flex-col gap-5 mb-10">
+    <div v-if="displayedKeys.length > 0" class="flex flex-col gap-5 mb-10 animate-fade-in-up delay-100">
       <!-- Game Key Cards matching Screenshot 4 -->
       <div
         v-for="(item, idx) in displayedKeys"
@@ -100,7 +100,7 @@ onMounted(async () => {
     <!-- Empty State -->
     <div
       v-else
-      class="py-20 text-center bg-white rounded-2xl border border-slate-100 shadow-sm mb-10"
+      class="py-20 text-center bg-white rounded-2xl border border-slate-100 shadow-sm mb-10 animate-card-entrance"
     >
       <i class="fa-solid fa-key text-5xl text-slate-300 mb-4 block"></i>
       <h2 class="text-xl font-bold text-slate-700 mb-2">No keys to display</h2>

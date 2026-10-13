@@ -37,4 +37,48 @@ describe('HighlightCarousel', () => {
     const img = wrapper.find('img')
     expect(img.attributes('src')).toBe('https://example.com/test.jpg')
   })
+
+  it('renders correctly when 5 or more highlights are provided', () => {
+    const fiveHighlights: HighlightItem[] = Array.from({ length: 5 }, (_, i) => ({
+      id: String(i + 1),
+      gameId: String(100 + i),
+      name: `Game ${i + 1}`,
+      customImage: `https://example.com/game-${i + 1}.jpg`,
+      buttonColor: '#ff0000'
+    }))
+
+    const wrapper = mount(HighlightCarousel, {
+      props: {
+        highlights: fiveHighlights
+      },
+      global: {
+        stubs: {
+          RouterLink: { template: '<a><slot /></a>' },
+          swiper: { template: '<div><slot /></div>' },
+          SwiperSlide: { template: '<div class="slide"><slot /></div>' }
+        }
+      }
+    })
+
+    const slides = wrapper.findAll('.slide')
+    expect(slides.length).toBe(5)
+  })
+
+  it('handles empty highlights gracefully', () => {
+    const wrapper = mount(HighlightCarousel, {
+      props: {
+        highlights: []
+      },
+      global: {
+        stubs: {
+          RouterLink: { template: '<a><slot /></a>' },
+          swiper: { template: '<div><slot /></div>' },
+          SwiperSlide: { template: '<div class="slide"><slot /></div>' }
+        }
+      }
+    })
+
+    const slides = wrapper.findAll('.slide')
+    expect(slides.length).toBe(0)
+  })
 })

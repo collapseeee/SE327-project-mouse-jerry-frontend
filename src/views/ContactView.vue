@@ -12,12 +12,12 @@ export default {
   <main class="max-w-5xl mx-auto px-6 py-10 min-h-[calc(100vh-8rem)]">
     <!-- Main Contact Card -->
     <div
-      class="bg-white rounded-3xl border border-slate-200/80 shadow-sm p-8 sm:p-10"
+      class="bg-white rounded-3xl border border-slate-200/80 shadow-sm p-8 sm:p-10 animate-card-entrance"
       data-test="contact-card"
     >
       <div class="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12 items-start">
         <!-- Left Column: Contact Channels & Address -->
-        <div class="flex flex-col gap-8">
+        <div class="flex flex-col gap-8 animate-fade-in-up delay-100">
           <!-- Contact us section -->
           <div>
             <h1 class="text-2xl sm:text-3xl font-extrabold text-primary tracking-tight mb-5">
@@ -88,7 +88,7 @@ export default {
         </div>
 
         <!-- Right Column: Map -->
-        <div class="flex flex-col">
+        <div class="flex flex-col animate-fade-in-scale delay-200">
           <h2 class="text-2xl sm:text-3xl font-extrabold text-primary tracking-tight mb-5">
             Map
           </h2>
