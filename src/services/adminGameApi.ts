@@ -1,44 +1,25 @@
 import type { FetchGamesParams, Game, GamePayload, GamesResponse, SystemRequirements } from '@/types/game'
+import {
+  isRecord,
+  isNonEmptyString,
+  parseStringField,
+  parseOptionalString,
+  parseNumericField,
+  parseStringArray,
+  parseResponseError
+} from './apiHelpers'
 
 const ADMIN_GAMES_BASE = '/api/v1/admin/games'
 const UPLOAD_BASE = '/api/v1/upload/image'
 
-const isRecord = (val: unknown): val is Record<string, unknown> => typeof val === 'object' && val !== null
-
-const isNonEmptyString = (val: unknown): val is string => typeof val === 'string' && Boolean(val.trim())
-
 const isValidGameRecord = (item: unknown): item is Record<string, unknown> & { name: string } =>
   isRecord(item) && isNonEmptyString(item.name)
-
-const parseStringField = (val: unknown, fallback = ''): string =>
-  isNonEmptyString(val) ? val : fallback
-
-const parseOptionalString = (val: unknown): string | undefined =>
-  isNonEmptyString(val) ? val : undefined
 
 const resolveGameId = (val: unknown, fallback: string): string => {
   if (typeof val === 'string' || typeof val === 'number') {
     return String(val)
   }
   return fallback
-}
-
-const parseNumericField = (val: unknown, fallback: number): number => {
-  if (typeof val === 'number' && !Number.isNaN(val)) {
-    return val
-  }
-  if (typeof val === 'string') {
-    const parsed = Number.parseFloat(val)
-    return Number.isNaN(parsed) ? fallback : parsed
-  }
-  return fallback
-}
-
-const parseStringArray = (val: unknown): string[] => {
-  if (!Array.isArray(val)) {
-    return []
-  }
-  return val.filter(isNonEmptyString)
 }
 
 const parseSystemRequirements = (val: unknown): SystemRequirements | undefined => {
@@ -115,47 +96,6 @@ const buildJsonAuthHeaders = (token: string): HeadersInit => ({
   'Content-Type': 'application/json',
   Authorization: `Bearer ${token}`
 })
-
-const extractDetailsError = (data: Record<string, unknown>): string | null => {
-  const details = data.details
-  if (!isRecord(details)) {
-    return null
-  }
-  const messages = Object.values(details).filter(isNonEmptyString)
-  return messages.length > 0 ? messages.join(', ') : null
-}
-
-const extractObjectError = (data: Record<string, unknown>): string | null => {
-  const detailsMsg = extractDetailsError(data)
-  if (detailsMsg) {
-    return detailsMsg
-  }
-  const errorVal = data.error
-  if (isNonEmptyString(errorVal)) {
-    return errorVal
-  }
-  const msgVal = data.message
-  return isNonEmptyString(msgVal) ? msgVal : null
-}
-
-const extractErrorMessage = (errData: unknown, fallback: string): string => {
-  if (isNonEmptyString(errData)) {
-    return errData
-  }
-  if (isRecord(errData)) {
-    return extractObjectError(errData) ?? fallback
-  }
-  return fallback
-}
-
-const parseResponseError = async (response: Response, fallback: string): Promise<string> => {
-  try {
-    const errData = await response.json()
-    return extractErrorMessage(errData, fallback)
-  } catch {
-    return response.statusText || fallback
-  }
-}
 
 export const fetchAdminGames = async (
   token: string,
