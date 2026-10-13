@@ -98,8 +98,8 @@ export default {
             data-test="contact-map-container"
           >
             <iframe
-              title="Google Map Location - Male Dormitory 1, Chiang Mai"
-              src="https://maps.google.com/maps?q=Male+Dormitory+1,+Suthep,+Mueang+Chiang+Mai+District,+Chiang+Mai+50200&t=&z=16&ie=UTF8&iwloc=&output=embed"
+              title="Google Map Location - Nimmanhaemin Road, Chiang Mai"
+              src="https://maps.google.com/maps?q=Nimmanhaemin+Road,+Chiang+Mai,+Thailand+50200&t=&z=16&ie=UTF8&iwloc=&output=embed"
               class="w-full h-full border-0"
               loading="lazy"
               referrerpolicy="no-referrer-when-downgrade"
