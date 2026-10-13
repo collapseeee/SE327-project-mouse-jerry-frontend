@@ -211,7 +211,7 @@ const buildPayload = (): GamePayload => {
   const parsedStock = typeof stock.value === 'number' ? stock.value : Number(stock.value)
   const filteredScreenshots = screenshots.value
     .map((s) => s.trim())
-    .filter((s) => Boolean(s))
+    .filter(Boolean)
 
   return {
     name: name.value.trim(),
@@ -292,10 +292,15 @@ onMounted(async () => {
           <!-- Cover Image Slot matching Screenshot 2 -->
           <div class="flex-shrink-0">
             <div
+              role="button"
+              tabindex="0"
               class="w-36 h-48 border-2 border-dashed border-gray-300 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-primary hover:bg-slate-50/50 transition-all relative overflow-hidden group bg-slate-50/30"
               title="Add / Change Cover Image"
+              aria-label="Add or change cover image"
               data-test="cover-image-slot"
               @click="openImageModal({ type: 'cover' })"
+              @keydown.enter.prevent="openImageModal({ type: 'cover' })"
+              @keydown.space.prevent="openImageModal({ type: 'cover' })"
             >
               <template v-if="coverImage">
                 <img
@@ -398,17 +403,22 @@ onMounted(async () => {
 
         <!-- Section: Screenshots (5 slots) matching Screenshot 2 -->
         <div>
-          <label class="block text-xs font-semibold text-slate-700 mb-2">
+          <p class="block text-xs font-semibold text-slate-700 mb-2">
             Screenshots (5 slots) :
-          </label>
+          </p>
           <div class="grid grid-cols-5 gap-3">
             <div
               v-for="(slotUrl, idx) in screenshots"
               :key="idx"
+              role="button"
+              tabindex="0"
               class="h-20 border-2 border-dashed border-gray-300 rounded-xl flex items-center justify-center cursor-pointer hover:border-primary hover:bg-slate-50/50 transition-all relative overflow-hidden group bg-slate-50/30"
               :title="`Screenshot slot ${idx + 1}`"
+              :aria-label="`Screenshot slot ${idx + 1}`"
               :data-test="`screenshot-slot-${idx}`"
               @click="openImageModal({ type: 'screenshot', index: idx })"
+              @keydown.enter.prevent="openImageModal({ type: 'screenshot', index: idx })"
+              @keydown.space.prevent="openImageModal({ type: 'screenshot', index: idx })"
             >
               <template v-if="slotUrl">
                 <img
@@ -435,9 +445,9 @@ onMounted(async () => {
 
         <!-- Section: Category matching Screenshot 2 & 3 -->
         <div>
-          <label class="block text-xs font-semibold text-slate-700 mb-2">
+          <p class="block text-xs font-semibold text-slate-700 mb-2">
             Category :
-          </label>
+          </p>
           <div class="flex flex-wrap items-center gap-2">
             <!-- Selected Category Tags (Purple chips matching Screenshot 3) -->
             <span
@@ -460,7 +470,9 @@ onMounted(async () => {
             <!-- Dropdown selector + Add button -->
             <div class="flex items-center gap-2">
               <select
+                id="category-select-dropdown"
                 v-model="selectedCategoryDropdown"
+                aria-label="Select Category"
                 class="px-3 py-1.5 bg-slate-50/50 border border-gray-200 rounded-lg text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white"
                 data-test="category-select"
               >
@@ -503,9 +515,9 @@ onMounted(async () => {
 
         <!-- Section: System Requirements per topic requested by user -->
         <div>
-          <label class="block text-xs font-semibold text-slate-700 mb-2">
+          <p class="block text-xs font-semibold text-slate-700 mb-2">
             System Requirements :
-          </label>
+          </p>
           <div class="bg-slate-50/50 border border-gray-200 rounded-xl p-4 space-y-3">
             <div class="flex items-center gap-3">
               <label for="req-os" class="w-24 text-xs font-bold text-slate-700">OS:</label>
@@ -569,9 +581,11 @@ onMounted(async () => {
 
     <!-- Hidden file input for S3 upload -->
     <input
+      id="upload-file-input"
       ref="uploadFileInput"
       type="file"
       accept="image/*"
+      aria-label="Upload game image to S3"
       class="hidden"
       data-test="hidden-file-input"
       @change="handleFileUpload"
