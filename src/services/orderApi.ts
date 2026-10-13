@@ -85,6 +85,12 @@ const mapRawOrderItemsList = (rawItems: unknown[]): OrderItemKeyDTO[] => {
   return items
 }
 
+const parseUserId = (val: unknown): number | undefined =>
+  typeof val === 'number' ? val : undefined
+
+const parseOptionalString = (val: unknown): string | undefined =>
+  isNonEmptyString(val) ? val : undefined
+
 const mapRawOrderDTO = (raw: unknown): OrderDTO => {
   if (!isRecord(raw)) {
     return { id: 0, orderNumber: '', totalAmount: 0, items: [] }
@@ -93,10 +99,10 @@ const mapRawOrderDTO = (raw: unknown): OrderDTO => {
   return {
     id: parseNumericField(raw.id, 0),
     orderNumber: parseStringField(raw.orderNumber, ''),
-    userId: typeof raw.userId === 'number' ? raw.userId : undefined,
-    username: isNonEmptyString(raw.username) ? raw.username : undefined,
+    userId: parseUserId(raw.userId),
+    username: parseOptionalString(raw.username),
     totalAmount: parseNumericField(raw.totalAmount, 0),
-    purchaseDate: isNonEmptyString(raw.purchaseDate) ? raw.purchaseDate : undefined,
+    purchaseDate: parseOptionalString(raw.purchaseDate),
     items: mapRawOrderItemsList(rawItems)
   }
 }
