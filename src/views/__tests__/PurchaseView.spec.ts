@@ -107,11 +107,45 @@ describe('PurchaseView', () => {
     const wrapper = mountPurchaseView()
     await flushPromises()
 
-    const confirmBtn = wrapper.find('button')
+    const confirmBtn = wrapper.find('[data-test="confirm-purchase-btn"]')
     await confirmBtn.trigger('click')
     await flushPromises()
 
     expect(confirmSpy).toHaveBeenCalled()
+    expect(mockPush).toHaveBeenCalledWith('/success')
+  })
+
+  it('displays processing popup modal and disables confirm button during checkout', async () => {
+    let resolvePurchase: (order: Order) => void = () => {}
+    const deferredPromise = new Promise<Order>((resolve) => {
+      resolvePurchase = resolve
+    })
+
+    const cartStore = useCartStore()
+    cartStore.items = [{ ...sampleCartItem }]
+    vi.spyOn(cartStore, 'confirmPurchase').mockReturnValue(deferredPromise)
+
+    const wrapper = mountPurchaseView()
+    await flushPromises()
+
+    expect(wrapper.find('[data-test="processing-popup"]').exists()).toBe(false)
+
+    const confirmBtn = wrapper.find('[data-test="confirm-purchase-btn"]')
+    await confirmBtn.trigger('click')
+
+    expect(wrapper.find('[data-test="processing-popup"]').exists()).toBe(true)
+    expect(wrapper.text()).toContain('Processing Order')
+    expect(confirmBtn.attributes('disabled')).toBeDefined()
+
+    // Second click should be prevented while processing
+    await confirmBtn.trigger('click')
+    expect(cartStore.confirmPurchase).toHaveBeenCalledTimes(1)
+
+    // Complete purchase
+    resolvePurchase(sampleConfirmedOrder)
+    await flushPromises()
+
+    expect(wrapper.find('[data-test="processing-popup"]').exists()).toBe(false)
     expect(mockPush).toHaveBeenCalledWith('/success')
   })
 })
