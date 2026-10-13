@@ -25,15 +25,15 @@ onMounted(async () => {
 </script>
 
 <template>
-  <main class="max-w-6xl mx-auto px-6 py-8 min-h-[calc(100vh-8rem)]">
-    <!-- Profile Card matching Screenshot 1 -->
+  <main class="max-w-5xl mx-auto px-6 py-10 min-h-[calc(100vh-8rem)]">
+    <!-- Profile Card matching Screenshot 1 & 2 -->
     <div
-      class="bg-white rounded-3xl border border-slate-200/80 shadow-sm p-6 sm:p-8 flex flex-col sm:flex-row items-center sm:items-center justify-between gap-6 mb-10"
+      class="bg-white rounded-3xl border border-slate-200/80 shadow-sm p-6 sm:p-8 flex flex-col sm:flex-row items-center justify-between gap-6 mb-10"
     >
-      <div class="flex flex-col sm:flex-row items-center sm:items-center gap-6 text-center sm:text-left">
-        <!-- Avatar matching Screenshot 1: rounded square with purple background -->
+      <div class="flex flex-col sm:flex-row items-center gap-6 text-center sm:text-left">
+        <!-- Avatar: rounded square with rich purple gradient matching Screenshot 1 -->
         <div
-          class="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-primary flex items-center justify-center flex-shrink-0 shadow-inner"
+          class="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-gradient-to-br from-primary via-[#520268] to-[#6d037a] flex items-center justify-center flex-shrink-0 shadow-md"
         >
           <i class="fa-solid fa-user text-3xl sm:text-4xl text-white"></i>
         </div>
@@ -48,7 +48,7 @@ onMounted(async () => {
           </p>
           <div class="mt-1">
             <span
-              class="inline-block px-3 py-1 bg-slate-200 text-slate-600 text-xs font-bold rounded-md uppercase tracking-wider"
+              class="inline-block px-3 py-0.5 bg-slate-200/80 text-slate-600 text-xs font-bold rounded-md uppercase tracking-wider"
             >
               {{ authStore.user?.role === 'ROLE_ADMIN' ? 'ADMIN ACCOUNT' : 'CUSTOMER ACCOUNT' }}
             </span>
@@ -56,37 +56,38 @@ onMounted(async () => {
         </div>
       </div>
 
-      <!-- Logout Button matching Screenshot 1 -->
+      <!-- Logout Button: pill style, light gray by default, hover red with smooth animation -->
       <button
         type="button"
-        class="px-5 py-2.5 bg-slate-200/80 hover:bg-slate-300 text-slate-700 font-semibold text-sm rounded-xl transition-colors flex items-center gap-2 cursor-pointer self-center sm:self-center"
+        class="px-5 py-2 bg-slate-200/80 text-slate-700 font-semibold text-sm rounded-full transition-all duration-300 ease-in-out hover:bg-accent-red hover:text-white hover:shadow-md hover:scale-105 active:scale-95 flex items-center gap-2 cursor-pointer self-center"
+        data-test="account-logout-btn"
         @click="handleLogout"
       >
-        <i class="fa-solid fa-arrow-right-from-bracket"></i>
+        <i class="fa-solid fa-arrow-right-from-bracket text-xs transition-transform duration-300 group-hover:translate-x-0.5"></i>
         <span>Logout</span>
       </button>
     </div>
 
-    <!-- My Digital Keys Heading matching Screenshot 1 -->
+    <!-- My Digital Keys Heading with yellow underline matching Screenshot 1 & 2 -->
     <div class="mb-8">
-      <div class="border-b-2 border-accent-yellow pb-2 inline-block mb-6">
+      <div class="border-b-2 border-accent-yellow pb-1.5 inline-block mb-6">
         <h2 class="text-2xl font-extrabold text-primary flex items-center gap-2.5">
           <i class="fa-solid fa-key rotate-90 text-primary"></i>
           <span>My Digital Keys</span>
         </h2>
       </div>
 
-      <!-- Orders List matching Screenshot 1 -->
+      <!-- Orders List matching Screenshot 2 -->
       <div v-if="cartStore.orders.length > 0" class="flex flex-col gap-6">
         <div
           v-for="order in cartStore.orders"
           :key="order.id"
           class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6"
         >
-          <!-- Order Header: Order #... (left) and Date (right) -->
+          <!-- Order Header: Order #... (blue, left) and Date (right with calendar icon) -->
           <div class="flex items-center justify-between mb-4">
             <h3 class="text-base font-bold text-blue-600">
-              Order #{{ order.id }}
+              Order #{{ order.orderNumber || order.id }}
             </h3>
             <span class="text-xs text-slate-500 font-medium flex items-center gap-1.5">
               <i class="fa-regular fa-calendar"></i>
@@ -121,19 +122,21 @@ onMounted(async () => {
         </div>
       </div>
 
-      <!-- Empty State -->
+      <!-- Empty State matching Screenshot 1: box icon, No purchases yet!, Browse Games button -->
       <div
         v-else
-        class="py-16 text-center bg-white rounded-2xl border border-slate-100 shadow-sm"
+        class="py-16 text-center bg-white rounded-2xl border border-slate-200/80 shadow-sm"
       >
-        <i class="fa-solid fa-key text-5xl text-slate-300 mb-4 block"></i>
-        <h3 class="text-lg font-bold text-slate-700 mb-2">No purchase history yet</h3>
+        <div class="flex justify-center mb-3">
+          <i class="fa-solid fa-box-open text-4xl text-slate-600"></i>
+        </div>
+        <h3 class="text-xl font-bold text-slate-800 mb-2">No purchases yet!</h3>
         <p class="text-slate-500 text-sm max-w-md mx-auto mb-6">
-          Start shopping to see your digital game keys here.
+          When you buy games, your digital activation keys will live here permanently.
         </p>
         <router-link
           to="/"
-          class="inline-block px-5 py-2.5 bg-primary text-white text-sm font-semibold rounded-lg hover:bg-primary-hover transition-colors"
+          class="inline-block px-6 py-2 bg-white border border-primary text-primary hover:bg-primary/5 text-sm font-bold rounded-lg transition-colors cursor-pointer"
         >
           Browse Games
         </router-link>
