@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import { Swiper, SwiperSlide } from 'swiper/vue'
 import { EffectCoverflow, Navigation, Autoplay } from 'swiper/modules'
 
@@ -15,11 +16,20 @@ export interface HighlightItem {
   buttonColor: string
 }
 
-defineProps<{
+const props = defineProps<{
   highlights: HighlightItem[]
 }>()
 
 const modules = [EffectCoverflow, Navigation, Autoplay]
+
+// When there are fewer than 5 items, Swiper loop in coverflow needs duplicated slides to show previews on both sides
+const displayHighlights = computed(() => {
+  if (props.highlights.length === 0) return []
+  if (props.highlights.length < 5) {
+    return [...props.highlights, ...props.highlights]
+  }
+  return props.highlights
+})
 </script>
 
 <template>
@@ -52,8 +62,8 @@ const modules = [EffectCoverflow, Navigation, Autoplay]
       class="w-full py-6"
     >
       <swiper-slide
-        v-for="item in highlights"
-        :key="item.id"
+        v-for="(item, idx) in displayHighlights"
+        :key="`${item.id}-${idx}`"
         class="highlight-slide relative rounded-2xl overflow-hidden bg-slate-900 select-none shadow-xl"
       >
         <!-- Blurred ambient background behind image -->
