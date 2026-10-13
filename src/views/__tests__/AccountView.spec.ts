@@ -93,7 +93,7 @@ describe('AccountView', () => {
     const wrapper = mountAccountView()
     await flushPromises()
 
-    const logoutBtn = wrapper.find('button')
+    const logoutBtn = wrapper.find('[data-test="account-logout-btn"]')
     await logoutBtn.trigger('click')
 
     expect(logoutSpy).toHaveBeenCalled()
@@ -110,7 +110,7 @@ describe('AccountView', () => {
     const wrapper = mountAccountView()
     await flushPromises()
 
-    expect(wrapper.text()).toContain('No purchase history yet')
+    expect(wrapper.text()).toContain('No purchases yet!')
     expect(wrapper.text()).toContain('Browse Games')
   })
 
