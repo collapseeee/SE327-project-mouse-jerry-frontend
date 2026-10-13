@@ -139,6 +139,9 @@ describe('HomeView', () => {
     expect(wrapper.text()).toContain('1')
     expect(wrapper.text()).toContain('6')
 
+    const highlightCallsBefore = fetchSpy.mock.calls.filter(([callUrl]) => String(callUrl).includes('/highlights')).length
+    expect(highlightCallsBefore).toBe(1)
+
     const page2Btn = wrapper.findAll('button').find((button) => button.text() === '2')
     expect(page2Btn).toBeDefined()
     if (page2Btn) {
@@ -148,6 +151,8 @@ describe('HomeView', () => {
 
     expect(fetchSpy).toHaveBeenCalledWith(expect.stringContaining('page=2'))
     expect(wrapper.text()).toContain('Towerfall Ascension: Dark World')
+    const highlightCallsAfter = fetchSpy.mock.calls.filter(([callUrl]) => String(callUrl).includes('/highlights')).length
+    expect(highlightCallsAfter).toBe(1)
   })
 
   it('gives every cover image alt text', async () => {
