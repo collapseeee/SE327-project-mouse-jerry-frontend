@@ -120,7 +120,7 @@ const parseOrdersResponse = async (response: Response): Promise<OrderDTO[]> => {
   return rawData.map(mapRawOrderDTO)
 }
 
-const requestOrders = async (url: string, token: string): Promise<Response> =>
+const requestOrders = (url: string, token: string): Promise<Response> =>
   fetch(url, {
     method: 'GET',
     headers: {
