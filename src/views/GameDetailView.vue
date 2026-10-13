@@ -79,8 +79,7 @@ const primaryCategory = computed(() => {
 
 const hasSystemRequirements = computed(() => {
   const req = game.value?.systemRequirements
-  if (!req) return false
-  return Boolean(req.os || req.processor || req.memory || req.graphics || req.storage)
+  return Boolean(req && Object.values(req).some(Boolean))
 })
 
 const prevImage = () => {
