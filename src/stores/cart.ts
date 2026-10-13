@@ -15,17 +15,20 @@ import {
   formatDate,
   mapOrderDtoToOrder
 } from '@/services/orderApi'
+export type {
+  DirectPurchaseGame,
+  DirectPurchaseItem,
+  Order,
+  OrderKeyItem
+} from '@/types/order'
 import type {
   DirectPurchaseGame,
   DirectPurchaseItem,
   Order,
-  OrderDTO,
-  OrderKeyItem
+  OrderDTO
 } from '@/types/order'
 import { useAuthStore } from './auth'
 import { useToastStore } from './toast'
-
-export type { DirectPurchaseGame, DirectPurchaseItem, Order, OrderKeyItem }
 
 const notifyCartItemAdded = (gameTitle?: string): void => {
   const toastStore = useToastStore()

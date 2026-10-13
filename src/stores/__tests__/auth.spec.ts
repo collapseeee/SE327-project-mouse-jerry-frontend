@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { setActivePinia, createPinia } from 'pinia'
 import { useAuthStore } from '../auth'
 import { loginUser, registerUser, logoutUser } from '@/services/authApi'
+import type { AuthResponse } from '@/types/auth'
 
 vi.mock('@/services/authApi', () => ({
   loginUser: vi.fn(),
@@ -43,7 +44,7 @@ describe('useAuthStore', () => {
   })
 
   it('performs successful login and stores token and user in localStorage', async () => {
-    const mockAuthResponse = {
+    const mockAuthResponse: AuthResponse = {
       token: 'jwt-token-xyz',
       id: 10,
       username: 'jerry',

@@ -12,7 +12,7 @@ describe('ToastContainer', () => {
   it('renders an empty aside container when no toasts are present', () => {
     const wrapper = mount(ToastContainer)
     expect(wrapper.find('aside').exists()).toBe(true)
-    expect(wrapper.findAll('[role="status"]')).toHaveLength(0)
+    expect(wrapper.findAll('output')).toHaveLength(0)
   })
 
   it('renders a success toast with game title and success icon', () => {
@@ -20,7 +20,7 @@ describe('ToastContainer', () => {
     toastStore.showCartSuccess('Cyberpunk 2077')
 
     const wrapper = mount(ToastContainer)
-    expect(wrapper.findAll('[role="status"]')).toHaveLength(1)
+    expect(wrapper.findAll('output')).toHaveLength(1)
     expect(wrapper.find('[data-test="toast-icon-success"]').exists()).toBe(true)
     expect(wrapper.text()).toContain('Added to Cart')
     expect(wrapper.text()).toContain('"Cyberpunk 2077"')
@@ -31,7 +31,7 @@ describe('ToastContainer', () => {
     toastStore.showSuccess('Game "Elden Ring" updated successfully', 'Updated Completed')
 
     const wrapper = mount(ToastContainer)
-    expect(wrapper.findAll('[role="status"]')).toHaveLength(1)
+    expect(wrapper.findAll('output')).toHaveLength(1)
     expect(wrapper.find('[data-test="toast-icon-success"]').exists()).toBe(true)
     expect(wrapper.text()).toContain('Updated Completed')
     expect(wrapper.text()).toContain('Game "Elden Ring" updated successfully')

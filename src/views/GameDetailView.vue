@@ -293,9 +293,9 @@ const handleBuyNow = async () => {
 
           <!-- Amount / Quantity Selector & Stock Info -->
           <div class="mb-4">
-            <label class="block font-bold text-slate-500 mb-1 text-sm">
+            <span class="block font-bold text-slate-500 mb-1 text-sm">
               Amount
-            </label>
+            </span>
             <div class="flex items-center gap-3">
               <div class="flex items-center bg-white border-2 border-slate-200 rounded-lg overflow-hidden w-max">
                 <button
