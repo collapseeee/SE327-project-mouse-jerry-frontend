@@ -14,6 +14,11 @@ describe('router', () => {
     expect(route.name).toBe('Home')
   })
 
+  it('resolves /contact to the Contact route', () => {
+    const route = router.resolve('/contact')
+    expect(route.name).toBe('Contact')
+  })
+
   it('resolves /login to the Login route', () => {
     const route = router.resolve('/login')
     expect(route.name).toBe('Login')
