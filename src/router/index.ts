@@ -12,6 +12,7 @@ import KeysView from '../views/KeysView.vue'
 import ContactView from '../views/ContactView.vue'
 import AdminGamesView from '../views/AdminGamesView.vue'
 import AdminGameFormView from '../views/AdminGameFormView.vue'
+import AdminCategoriesView from '../views/AdminCategoriesView.vue'
 import { useAuthStore } from '../stores/auth'
 
 const router = createRouter({
@@ -102,6 +103,12 @@ const router = createRouter({
       path: '/admin/games/:id/edit',
       name: 'AdminGameEdit',
       component: AdminGameFormView,
+      meta: { requiresAuth: true, requiresAdmin: true }
+    },
+    {
+      path: '/admin/categories',
+      name: 'AdminCategories',
+      component: AdminCategoriesView,
       meta: { requiresAuth: true, requiresAdmin: true }
     }
   ]

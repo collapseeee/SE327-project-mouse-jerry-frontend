@@ -109,6 +109,11 @@ describe('router', () => {
     expect(editRoute.name).toBe('AdminGameEdit')
     expect(editRoute.params.id).toBe('elden-ring')
     expect(editRoute.meta.requiresAdmin).toBe(true)
+
+    const categoriesRoute = router.resolve('/admin/categories')
+    expect(categoriesRoute.name).toBe('AdminCategories')
+    expect(categoriesRoute.meta.requiresAuth).toBe(true)
+    expect(categoriesRoute.meta.requiresAdmin).toBe(true)
   })
 
   it('redirects non-admin user visiting admin route to /', async () => {
