@@ -1,3 +1,9 @@
+<script lang="ts">
+export default {
+  name: 'LoginView'
+}
+</script>
+
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
@@ -21,8 +27,18 @@ const initialMode = computed<'register' | 'login'>(() => {
 
 const getRedirectTarget = (): string => {
   const target = route?.query?.redirect
-  if (typeof target === 'string' && target.trim()) {
-    return target.trim()
+  const hasTarget = typeof target === 'string' && Boolean(target.trim())
+  const cleanTarget = hasTarget ? (target as string).trim() : ''
+
+  if (authStore.isAdmin) {
+    if (cleanTarget.startsWith('/admin')) {
+      return cleanTarget
+    }
+    return '/admin/games'
+  }
+
+  if (cleanTarget && !cleanTarget.startsWith('/admin')) {
+    return cleanTarget
   }
   return '/'
 }
