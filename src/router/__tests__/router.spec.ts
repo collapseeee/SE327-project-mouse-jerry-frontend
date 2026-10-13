@@ -119,6 +119,11 @@ describe('router', () => {
     expect(salesRoute.name).toBe('AdminSaleHistory')
     expect(salesRoute.meta.requiresAuth).toBe(true)
     expect(salesRoute.meta.requiresAdmin).toBe(true)
+
+    const highlightsRoute = router.resolve('/admin/highlights')
+    expect(highlightsRoute.name).toBe('AdminHighlights')
+    expect(highlightsRoute.meta.requiresAuth).toBe(true)
+    expect(highlightsRoute.meta.requiresAdmin).toBe(true)
   })
 
   it('redirects non-admin user visiting admin route to /', async () => {

@@ -141,15 +141,76 @@ export const fetchGameById = async (gameId: string): Promise<Game | null> => {
   }
 }
 
-export const fetchHighlights = async (): Promise<Game[]> => {
-  try {
-    const response = await fetch(`${API_BASE}/highlights`)
-    if (!response.ok) {
-      return []
-    }
-    const rawData: unknown = await response.json()
-    return parseGamesList(rawData)
-  } catch {
+const resolveHighlightGameId = (item: Record<string, unknown>): string => {
+  const rawId = item.gameId !== undefined ? item.gameId : item.id
+  return resolveGameId(rawId, '')
+}
+
+const resolveHighlightName = (item: Record<string, unknown>): string => {
+  const rawName = item.gameName !== undefined ? item.gameName : item.name
+  return parseStringField(rawName)
+}
+
+const mapCustomHighlightItem = (item: unknown): (Game & { buttonColor?: string; customImage?: string }) | null => {
+  if (!isRecord(item)) {
+    return null
+  }
+  const name = resolveHighlightName(item)
+  const gameId = resolveHighlightGameId(item)
+  const finalId = gameId ? gameId : name
+  if (!finalId) {
+    return null
+  }
+  const customImage = parseOptionalString(item.customImage)
+  const buttonColor = parseOptionalString(item.buttonColor)
+  return {
+    id: finalId,
+    name,
+    price: 0,
+    coverImage: customImage || '',
+    category: 'Highlight',
+    customImage,
+    buttonColor
+  }
+}
+
+const parseCustomHighlights = (raw: unknown): Array<Game & { buttonColor?: string; customImage?: string }> => {
+  if (!Array.isArray(raw)) {
     return []
   }
+  return raw.map(mapCustomHighlightItem).filter((g): g is Game & { buttonColor?: string; customImage?: string } => g !== null)
+}
+
+const fetchCustomHighlightsList = async (): Promise<Array<Game & { buttonColor?: string; customImage?: string }>> => {
+  try {
+    const customResponse = await fetch('/api/v1/highlights')
+    if (customResponse.ok) {
+      const rawData: unknown = await customResponse.json()
+      return parseCustomHighlights(rawData)
+    }
+  } catch {
+    // Fall back to default highlights
+  }
+  return []
+}
+
+const fetchDefaultHighlightsList = async (): Promise<Array<Game & { buttonColor?: string; customImage?: string }>> => {
+  try {
+    const response = await fetch(`${API_BASE}/highlights`)
+    if (response.ok) {
+      const rawData: unknown = await response.json()
+      return parseGamesList(rawData)
+    }
+  } catch {
+    // Fall back to empty list
+  }
+  return []
+}
+
+export const fetchHighlights = async (): Promise<Array<Game & { buttonColor?: string; customImage?: string }>> => {
+  const customHighlights = await fetchCustomHighlightsList()
+  if (customHighlights.length > 0) {
+    return customHighlights
+  }
+  return fetchDefaultHighlightsList()
 }

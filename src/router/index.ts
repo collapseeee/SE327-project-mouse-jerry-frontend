@@ -13,6 +13,7 @@ import ContactView from '../views/ContactView.vue'
 import AdminGamesView from '../views/AdminGamesView.vue'
 import AdminGameFormView from '../views/AdminGameFormView.vue'
 import AdminCategoriesView from '../views/AdminCategoriesView.vue'
+import AdminHighlightsView from '../views/AdminHighlightsView.vue'
 import AdminSaleHistoryView from '../views/AdminSaleHistoryView.vue'
 import { useAuthStore } from '../stores/auth'
 
@@ -121,6 +122,16 @@ const router = createRouter({
     {
       path: '/admin/sales',
       redirect: '/admin/sale-history'
+    },
+    {
+      path: '/admin/highlights',
+      name: 'AdminHighlights',
+      component: AdminHighlightsView,
+      meta: { requiresAuth: true, requiresAdmin: true }
+    },
+    {
+      path: '/admin/highlight',
+      redirect: '/admin/highlights'
     }
   ]
 })

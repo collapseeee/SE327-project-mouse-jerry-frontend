@@ -239,6 +239,20 @@ describe('adminGameApi', () => {
       expect(url).toBe('https://s3.amazonaws.com/bucket/test.png')
     })
 
+    it('returns publicUrl when fileUrl is absent', async () => {
+      const file = new File(['image-content'], 'test.png', { type: 'image/png' })
+      vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({
+          publicUrl: '/api/v1/upload/files/games/test.png',
+          name: 'games/test.png'
+        })
+      } as unknown as Response)
+
+      const url = await uploadGameImage('mock-token', file)
+      expect(url).toBe('/api/v1/upload/files/games/test.png')
+    })
+
     it('throws error when upload fails', async () => {
       const file = new File(['content'], 'test.png', { type: 'image/png' })
       vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({

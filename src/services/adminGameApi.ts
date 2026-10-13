@@ -199,6 +199,19 @@ export const deleteAdminGame = async (
   }
 }
 
+const extractImageUrl = (data: unknown): string | null => {
+  if (!isRecord(data)) {
+    return null
+  }
+  for (const key of ['publicUrl', 'fileUrl', 'url']) {
+    const val = data[key]
+    if (isNonEmptyString(val)) {
+      return val
+    }
+  }
+  return null
+}
+
 export const uploadGameImage = async (
   token: string,
   file: File
@@ -218,8 +231,9 @@ export const uploadGameImage = async (
     throw new Error(msg)
   }
   const data: unknown = await response.json()
-  if (isRecord(data) && isNonEmptyString(data.fileUrl)) {
-    return data.fileUrl
+  const imageUrl = extractImageUrl(data)
+  if (imageUrl) {
+    return imageUrl
   }
   throw new Error('Upload succeeded but no image URL was returned')
 }

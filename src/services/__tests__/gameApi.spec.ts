@@ -154,10 +154,10 @@ describe('gameApi', () => {
     expect(result).toBeNull()
   })
 
-  it('fetchHighlights returns list of highlighted games', async () => {
+  it('fetchHighlights returns list of highlighted games from dedicated endpoint', async () => {
     const mockHighlights = [
-      { id: '1', name: 'Game 1', price: 100, coverImage: 'img1.jpg', isHighlight: true },
-      { id: '2', name: 'Game 2', price: 200, coverImage: 'img2.jpg', isHighlight: true }
+      { id: 1, gameId: '1', gameName: 'Game 1', buttonColor: '#8b0000', customImage: 'img1.jpg' },
+      { id: 2, gameId: '2', gameName: 'Game 2', buttonColor: '#00c853', customImage: 'img2.jpg' }
     ]
 
     vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
@@ -168,6 +168,25 @@ describe('gameApi', () => {
     const result = await fetchHighlights()
     expect(result).toHaveLength(2)
     expect(result[0]?.id).toBe('1')
+    expect(result[0]?.buttonColor).toBe('#8b0000')
+    expect(fetch).toHaveBeenCalledWith('/api/v1/highlights')
+  })
+
+  it('fetchHighlights falls back to /api/v1/games/highlights when custom endpoint fails', async () => {
+    const mockGameHighlights = [
+      { id: 'g1', name: 'Game 1', price: 100, coverImage: 'img1.jpg', isHighlight: true }
+    ]
+
+    vi.spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce({ ok: false, status: 404 } as Response)
+      .mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve(mockGameHighlights)
+      } as unknown as Response)
+
+    const result = await fetchHighlights()
+    expect(result).toHaveLength(1)
+    expect(result[0]?.id).toBe('g1')
     expect(fetch).toHaveBeenCalledWith('/api/v1/games/highlights')
   })
 

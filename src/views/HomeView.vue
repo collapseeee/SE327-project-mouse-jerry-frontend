@@ -41,8 +41,8 @@ const loadHighlights = async (): Promise<void> => {
       id: `h-${item.id}`,
       gameId: item.id,
       name: item.name,
-      customImage: item.screenshots?.[0] || item.coverImage,
-      buttonColor: mapHighlightColor(index)
+      customImage: item.customImage || item.screenshots?.[0] || item.coverImage,
+      buttonColor: item.buttonColor || mapHighlightColor(index)
     }))
   } catch {
     highlights.value = []
