@@ -64,15 +64,16 @@ const padScreenshots = (list?: string[]): string[] => {
   return Array.from({ length: 5 }, (_, i) => source[i] || '')
 }
 
+const assignReq = (val?: string): string => val ?? ''
+
 const populateSysReqs = (sr?: SystemRequirements): void => {
-  if (!sr) {
-    return
+  if (sr) {
+    reqOs.value = assignReq(sr.os)
+    reqProcessor.value = assignReq(sr.processor)
+    reqMemory.value = assignReq(sr.memory)
+    reqGraphics.value = assignReq(sr.graphics)
+    reqStorage.value = assignReq(sr.storage)
   }
-  reqOs.value = sr.os || ''
-  reqProcessor.value = sr.processor || ''
-  reqMemory.value = sr.memory || ''
-  reqGraphics.value = sr.graphics || ''
-  reqStorage.value = sr.storage || ''
 }
 
 const populateCategories = (game: Game): void => {

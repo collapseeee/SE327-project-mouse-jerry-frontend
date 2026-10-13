@@ -25,22 +25,22 @@ const initialMode = computed<'register' | 'login'>(() => {
   return 'register'
 })
 
+const getQueryRedirect = (): string => {
+  const target = route.query?.redirect
+  return typeof target === 'string' ? target.trim() : ''
+}
+
+const resolveAdminRedirect = (target: string): string => {
+  return target.startsWith('/admin') ? target : '/admin/games'
+}
+
+const resolveCustomerRedirect = (target: string): string => {
+  return target && !target.startsWith('/admin') ? target : '/'
+}
+
 const getRedirectTarget = (): string => {
-  const target = route?.query?.redirect
-  const hasTarget = typeof target === 'string' && Boolean(target.trim())
-  const cleanTarget = hasTarget ? (target as string).trim() : ''
-
-  if (authStore.isAdmin) {
-    if (cleanTarget.startsWith('/admin')) {
-      return cleanTarget
-    }
-    return '/admin/games'
-  }
-
-  if (cleanTarget && !cleanTarget.startsWith('/admin')) {
-    return cleanTarget
-  }
-  return '/'
+  const target = getQueryRedirect()
+  return authStore.isAdmin ? resolveAdminRedirect(target) : resolveCustomerRedirect(target)
 }
 
 const handleLoginAction = async (username: string, password: string) => {
