@@ -1,10 +1,22 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, beforeEach } from 'vitest'
+import { setActivePinia, createPinia } from 'pinia'
 import router from '../index'
+import { useAuthStore } from '@/stores/auth'
 
 describe('router', () => {
+  beforeEach(() => {
+    localStorage.clear()
+    setActivePinia(createPinia())
+  })
+
   it('resolves / to the Home route', () => {
     const route = router.resolve('/')
     expect(route.name).toBe('Home')
+  })
+
+  it('resolves /contact to the Contact route', () => {
+    const route = router.resolve('/contact')
+    expect(route.name).toBe('Contact')
   })
 
   it('resolves /login to the Login route', () => {
@@ -32,5 +44,54 @@ describe('router', () => {
     const route = router.resolve('/product/vampire-survivors-emergency-meeting')
     expect(route.name).toBe('GameDetail')
     expect(route.params.id).toBe('vampire-survivors-emergency-meeting')
+  })
+
+  it('resolves /cart to the Cart route with requiresAuth meta', () => {
+    const route = router.resolve('/cart')
+    expect(route.name).toBe('Cart')
+    expect(route.meta.requiresAuth).toBe(true)
+  })
+
+  it('resolves /account, /purchase-page, /success, and /my-keys with requiresAuth meta', () => {
+    const accountRoute = router.resolve('/account')
+    expect(accountRoute.name).toBe('Account')
+    expect(accountRoute.meta.requiresAuth).toBe(true)
+
+    const purchaseRoute = router.resolve('/purchase-page')
+    expect(purchaseRoute.name).toBe('Purchase')
+    expect(purchaseRoute.meta.requiresAuth).toBe(true)
+
+    const successRoute = router.resolve('/success')
+    expect(successRoute.name).toBe('Success')
+    expect(successRoute.meta.requiresAuth).toBe(true)
+
+    const keysRoute = router.resolve('/my-keys')
+    expect(keysRoute.name).toBe('Keys')
+    expect(keysRoute.meta.requiresAuth).toBe(true)
+  })
+
+  it('redirects unauthenticated user visiting /cart to /login with query', async () => {
+    await router.push('/')
+    await router.push('/cart')
+    expect(router.currentRoute.value.path).toBe('/login')
+    expect(router.currentRoute.value.query.mode).toBe('login')
+    expect(router.currentRoute.value.query.redirect).toBe('/cart')
+  })
+
+  it('redirects unauthenticated user visiting /account to /login with query', async () => {
+    await router.push('/')
+    await router.push('/account')
+    expect(router.currentRoute.value.path).toBe('/login')
+    expect(router.currentRoute.value.query.mode).toBe('login')
+    expect(router.currentRoute.value.query.redirect).toBe('/account')
+  })
+
+  it('allows authenticated user to visit /cart and /account', async () => {
+    const authStore = useAuthStore()
+    authStore.setUserSession({ id: 1, username: 'testuser' }, 'token-xyz')
+    await router.push('/cart')
+    expect(router.currentRoute.value.path).toBe('/cart')
+    await router.push('/account')
+    expect(router.currentRoute.value.path).toBe('/account')
   })
 })

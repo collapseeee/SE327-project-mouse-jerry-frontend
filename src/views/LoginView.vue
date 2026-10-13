@@ -19,10 +19,18 @@ const initialMode = computed<'register' | 'login'>(() => {
   return 'register'
 })
 
+const getRedirectTarget = (): string => {
+  const target = route?.query?.redirect
+  if (typeof target === 'string' && target.trim()) {
+    return target.trim()
+  }
+  return '/'
+}
+
 const handleLoginAction = async (username: string, password: string) => {
   const result = await authStore.login({ username, password })
   if (result.success) {
-    router?.push('/')
+    router?.push(getRedirectTarget())
     return
   }
   serverError.value = result.error || 'Login failed. Please check your credentials.'
@@ -34,7 +42,7 @@ const autoLoginAfterRegister = async (username: string, password: string) => {
     password
   })
   if (loginResult.success) {
-    router?.push('/')
+    router?.push(getRedirectTarget())
     return
   }
   serverError.value = loginResult.error || 'Registration succeeded, but auto-login failed. Please sign in.'

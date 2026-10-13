@@ -10,10 +10,27 @@ export interface Game {
   publisher?: string
   releaseDate?: string
   stock?: number
+  isHighlight?: boolean
 }
 
 export interface CategoryItem {
-  id: string
+  id: string | number
   name: string
   slug: string
+  isVisible?: boolean
 }
+
+export interface FetchGamesParams {
+  category?: string
+  search?: string
+  page?: number
+  size?: number
+  sort?: string
+  direction?: string
+}
+
+export interface GamesResponse {
+  games: Game[]
+  totalCount: number
+}
+

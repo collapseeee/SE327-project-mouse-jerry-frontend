@@ -166,9 +166,59 @@ describe('authApi', () => {
     }))
   })
 
-  it('logoutUser handles exception gracefully', async () => {
-    vi.spyOn(globalThis, 'fetch').mockRejectedValueOnce(new Error('Network error'))
+  it('logoutUser handles exception gracefully and works without token', async () => {
+    const spy = vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
+      ok: true
+    } as unknown as Response)
 
+    await logoutUser(null)
+    expect(spy).toHaveBeenCalledWith('/api/v1/auth/logout', {
+      method: 'POST',
+      headers: {}
+    })
+
+    vi.spyOn(globalThis, 'fetch').mockRejectedValueOnce(new Error('Network error'))
     await expect(logoutUser('token')).resolves.not.toThrow()
+  })
+
+  it('extracts direct string errors and handles non-record error bodies', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
+      ok: false,
+      statusText: '',
+      json: () => Promise.resolve('Raw string failure')
+    } as unknown as Response)
+
+    await expect(loginUser({ username: 'u', password: 'p' }))
+      .rejects.toThrow('Raw string failure')
+
+    // Non-string, non-record body (e.g. number 404)
+    vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
+      ok: false,
+      statusText: '',
+      json: () => Promise.resolve(404)
+    } as unknown as Response)
+
+    await expect(loginUser({ username: 'u', password: 'p' }))
+      .rejects.toThrow('Login failed')
+
+    // Empty details object without string values falling back to error field
+    vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
+      ok: false,
+      statusText: '',
+      json: () => Promise.resolve({ error: 'Top-level error', details: { a: '' } })
+    } as unknown as Response)
+
+    await expect(loginUser({ username: 'u', password: 'p' }))
+      .rejects.toThrow('Top-level error')
+
+    // Response non-json with empty statusText
+    vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
+      ok: false,
+      statusText: '',
+      json: () => Promise.reject(new Error('SyntaxError'))
+    } as unknown as Response)
+
+    await expect(loginUser({ username: 'u', password: 'p' }))
+      .rejects.toThrow('Login failed')
   })
 })

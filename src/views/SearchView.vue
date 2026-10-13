@@ -1,14 +1,22 @@
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
-import { useRoute } from 'vue-router'
-import { searchGames } from '@/data/games'
+import { ref, computed, watch, onMounted } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { fetchGames } from '@/services/gameApi'
+import { useAuthStore } from '@/stores/auth'
+import { useCartStore } from '@/stores/cart'
 import GameCard from '@/components/GameCard.vue'
 import Pagination from '@/components/Pagination.vue'
 import type { Game } from '@/types/game'
 
 const route = useRoute()
+const router = useRouter()
+const authStore = useAuthStore()
+const cartStore = useCartStore()
 const currentPage = ref(1)
 const pageSize = ref(10)
+const totalCount = ref(0)
+const searchResults = ref<Game[]>([])
+const isLoading = ref(true)
 
 const searchQuery = computed(() => {
   const queryParam = route.query.q
@@ -16,30 +24,58 @@ const searchQuery = computed(() => {
   return ''
 })
 
-const searchResults = computed<Game[]>(() => {
-  if (!searchQuery.value) return []
-  return searchGames(searchQuery.value)
-})
-
 const totalPages = computed(() => {
-  return Math.ceil(searchResults.value.length / pageSize.value) || 1
+  return Math.ceil(totalCount.value / pageSize.value) || 1
 })
 
-const paginatedResults = computed(() => {
-  const start = (currentPage.value - 1) * pageSize.value
-  return searchResults.value.slice(start, start + pageSize.value)
+const loadSearchResults = async (queryParam: string, page: number): Promise<void> => {
+  if (!queryParam) {
+    searchResults.value = []
+    totalCount.value = 0
+    isLoading.value = false
+    return
+  }
+  isLoading.value = true
+  try {
+    const res = await fetchGames({ search: queryParam, page, size: pageSize.value })
+    searchResults.value = res.games
+    totalCount.value = res.totalCount
+  } catch {
+    searchResults.value = []
+    totalCount.value = 0
+  } finally {
+    isLoading.value = false
+  }
+}
+
+onMounted(() => {
+  loadSearchResults(searchQuery.value, currentPage.value)
 })
 
 watch(
   () => route.query.q,
-  () => {
+  (newQuery) => {
     currentPage.value = 1
+    const queryStr = typeof newQuery === 'string' ? newQuery.trim() : ''
+    loadSearchResults(queryStr, 1)
   }
 )
 
-const onPageChange = (page: number) => {
+const onPageChange = async (page: number): Promise<void> => {
   currentPage.value = page
+  await loadSearchResults(searchQuery.value, page)
   window.scrollTo({ top: 0, behavior: 'smooth' })
+}
+
+const handleAddToCart = async (game: Game): Promise<void> => {
+  if (!authStore.isAuthenticated) {
+    router.push({
+      path: '/login',
+      query: { mode: 'login', redirect: route.fullPath }
+    })
+    return
+  }
+  await cartStore.addItem(game.id, 1, game.name)
 }
 </script>
 
@@ -62,46 +98,49 @@ const onPageChange = (page: number) => {
         Search Results for: "{{ searchQuery }}" Games
       </h1>
       <span class="text-sm text-text-muted font-medium pb-1">
-        {{ searchResults.length }} products found
+        {{ totalCount }} products found
       </span>
     </div>
 
     <!-- Product Grid -->
     <section
-      v-if="paginatedResults.length > 0"
+      v-if="searchResults.length > 0"
       class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-5 mb-10"
     >
       <GameCard
-        v-for="game in paginatedResults"
+        v-for="game in searchResults"
         :key="game.id"
         :game="game"
+        @add-to-cart="handleAddToCart"
       />
     </section>
 
     <!-- Empty State -->
     <div
-      v-else
-      class="py-16 text-center bg-white rounded-2xl border border-slate-100 shadow-sm my-6"
+      v-else-if="!isLoading"
+      class="py-16 text-center bg-white rounded-2xl border border-slate-100 shadow-sm mb-10"
     >
-      <i class="fa-solid fa-magnifying-glass text-5xl text-slate-300 mb-4 block"></i>
-      <h2 class="text-xl font-bold text-slate-700 mb-2">No games found</h2>
-      <p class="text-slate-500 text-sm max-w-md mx-auto mb-6">
-        We couldn't find any games matching "{{ searchQuery }}". Try searching with different keywords.
+      <i class="fa-solid fa-magnifying-glass text-4xl text-slate-300 mb-3 block"></i>
+      <h2 class="text-lg font-bold text-slate-700 mb-1">No games found</h2>
+      <p class="text-slate-500 text-sm">
+        We couldn't find any games matching "{{ searchQuery }}".
       </p>
-      <router-link
-        to="/"
-        class="inline-block px-5 py-2.5 bg-primary text-white text-sm font-semibold rounded-lg hover:bg-primary-hover transition-colors"
-      >
-        Back to Home
-      </router-link>
+    </div>
+
+    <!-- Loading State -->
+    <div
+      v-else
+      class="py-16 text-center mb-10"
+    >
+      <i class="fa-solid fa-circle-notch fa-spin text-3xl text-primary mb-3 block"></i>
+      <p class="text-slate-500 text-sm">Searching games...</p>
     </div>
 
     <!-- Pagination -->
     <Pagination
-      v-if="totalPages > 1"
       :current-page="currentPage"
       :total-pages="totalPages"
-      @update:current-page="onPageChange"
+      @page-change="onPageChange"
     />
   </main>
 </template>

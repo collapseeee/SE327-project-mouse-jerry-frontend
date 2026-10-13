@@ -1,21 +1,24 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import logoImg from '@/assets/logo.png'
-import { getAllCategories } from '@/data/games'
+import { fetchCategories } from '@/services/categoryApi'
 import { useAuthStore } from '@/stores/auth'
+import { useCartStore } from '@/stores/cart'
+import type { CategoryItem } from '@/types/game'
 
 const router = useRouter()
+const route = useRoute()
 const authStore = useAuthStore()
+const cartStore = useCartStore()
 
 const searchQuery = ref('')
 const isCategoryDropdownOpen = ref(false)
 const categoryDropdownRef = ref<HTMLElement | null>(null)
 
-const isUserDropdownOpen = ref(false)
-const userDropdownRef = ref<HTMLElement | null>(null)
+const isProfilePage = computed(() => route.path === '/account')
 
-const categories = getAllCategories()
+const categories = ref<CategoryItem[]>([])
 
 const toggleCategoryDropdown = () => {
   isCategoryDropdownOpen.value = !isCategoryDropdownOpen.value
@@ -23,20 +26,6 @@ const toggleCategoryDropdown = () => {
 
 const closeCategoryDropdown = () => {
   isCategoryDropdownOpen.value = false
-}
-
-const toggleUserDropdown = () => {
-  isUserDropdownOpen.value = !isUserDropdownOpen.value
-}
-
-const closeUserDropdown = () => {
-  isUserDropdownOpen.value = false
-}
-
-const handleLogout = async () => {
-  closeUserDropdown()
-  await authStore.logout()
-  router.push('/login?mode=login')
 }
 
 const handleSearch = () => {
@@ -54,17 +43,35 @@ const handleClickOutside = (event: MouseEvent) => {
   ) {
     closeCategoryDropdown()
   }
-  if (
-    userDropdownRef.value &&
-    !userDropdownRef.value.contains(target)
-  ) {
-    closeUserDropdown()
+}
+
+const loadCategories = async (): Promise<void> => {
+  try {
+    const remoteCategories = await fetchCategories()
+    categories.value = remoteCategories
+  } catch {
+    categories.value = []
   }
 }
 
 onMounted(() => {
   document.addEventListener('click', handleClickOutside)
+  loadCategories()
+  if (authStore.isAuthenticated) {
+    cartStore.loadCart()
+  }
 })
+
+watch(
+  () => authStore.isAuthenticated,
+  (isAuth) => {
+    if (isAuth) {
+      cartStore.loadCart()
+    } else {
+      cartStore.reset()
+    }
+  }
+)
 
 onUnmounted(() => {
   document.removeEventListener('click', handleClickOutside)
@@ -128,6 +135,12 @@ onUnmounted(() => {
                 >
                   {{ cat.name }}
                 </router-link>
+                <div
+                  v-if="categories.length === 0"
+                  class="px-4 py-2.5 text-xs text-slate-400 italic"
+                >
+                  No categories found
+                </div>
               </div>
             </transition>
           </div>
@@ -164,12 +177,15 @@ onUnmounted(() => {
           to="/cart"
           class="relative text-white hover:text-accent-yellow transition-colors p-1"
           title="Shopping Cart"
+          data-test="navbar-cart-link"
         >
           <i class="fa-solid fa-cart-shopping text-lg"></i>
           <span
+            v-if="authStore.isAuthenticated && cartStore.totalItems > 0"
             class="absolute -top-1 -right-1 bg-accent-red text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center leading-none"
+            data-test="navbar-cart-badge"
           >
-            2
+            {{ cartStore.totalItems }}
           </span>
         </router-link>
 
@@ -181,56 +197,21 @@ onUnmounted(() => {
           DO NOT hardcode 'thainchai' or any static username here to match baseline UI screenshots/mockups.
         -->
         <template v-if="authStore.isAuthenticated">
-          <div ref="userDropdownRef" class="relative">
-            <button
-              type="button"
-              id="navbar-user-btn"
-              aria-haspopup="true"
-              :aria-expanded="isUserDropdownOpen"
-              class="flex items-center gap-1.5 text-white hover:text-accent-yellow transition-colors p-1 group cursor-pointer"
-              :title="authStore.currentUsername"
-              data-test="navbar-user-btn"
-              @click="toggleUserDropdown"
+          <router-link
+            to="/account"
+            class="flex items-center gap-1.5 text-white hover:text-accent-yellow transition-colors p-1 group cursor-pointer"
+            :title="authStore.currentUsername"
+            data-test="navbar-user-btn"
+          >
+            <i class="fa-regular fa-circle-user text-xl transition-colors"></i>
+            <span
+              v-if="!isProfilePage"
+              class="text-sm font-medium hidden sm:inline-block"
+              data-test="navbar-username"
             >
-              <i class="fa-regular fa-circle-user text-xl text-accent-yellow"></i>
-              <span class="text-sm font-medium hidden sm:inline-block" data-test="navbar-username">
-                {{ authStore.currentUsername }}
-              </span>
-              <i
-                class="fa-solid fa-chevron-down text-[10px] text-white/70 transition-transform duration-200"
-                :class="{ 'rotate-180': isUserDropdownOpen }"
-              ></i>
-            </button>
-
-            <!-- User Dropdown Menu -->
-            <transition
-              enter-active-class="transition duration-150 ease-out"
-              enter-from-class="opacity-0 -translate-y-2 scale-95"
-              enter-to-class="opacity-100 translate-y-0 scale-100"
-              leave-active-class="transition duration-100 ease-in"
-              leave-from-class="opacity-100 translate-y-0 scale-100"
-              leave-to-class="opacity-0 -translate-y-2 scale-95"
-            >
-              <div
-                v-if="isUserDropdownOpen"
-                class="absolute right-0 mt-2 w-48 bg-bg-surface text-text-dark rounded-lg shadow-xl border border-auth-border py-1.5 z-50 overflow-hidden"
-                data-test="navbar-user-dropdown"
-              >
-                <div class="px-4 py-2 border-b border-auth-border text-xs text-text-muted">
-                  Signed in as <span class="font-bold text-text-dark">{{ authStore.currentUsername }}</span>
-                </div>
-                <button
-                  type="button"
-                  class="w-full text-left px-4 py-2 text-sm text-accent-red hover:bg-bg-light transition-colors cursor-pointer flex items-center gap-2"
-                  data-test="navbar-logout-btn"
-                  @click="handleLogout"
-                >
-                  <i class="fa-solid fa-right-from-bracket"></i>
-                  <span>Logout</span>
-                </button>
-              </div>
-            </transition>
-          </div>
+              {{ authStore.currentUsername }}
+            </span>
+          </router-link>
         </template>
         <template v-else>
           <!-- Original baseline icon-only login button matching reference image -->

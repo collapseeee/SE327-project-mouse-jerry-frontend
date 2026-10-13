@@ -89,10 +89,16 @@ Before pushing, verify that all local checks pass:
 
 ### Step 5: Atomic Commit & Push
 
-Commit changes with single-concern message and co-author tag:
+Always adhere to the **Atomic Commit Principle** (DevOps rule — one purpose per commit):
+- **NEVER** bundle unrelated changes or whole features + tests into a single bulk commit (`git add -A` or `git add .`).
+- Separate commits by concern and type:
+  - `fix(<scope>): ...` — Targeted bug or static analysis remediation only.
+  - `test(<scope>): ...` — Unit and integration tests only.
+  - `docs(<scope>): ...` — Documentation updates only.
+- Stage only the specific affected files:
 
 ```powershell
-git add -A
+git add <affected-source-files>
 git commit -m "fix(<scope>): resolve DeepSource <issue>`n`nCo-authored-by: Antigravity Agent <agent@antigravity.google.com>"
 git push origin <branch>
 ```

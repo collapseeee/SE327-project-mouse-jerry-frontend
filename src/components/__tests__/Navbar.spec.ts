@@ -3,19 +3,36 @@ import { mount, flushPromises } from '@vue/test-utils'
 import { setActivePinia, createPinia } from 'pinia'
 import Navbar from '../Navbar.vue'
 import { useAuthStore } from '@/stores/auth'
+import { useCartStore } from '@/stores/cart'
+
+import { reactive } from 'vue'
 
 const mockPush = vi.fn()
+const mockRoute = reactive({ path: '/' })
 vi.mock('vue-router', () => ({
   useRouter: () => ({
     push: mockPush
-  })
+  }),
+  useRoute: () => mockRoute
 }))
+
+const sampleCategories = [
+  { id: 1, name: 'Fighting', slug: 'Fighting', isVisible: true },
+  { id: 2, name: 'Hack and slash/Beat \'em up', slug: 'Hack and slash/Beat \'em up', isVisible: true },
+  { id: 3, name: 'Indie', slug: 'Indie', isVisible: true }
+]
 
 describe('Navbar', () => {
   beforeEach(() => {
     localStorage.clear()
     setActivePinia(createPinia())
     mockPush.mockClear()
+    mockRoute.path = '/'
+    vi.restoreAllMocks()
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve(sampleCategories)
+    } as Response)
   })
 
   const mountNavbar = () => {
@@ -31,8 +48,9 @@ describe('Navbar', () => {
     })
   }
 
-  it('renders brand name and icon-only Login link matching baseline when unauthenticated', () => {
+  it('renders brand name and icon-only Login link matching baseline when unauthenticated', async () => {
     const wrapper = mountNavbar()
+    await flushPromises()
     expect(wrapper.text()).toContain('Mouse Jerry')
     const loginLink = wrapper.find('[data-test="navbar-login-link"]')
     expect(loginLink.exists()).toBe(true)
@@ -42,64 +60,35 @@ describe('Navbar', () => {
     expect(wrapper.find('[data-test="navbar-user-btn"]').exists()).toBe(false)
   })
 
-  it('renders dynamic username when authenticated and toggles dropdown', async () => {
+  it('renders dynamic username when authenticated on non-profile pages and links to /account', async () => {
     const authStore = useAuthStore()
     authStore.setUserSession({ id: 1, username: 'thainchai' }, 'token-123')
 
     const wrapper = mountNavbar()
+    await flushPromises()
     const userBtn = wrapper.find('[data-test="navbar-user-btn"]')
     expect(userBtn.exists()).toBe(true)
+    expect(userBtn.attributes('href')).toBe('/account')
     expect(wrapper.find('[data-test="navbar-username"]').text()).toBe('thainchai')
-
-    // Initially dropdown closed
-    expect(wrapper.find('[data-test="navbar-user-dropdown"]').exists()).toBe(false)
-
-    // Open dropdown
-    await userBtn.trigger('click')
-    expect(wrapper.find('[data-test="navbar-user-dropdown"]').exists()).toBe(true)
-    expect(wrapper.text()).toContain('Signed in as thainchai')
-
-    // Close dropdown on click again
-    await userBtn.trigger('click')
-    expect(wrapper.find('[data-test="navbar-user-dropdown"]').exists()).toBe(false)
+    expect(userBtn.find('i.fa-regular.fa-circle-user').exists()).toBe(true)
   })
 
-  it('handles logout and navigates to login page', async () => {
-    const authStore = useAuthStore()
-    authStore.setUserSession({ id: 2, username: 'gamer99' }, 'token-xyz')
-
-    const wrapper = mountNavbar()
-    const userBtn = wrapper.find('[data-test="navbar-user-btn"]')
-    await userBtn.trigger('click')
-
-    const logoutBtn = wrapper.find('[data-test="navbar-logout-btn"]')
-    expect(logoutBtn.exists()).toBe(true)
-
-    await logoutBtn.trigger('click')
-    await flushPromises()
-
-    expect(authStore.isAuthenticated).toBe(false)
-    expect(mockPush).toHaveBeenCalledWith('/login?mode=login')
-  })
-
-  it('closes dropdowns when clicking outside', async () => {
+  it('hides username text when authenticated on /account profile page', async () => {
+    mockRoute.path = '/account'
     const authStore = useAuthStore()
     authStore.setUserSession({ id: 1, username: 'thainchai' }, 'token-123')
 
     const wrapper = mountNavbar()
+    await flushPromises()
     const userBtn = wrapper.find('[data-test="navbar-user-btn"]')
-    await userBtn.trigger('click')
-    expect(wrapper.find('[data-test="navbar-user-dropdown"]').exists()).toBe(true)
-
-    // Simulate clicking outside on document body
-    document.dispatchEvent(new MouseEvent('click', { bubbles: true }))
-    await wrapper.vm.$nextTick()
-
-    expect(wrapper.find('[data-test="navbar-user-dropdown"]').exists()).toBe(false)
+    expect(userBtn.exists()).toBe(true)
+    expect(userBtn.attributes('href')).toBe('/account')
+    expect(wrapper.find('[data-test="navbar-username"]').exists()).toBe(false)
   })
 
-  it('renders search input with accessible label and matching id', () => {
+  it('renders search input with accessible label and matching id', async () => {
     const wrapper = mountNavbar()
+    await flushPromises()
     const label = wrapper.find('label[for="navbar-search"]')
     const input = wrapper.find('input#navbar-search')
 
@@ -110,6 +99,7 @@ describe('Navbar', () => {
 
   it('toggles category dropdown menu on click and closes on item select', async () => {
     const wrapper = mountNavbar()
+    await flushPromises()
     const categoryBtn = wrapper.find('#category-dropdown-btn')
     expect(categoryBtn.exists()).toBe(true)
 
@@ -129,6 +119,7 @@ describe('Navbar', () => {
 
   it('navigates to /search when search form is submitted with non-empty query', async () => {
     const wrapper = mountNavbar()
+    await flushPromises()
     const input = wrapper.find('input#navbar-search')
 
     await input.setValue('cyberpunk')
@@ -142,6 +133,7 @@ describe('Navbar', () => {
 
   it('does not navigate when search query is empty or whitespace', async () => {
     const wrapper = mountNavbar()
+    await flushPromises()
     const input = wrapper.find('input#navbar-search')
 
     await input.setValue('   ')
@@ -150,10 +142,65 @@ describe('Navbar', () => {
     expect(mockPush).not.toHaveBeenCalled()
   })
 
-  it('renders cart badge with product count', () => {
+  it('renders cart badge with product count when authenticated with cart items', async () => {
+    const authStore = useAuthStore()
+    authStore.setUserSession({ id: 1, username: 'thainchai' }, 'token-123')
+    const cartStore = useCartStore()
+    vi.spyOn(cartStore, 'loadCart').mockResolvedValue()
+    cartStore.items = [
+      { id: 1, gameId: 'g1', gameTitle: 'Game 1', coverImage: '', unitPrice: 100, quantity: 2, stock: 5, totalPrice: 200 }
+    ]
+
     const wrapper = mountNavbar()
+    await flushPromises()
     const cartLink = wrapper.find('a[href="/cart"]')
     expect(cartLink.exists()).toBe(true)
-    expect(cartLink.text()).toContain('2')
+    const badge = wrapper.find('[data-test="navbar-cart-badge"]')
+    expect(badge.exists()).toBe(true)
+    expect(badge.text()).toBe('2')
+  })
+
+  it('does not render cart badge when unauthenticated', async () => {
+    const wrapper = mountNavbar()
+    await flushPromises()
+    const badge = wrapper.find('[data-test="navbar-cart-badge"]')
+    expect(badge.exists()).toBe(false)
+  })
+
+  it('updates categories on mount when fetchCategories returns remote list', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve([
+        { id: 99, name: 'Sci-Fi', slug: 'Sci-Fi', isVisible: true }
+      ])
+    } as unknown as Response)
+
+    const wrapper = mountNavbar()
+    await flushPromises()
+
+    const categoryBtn = wrapper.find('#category-dropdown-btn')
+    await categoryBtn.trigger('click')
+    expect(wrapper.text()).toContain('Sci-Fi')
+  })
+
+  it('shows no categories found when remote categories list is empty', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve([])
+    } as unknown as Response)
+
+    const wrapper = mountNavbar()
+    await flushPromises()
+
+    const categoryBtn = wrapper.find('#category-dropdown-btn')
+    await categoryBtn.trigger('click')
+    expect(wrapper.text()).toContain('No categories found')
+
+    // Click inside the dropdown menu button itself to toggle off
+    await categoryBtn.trigger('click')
+    // Click outside when dropdown is already closed
+    document.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+    await wrapper.vm.$nextTick()
+    expect(wrapper.find('a[href="/category/Fighting"]').exists()).toBe(false)
   })
 })
