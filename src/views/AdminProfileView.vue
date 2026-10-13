@@ -83,11 +83,11 @@ const handleLogout = async (): Promise<void> => {
       <!-- Logout Button -->
       <button
         type="button"
-        class="w-full mt-6 py-2.5 sm:py-3 px-4 bg-[#DE1A58] hover:bg-[#c21349] active:bg-[#a50e3c] text-white font-bold text-sm sm:text-base rounded-xl shadow-md shadow-rose-500/25 transition-all duration-200 hover:shadow-lg hover:scale-[1.01] active:scale-[0.98] cursor-pointer text-center animate-logout lowercase"
+        class="w-full mt-6 py-2.5 sm:py-3 px-4 bg-[#DE1A58] hover:bg-[#c21349] active:bg-[#a50e3c] text-white font-bold text-sm sm:text-base rounded-xl shadow-md shadow-rose-500/25 transition-all duration-200 hover:shadow-lg hover:scale-[1.01] active:scale-[0.98] cursor-pointer text-center animate-logout"
         data-test="admin-logout-btn"
         @click="handleLogout"
       >
-        logout:
+        Logout
       </button>
     </div>
   </main>
