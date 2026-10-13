@@ -17,6 +17,8 @@ const isCategoryDropdownOpen = ref(false)
 const categoryDropdownRef = ref<HTMLElement | null>(null)
 
 const isProfilePage = computed(() => route.path === '/account')
+const isAdminRoute = computed(() => route.path.startsWith('/admin'))
+const adminSearchQuery = ref('')
 
 const categories = ref<CategoryItem[]>([])
 
@@ -33,6 +35,11 @@ const handleSearch = () => {
   if (query) {
     router.push({ path: '/search', query: { q: query } })
   }
+}
+
+const handleAdminSearch = () => {
+  const query = adminSearchQuery.value.trim()
+  router.push({ path: '/admin/games', query: query ? { search: query } : {} })
 }
 
 const handleClickOutside = (event: MouseEvent) => {
@@ -80,7 +87,77 @@ onUnmounted(() => {
 
 <template>
   <nav class="w-full bg-primary text-white shadow-md relative z-50">
-    <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between gap-4">
+    <!-- Admin Navbar Layout matching Screenshots 1, 2, 3 -->
+    <div
+      v-if="isAdminRoute"
+      class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between gap-4"
+      data-test="admin-navbar-container"
+    >
+      <div class="flex items-center gap-6">
+        <router-link
+          to="/admin/games"
+          class="font-black text-xl tracking-wider text-accent-red uppercase hover:opacity-90 transition-opacity"
+          data-test="admin-brand-logo"
+        >
+          MOUSE JERRY
+        </router-link>
+
+        <!-- Search Bar matching Screenshots 1, 2, 3 -->
+        <form class="flex items-center" @submit.prevent="handleAdminSearch">
+          <label for="admin-navbar-search" class="sr-only">Search games</label>
+          <input
+            id="admin-navbar-search"
+            v-model="adminSearchQuery"
+            type="text"
+            placeholder="Search games"
+            class="px-3 py-1.5 bg-[#fef3c7] text-slate-800 placeholder-slate-400 text-xs sm:text-sm rounded-l border-none focus:outline-none w-36 sm:w-60 shadow-inner"
+            data-test="admin-navbar-search-input"
+          />
+          <button
+            type="submit"
+            class="px-3 py-1.5 bg-[#4a02b5] hover:bg-[#5b03dc] text-white text-xs sm:text-sm font-semibold rounded-r transition-colors cursor-pointer"
+            data-test="admin-navbar-search-btn"
+          >
+            Search
+          </button>
+        </form>
+      </div>
+
+      <!-- Admin Nav Links matching Screenshot 1 -->
+      <div class="flex items-center gap-5 sm:gap-7 text-xs sm:text-sm font-bold tracking-wider">
+        <router-link
+          to="/admin/games"
+          class="text-white hover:text-accent-yellow transition-colors pb-1 uppercase"
+          :class="{ 'border-b-2 border-white': route.path.startsWith('/admin') }"
+          data-test="admin-nav-game"
+        >
+          GAME
+        </router-link>
+        <span class="text-white/70 hover:text-white cursor-pointer transition-colors uppercase">
+          CATEGORY
+        </span>
+        <span class="text-white/70 hover:text-white cursor-pointer transition-colors uppercase">
+          HIGHLIGHT
+        </span>
+        <span class="text-white/70 hover:text-white cursor-pointer transition-colors uppercase">
+          SALE HISTORY
+        </span>
+        <router-link
+          to="/account"
+          class="text-white hover:text-accent-yellow transition-colors ml-1 sm:ml-2"
+          title="Account"
+          data-test="admin-profile-btn"
+        >
+          <i class="fa-regular fa-circle-user text-2xl"></i>
+        </router-link>
+      </div>
+    </div>
+
+    <!-- Regular Customer Navbar -->
+    <div
+      v-else
+      class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between gap-4"
+    >
       <!-- Left side: Brand Logo & Links -->
       <div class="flex items-center gap-6">
         <router-link to="/" class="flex items-center gap-2.5 group">
@@ -148,6 +225,16 @@ onUnmounted(() => {
           <router-link to="/contact" class="flex items-center gap-1.5 text-white/90 hover:text-white transition-colors">
             <i class="fa-solid fa-envelope text-accent-yellow"></i>
             <span>Contact</span>
+          </router-link>
+
+          <router-link
+            v-if="authStore.isAdmin"
+            to="/admin/games"
+            class="flex items-center gap-1.5 text-accent-yellow hover:text-white transition-colors font-semibold"
+            data-test="navbar-admin-link"
+          >
+            <i class="fa-solid fa-shield-halved"></i>
+            <span>Back Office</span>
           </router-link>
         </div>
       </div>

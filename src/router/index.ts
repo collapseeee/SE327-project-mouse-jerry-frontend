@@ -10,6 +10,8 @@ import PurchaseView from '../views/PurchaseView.vue'
 import SuccessView from '../views/SuccessView.vue'
 import KeysView from '../views/KeysView.vue'
 import ContactView from '../views/ContactView.vue'
+import AdminGamesView from '../views/AdminGamesView.vue'
+import AdminGameFormView from '../views/AdminGameFormView.vue'
 import { useAuthStore } from '../stores/auth'
 
 const router = createRouter({
@@ -79,6 +81,28 @@ const router = createRouter({
       name: 'Keys',
       component: KeysView,
       meta: { requiresAuth: true }
+    },
+    {
+      path: '/admin',
+      redirect: '/admin/games'
+    },
+    {
+      path: '/admin/games',
+      name: 'AdminGames',
+      component: AdminGamesView,
+      meta: { requiresAuth: true, requiresAdmin: true }
+    },
+    {
+      path: '/admin/games/new',
+      name: 'AdminGameNew',
+      component: AdminGameFormView,
+      meta: { requiresAuth: true, requiresAdmin: true }
+    },
+    {
+      path: '/admin/games/:id/edit',
+      name: 'AdminGameEdit',
+      component: AdminGameFormView,
+      meta: { requiresAuth: true, requiresAdmin: true }
     }
   ]
 })
@@ -91,6 +115,9 @@ router.beforeEach((to) => {
         path: '/login',
         query: { mode: 'login', redirect: to.fullPath }
       }
+    }
+    if (to.meta.requiresAdmin && !authStore.isAdmin) {
+      return { path: '/' }
     }
   }
   return true
