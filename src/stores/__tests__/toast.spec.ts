@@ -29,11 +29,11 @@ describe('useToastStore', () => {
 
   it('adds a success toast using showSuccess', () => {
     const store = useToastStore()
-    store.showSuccess('Operation successful', 'Elden Ring')
+    store.showSuccess('Operation successful')
 
     expect(store.toasts).toHaveLength(1)
     expect(store.toasts[0].message).toBe('Operation successful')
-    expect(store.toasts[0].gameTitle).toBe('Elden Ring')
+    expect(store.toasts[0].title).toBe('Updated Completed')
     expect(store.toasts[0].type).toBe('success')
   })
 
