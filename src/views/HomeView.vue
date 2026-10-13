@@ -91,12 +91,12 @@ const handleAddToCart = async (game: Game): Promise<void> => {
 <template>
   <main class="max-w-7xl mx-auto px-6 py-6">
     <!-- Premium Swiper Coverflow Carousel -->
-    <section v-if="highlights.length > 0" class="mb-8">
+    <section v-if="highlights.length > 0" class="mb-8 animate-fade-in-scale">
       <HighlightCarousel :highlights="highlights" />
     </section>
 
     <!-- Section Title -->
-    <div class="mb-6">
+    <div class="mb-6 animate-fade-in-down delay-100">
       <h3 class="text-2xl font-bold text-primary">
         All Games
       </h3>
@@ -105,7 +105,7 @@ const handleAddToCart = async (game: Game): Promise<void> => {
     <!-- Product Grid matching Screenshot 3 -->
     <section
       v-if="catalogGames.length > 0"
-      class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-5 mb-8"
+      class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-5 mb-8 animate-fade-in-up delay-200"
     >
       <GameCard
         v-for="game in catalogGames"
@@ -118,7 +118,7 @@ const handleAddToCart = async (game: Game): Promise<void> => {
     <!-- Empty State -->
     <div
       v-else-if="!isLoading"
-      class="py-16 text-center bg-white rounded-2xl border border-slate-100 shadow-sm mb-8"
+      class="py-16 text-center bg-white rounded-2xl border border-slate-100 shadow-sm mb-8 animate-card-entrance"
     >
       <i class="fa-solid fa-gamepad text-4xl text-slate-300 mb-3 block"></i>
       <p class="text-slate-600 font-medium">No games available at this time.</p>

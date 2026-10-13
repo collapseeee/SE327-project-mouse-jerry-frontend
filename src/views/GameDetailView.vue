@@ -174,7 +174,7 @@ const handleBuyNow = async () => {
     <!-- Game Found State -->
     <template v-else-if="game">
       <!-- Breadcrumb matching Baseline UI & Screenshot -->
-      <nav class="flex items-center text-sm mb-6 flex-wrap gap-1 text-slate-500" aria-label="Breadcrumb">
+      <nav class="flex items-center text-sm mb-6 flex-wrap gap-1 text-slate-500 animate-fade-in-down" aria-label="Breadcrumb">
         <router-link to="/" class="text-secondary hover:underline font-medium">
           Home
         </router-link>
@@ -191,7 +191,7 @@ const handleBuyNow = async () => {
       <!-- Top Two-Column Grid: Visuals Column (Left) & Purchasing Column (Right) -->
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 mb-10">
         <!-- Left Column: Visuals / Custom Slider & Thumbnails -->
-        <section class="lg:col-span-7 flex flex-col">
+        <section class="lg:col-span-7 flex flex-col animate-fade-in-scale delay-100">
           <!-- Main Slider Image Box -->
           <div class="relative overflow-hidden rounded-xl bg-[#111] shadow-sm mb-3 flex items-center justify-center min-h-[420px] max-h-[460px]">
             <img
@@ -247,7 +247,7 @@ const handleBuyNow = async () => {
         </section>
 
         <!-- Right Column: Purchasing Section (Matching Screenshot) -->
-        <section class="lg:col-span-5 flex flex-col justify-start">
+        <section class="lg:col-span-5 flex flex-col justify-start animate-fade-in-up delay-200">
           <!-- Game Cover Image with border-primary -->
           <div class="mb-4">
             <img
@@ -339,7 +339,7 @@ const handleBuyNow = async () => {
       </div>
 
       <!-- Bottom Info Column (Matching Baseline Section Titles & Cards) -->
-      <div class="w-full lg:w-8/12 mt-4 space-y-8">
+      <div class="w-full lg:w-8/12 mt-4 space-y-8 animate-fade-in-up delay-300">
         <!-- 1. Category Section -->
         <div class="mb-6">
           <h3 class="relative text-2xl font-extrabold text-primary pb-2.5 mb-3 after:content-[''] after:absolute after:left-0 after:bottom-0 after:w-12 after:h-1 after:bg-accent-yellow after:rounded">
@@ -408,7 +408,7 @@ const handleBuyNow = async () => {
     <!-- Game Not Found State -->
     <div
       v-else
-      class="py-20 text-center bg-white rounded-2xl border border-slate-100 shadow-sm"
+      class="py-20 text-center bg-white rounded-2xl border border-slate-100 shadow-sm animate-card-entrance"
     >
       <i class="fa-solid fa-triangle-exclamation text-5xl text-accent-red mb-4 block"></i>
       <h1 class="text-2xl font-bold text-slate-800 mb-2">Game Not Found</h1>

@@ -88,7 +88,7 @@ onMounted(async () => {
 <template>
   <main class="max-w-7xl mx-auto px-6 py-8 min-h-[calc(100vh-8rem)]">
     <!-- Header: Shopping Cart Icon + Your Cart Title -->
-    <div class="flex items-center gap-3 mb-8" data-test="cart-header">
+    <div class="flex items-center gap-3 mb-8 animate-fade-in-down" data-test="cart-header">
       <i class="fa-solid fa-cart-shopping text-3xl text-primary"></i>
       <h1 class="text-3xl font-extrabold text-primary tracking-tight">
         Your Cart
@@ -98,7 +98,7 @@ onMounted(async () => {
     <!-- Loading State -->
     <div
       v-if="cartStore.isLoading && cartStore.items.length === 0"
-      class="py-24 text-center bg-white rounded-2xl border border-slate-100 shadow-sm"
+      class="py-24 text-center bg-white rounded-2xl border border-slate-100 shadow-sm animate-fade-in"
       data-test="cart-loading-state"
     >
       <i class="fa-solid fa-circle-notch fa-spin text-4xl text-primary mb-4 block"></i>
@@ -108,7 +108,7 @@ onMounted(async () => {
     <!-- Empty State -->
     <div
       v-else-if="cartStore.items.length === 0"
-      class="py-20 text-center bg-white rounded-2xl border border-slate-100 shadow-sm max-w-xl mx-auto p-8"
+      class="py-20 text-center bg-white rounded-2xl border border-slate-100 shadow-sm max-w-xl mx-auto p-8 animate-card-entrance"
       data-test="cart-empty-state"
     >
       <i class="fa-solid fa-basket-shopping text-5xl text-slate-300 mb-4 block"></i>
@@ -133,7 +133,7 @@ onMounted(async () => {
       data-test="cart-content-grid"
     >
       <!-- Left Column: Cart Items List -->
-      <section class="lg:col-span-2 space-y-4" data-test="cart-items-list">
+      <section class="lg:col-span-2 space-y-4 animate-fade-in-up" data-test="cart-items-list">
         <article
           v-for="item in cartStore.items"
           :key="item.id"
@@ -243,7 +243,7 @@ onMounted(async () => {
 
       <!-- Right Column: Order Summary Card -->
       <aside
-        class="w-full lg:sticky lg:top-24 bg-white rounded-2xl border border-slate-100 shadow-sm p-6"
+        class="w-full lg:sticky lg:top-24 bg-white rounded-2xl border border-slate-100 shadow-sm p-6 animate-fade-in-scale delay-150"
         data-test="order-summary-card"
       >
         <h2 class="text-xl font-bold text-primary mb-6">

@@ -23,7 +23,7 @@ const modules = [EffectCoverflow, Navigation, Autoplay]
 </script>
 
 <template>
-  <div class="w-full py-4 relative highlight-carousel-wrapper">
+  <div class="w-full py-4 relative highlight-carousel-wrapper animate-fade-in-scale">
     <swiper
       :modules="modules"
       effect="coverflow"

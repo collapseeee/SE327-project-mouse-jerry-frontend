@@ -33,7 +33,7 @@ const visiblePages = computed<number[]>(() => {
 <template>
   <nav
     v-if="totalPages > 1"
-    class="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2 py-6 text-sm font-semibold select-none"
+    class="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2 py-6 text-sm font-semibold select-none animate-fade-in-up"
     aria-label="Pagination"
   >
     <!-- Previous button matching baseline '<' / '&laquo;' -->
