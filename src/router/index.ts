@@ -9,6 +9,7 @@ import CartView from '../views/CartView.vue'
 import PurchaseView from '../views/PurchaseView.vue'
 import SuccessView from '../views/SuccessView.vue'
 import KeysView from '../views/KeysView.vue'
+import ContactView from '../views/ContactView.vue'
 import { useAuthStore } from '../stores/auth'
 
 const router = createRouter({
@@ -18,6 +19,11 @@ const router = createRouter({
       path: '/',
       name: 'Home',
       component: HomeView
+    },
+    {
+      path: '/contact',
+      name: 'Contact',
+      component: ContactView
     },
     {
       path: '/login',
