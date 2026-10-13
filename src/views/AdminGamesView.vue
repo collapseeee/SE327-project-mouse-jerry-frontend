@@ -68,21 +68,27 @@ const cancelDelete = (): void => {
   gameToDelete.value = null
 }
 
+const computeNextPageAfterDelete = (currentCount: number, page: number): number =>
+  currentCount === 1 && page > 1 ? page - 1 : page
+
+const performGameDeletion = async (token: string, targetId: string, targetName: string): Promise<void> => {
+  await deleteAdminGame(token, targetId)
+  toastStore.showSuccess(`Deleted game "${targetName}" successfully`)
+  gameToDelete.value = null
+  const querySearch = typeof route.query.search === 'string' ? route.query.search : ''
+  const nextPage = computeNextPageAfterDelete(games.value.length, currentPage.value)
+  await loadGames(querySearch, nextPage)
+}
+
 const executeDelete = async (): Promise<void> => {
-  if (!gameToDelete.value || !authStore.token) {
+  const target = gameToDelete.value
+  const token = authStore.token
+  if (!target || !token) {
     return
   }
   isDeleting.value = true
-  const target = gameToDelete.value
   try {
-    await deleteAdminGame(authStore.token, target.id)
-    toastStore.showSuccess(`Deleted game "${target.name}" successfully`)
-    gameToDelete.value = null
-    const querySearch = typeof route.query.search === 'string' ? route.query.search : ''
-    const nextPage = games.value.length === 1 && currentPage.value > 1
-      ? currentPage.value - 1
-      : currentPage.value
-    await loadGames(querySearch, nextPage)
+    await performGameDeletion(token, target.id, target.name)
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : 'Failed to delete game'
     toastStore.showError(msg)
