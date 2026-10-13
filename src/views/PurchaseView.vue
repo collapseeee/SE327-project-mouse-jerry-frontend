@@ -5,7 +5,7 @@ export default {
 </script>
 
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useCartStore } from '@/stores/cart'
 
@@ -21,6 +21,7 @@ interface PurchaseDisplayItem {
 
 const cartStore = useCartStore()
 const router = useRouter()
+const isProcessing = ref(false)
 
 // Determine items to display: If directPurchaseItem is set, ONLY show that item.
 // Otherwise, show normalized items from cartStore.items.
@@ -54,12 +55,17 @@ const totalItemCount = computed<number>(() => {
 })
 
 const handleConfirm = async (): Promise<void> => {
-  if (purchaseItems.value.length === 0) {
+  if (purchaseItems.value.length === 0 || isProcessing.value) {
     return
   }
-  const order = await cartStore.confirmPurchase()
-  if (order) {
-    router.push('/success')
+  isProcessing.value = true
+  try {
+    const order = await cartStore.confirmPurchase()
+    if (order) {
+      router.push('/success')
+    }
+  } finally {
+    isProcessing.value = false
   }
 }
 
@@ -71,7 +77,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <main class="max-w-4xl mx-auto px-6 py-8 min-h-[calc(100vh-8rem)]">
+  <main class="max-w-4xl mx-auto px-6 py-8 min-h-[calc(100vh-8rem)] relative">
     <!-- Title matching Screenshot 3 -->
     <h1 class="text-2xl sm:text-3xl font-extrabold text-primary flex items-center gap-2.5 mb-8">
       <i class="fa-solid fa-money-check-dollar"></i>
@@ -128,10 +134,13 @@ onMounted(async () => {
         <div class="flex justify-end pt-4">
           <button
             type="button"
-            class="px-10 py-3 bg-slate-500 hover:bg-slate-600 text-white font-bold rounded-xl shadow-sm transition-colors cursor-pointer text-base"
+            class="px-10 py-3 bg-slate-500 hover:bg-slate-600 text-white font-bold rounded-xl shadow-sm transition-colors cursor-pointer text-base disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+            :disabled="isProcessing"
+            data-test="confirm-purchase-btn"
             @click="handleConfirm"
           >
-            Confirm
+            <i v-if="isProcessing" class="fa-solid fa-circle-notch fa-spin"></i>
+            <span>{{ isProcessing ? 'Processing...' : 'Confirm' }}</span>
           </button>
         </div>
       </div>
@@ -153,6 +162,39 @@ onMounted(async () => {
       >
         Back to Store
       </router-link>
+    </div>
+
+    <!-- Processing Popup Modal -->
+    <div
+      v-if="isProcessing"
+      class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-fade-in"
+      data-test="processing-popup"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Processing your order"
+    >
+      <div
+        class="bg-white rounded-3xl border border-slate-100 shadow-2xl p-8 sm:p-10 max-w-md w-full text-center flex flex-col items-center gap-5 transform transition-all"
+      >
+        <div
+          class="w-20 h-20 rounded-2xl bg-primary/10 flex items-center justify-center text-primary shadow-inner"
+        >
+          <i class="fa-solid fa-circle-notch fa-spin text-4xl text-primary"></i>
+        </div>
+
+        <div class="flex flex-col gap-2">
+          <h3 class="text-2xl font-extrabold text-primary tracking-tight">
+            Processing Order
+          </h3>
+          <p class="text-sm text-slate-500 font-medium leading-relaxed">
+            Please wait while we secure your payment and claim your digital keys. Do not close or refresh this page.
+          </p>
+        </div>
+
+        <div class="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden mt-2">
+          <div class="bg-gradient-to-r from-primary to-secondary h-full rounded-full animate-pulse w-full"></div>
+        </div>
+      </div>
     </div>
   </main>
 </template>
