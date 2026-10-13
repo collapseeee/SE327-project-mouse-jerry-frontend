@@ -40,6 +40,19 @@ const parseStringArray = (val: unknown): string[] => {
   return val.filter(isNonEmptyString)
 }
 
+const parseSystemRequirements = (val: unknown): Game['systemRequirements'] => {
+  if (!isRecord(val)) {
+    return undefined
+  }
+  return {
+    os: parseOptionalString(val.os),
+    processor: parseOptionalString(val.processor),
+    memory: parseOptionalString(val.memory),
+    graphics: parseOptionalString(val.graphics),
+    storage: parseOptionalString(val.storage)
+  }
+}
+
 const mapToGame = (item: unknown): Game | null => {
   if (!isValidGameRecord(item)) {
     return null
@@ -56,7 +69,8 @@ const mapToGame = (item: unknown): Game | null => {
     publisher: parseOptionalString(item.publisher),
     releaseDate: parseOptionalString(item.releaseDate),
     stock: parseNumericField(item.stock, 0),
-    isHighlight: item.isHighlight === true
+    isHighlight: item.isHighlight === true,
+    systemRequirements: parseSystemRequirements(item.systemRequirements)
   }
 }
 
