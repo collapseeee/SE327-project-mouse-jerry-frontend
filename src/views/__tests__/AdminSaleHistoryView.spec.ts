@@ -156,4 +156,50 @@ describe('AdminSaleHistoryView', () => {
     expect(row.exists()).toBe(true)
     expect(row.text()).toContain('No items')
   })
+
+  it('paginates sales list at 15 items per page', async () => {
+    const manySales: OrderDTO[] = Array.from({ length: 17 }, (_, i) => ({
+      id: i + 1,
+      orderNumber: `ORD-PAGE-${i + 1}`,
+      userId: 100 + i,
+      username: `user_${i + 1}`,
+      totalAmount: 100,
+      purchaseDate: '2026-10-13T10:00:00',
+      items: [
+        {
+          id: i + 1,
+          gameId: 'game-x',
+          gameTitle: 'Game X',
+          coverImage: 'x.jpg',
+          gameKey: `KEY-${i + 1}`,
+          price: 100
+        }
+      ]
+    }))
+
+    vi.mocked(fetchAdminSaleHistory).mockResolvedValueOnce(manySales)
+
+    const wrapper = mount(AdminSaleHistoryView)
+    await flushPromises()
+
+    // Page 1 should render first 15 sales
+    expect(wrapper.find('[data-test="sale-row-ORD-PAGE-1"]').exists()).toBe(true)
+    expect(wrapper.find('[data-test="sale-row-ORD-PAGE-15"]').exists()).toBe(true)
+    expect(wrapper.find('[data-test="sale-row-ORD-PAGE-16"]').exists()).toBe(false)
+
+    // Pagination component should exist
+    const pagination = wrapper.find('[data-test="sale-history-pagination"]')
+    expect(pagination.exists()).toBe(true)
+
+    // Switch to page 2
+    const page2Btn = pagination.findAll('button').find((btn) => btn.text() === '2')
+    expect(page2Btn).toBeDefined()
+    await page2Btn!.trigger('click')
+    await flushPromises()
+
+    // Page 2 should render 16th and 17th sales
+    expect(wrapper.find('[data-test="sale-row-ORD-PAGE-1"]').exists()).toBe(false)
+    expect(wrapper.find('[data-test="sale-row-ORD-PAGE-16"]').exists()).toBe(true)
+    expect(wrapper.find('[data-test="sale-row-ORD-PAGE-17"]').exists()).toBe(true)
+  })
 })

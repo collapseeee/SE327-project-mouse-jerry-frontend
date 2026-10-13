@@ -5,7 +5,8 @@ export default {
 </script>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
+import Pagination from '@/components/Pagination.vue'
 import {
   fetchAdminSaleHistory,
   formatSaleDateParts,
@@ -23,6 +24,21 @@ const sales = ref<OrderDTO[]>([])
 const isLoading = ref(false)
 const errorMessage = ref<string | null>(null)
 
+const currentPage = ref(1)
+const pageSize = ref(15)
+
+const totalPages = computed(() => Math.max(1, Math.ceil(sales.value.length / pageSize.value)))
+
+const paginatedSales = computed(() => {
+  const start = (currentPage.value - 1) * pageSize.value
+  return sales.value.slice(start, start + pageSize.value)
+})
+
+const onPageChange = (page: number): void => {
+  currentPage.value = page
+  window.scrollTo({ top: 0, behavior: 'smooth' })
+}
+
 const loadSales = async (): Promise<void> => {
   if (!authStore.token) {
     return
@@ -31,6 +47,7 @@ const loadSales = async (): Promise<void> => {
   errorMessage.value = null
   try {
     sales.value = await fetchAdminSaleHistory(authStore.token)
+    currentPage.value = 1
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : 'Failed to load sale history'
     errorMessage.value = msg
@@ -89,7 +106,7 @@ onMounted(() => {
             </thead>
             <tbody class="divide-y divide-gray-100 text-sm">
               <tr
-                v-for="sale in sales"
+                v-for="sale in paginatedSales"
                 :key="sale.orderNumber || sale.id"
                 class="hover:bg-slate-50/60 transition-colors"
                 :data-test="`sale-row-${sale.orderNumber || sale.id}`"
@@ -153,6 +170,14 @@ onMounted(() => {
           </table>
         </div>
       </div>
+
+      <!-- Pagination matching 15 per page -->
+      <Pagination
+        :current-page="currentPage"
+        :total-pages="totalPages"
+        data-test="sale-history-pagination"
+        @page-change="onPageChange"
+      />
     </div>
   </div>
 </template>

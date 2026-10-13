@@ -5,14 +5,30 @@ export default {
 </script>
 
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import Pagination from '@/components/Pagination.vue'
 import { useAuthStore } from '@/stores/auth'
 import { useCartStore } from '@/stores/cart'
 
 const authStore = useAuthStore()
 const cartStore = useCartStore()
 const router = useRouter()
+
+const currentPage = ref(1)
+const pageSize = ref(15)
+
+const totalPages = computed(() => Math.max(1, Math.ceil(cartStore.orders.length / pageSize.value)))
+
+const paginatedOrders = computed(() => {
+  const start = (currentPage.value - 1) * pageSize.value
+  return cartStore.orders.slice(start, start + pageSize.value)
+})
+
+const onPageChange = (page: number): void => {
+  currentPage.value = page
+  window.scrollTo({ top: 0, behavior: 'smooth' })
+}
 
 const handleLogout = async (): Promise<void> => {
   await authStore.logout()
@@ -21,6 +37,7 @@ const handleLogout = async (): Promise<void> => {
 
 onMounted(async () => {
   await cartStore.loadOrders()
+  currentPage.value = 1
 })
 </script>
 
@@ -80,9 +97,10 @@ onMounted(async () => {
       <!-- Orders List matching Screenshot 2 -->
       <div v-if="cartStore.orders.length > 0" class="flex flex-col gap-6">
         <div
-          v-for="order in cartStore.orders"
+          v-for="order in paginatedOrders"
           :key="order.id"
           class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6"
+          :data-test="'account-order-' + (order.orderNumber || order.id)"
         >
           <!-- Order Header: Order #... (blue, left) and Date (right with calendar icon) -->
           <div class="flex items-center justify-between mb-4">
@@ -120,6 +138,14 @@ onMounted(async () => {
             </div>
           </div>
         </div>
+
+        <!-- Pagination matching 15 per page -->
+        <Pagination
+          :current-page="currentPage"
+          :total-pages="totalPages"
+          data-test="account-orders-pagination"
+          @page-change="onPageChange"
+        />
       </div>
 
       <!-- Empty State matching Screenshot 1: box icon, No purchases yet!, Browse Games button -->
