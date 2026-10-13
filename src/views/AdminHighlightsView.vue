@@ -97,19 +97,28 @@ const closeModal = (): void => {
   resetFormFields()
 }
 
-const resolveThumbnail = (item: HighlightRecord): string => {
-  if (item.customImage && Boolean(item.customImage.trim())) {
-    return item.customImage
+const getGameFallbackImage = (gameId: string): string => {
+  const matchingGame = storeGames.value.find((g) => g.id === gameId)
+  if (!matchingGame) {
+    return DEFAULT_IMAGE_PLACEHOLDER
   }
-  const matchingGame = storeGames.value.find((g) => g.id === item.gameId)
-  if (matchingGame?.screenshots && matchingGame.screenshots.length > 0) {
-    return matchingGame.screenshots[0]
+  const firstScreenshot = matchingGame.screenshots?.[0]
+  if (firstScreenshot) {
+    return firstScreenshot
   }
-  if (matchingGame?.coverImage) {
-    return matchingGame.coverImage
-  }
-  return DEFAULT_IMAGE_PLACEHOLDER
+  return matchingGame.coverImage || DEFAULT_IMAGE_PLACEHOLDER
 }
+
+const resolveThumbnail = (item: HighlightRecord): string => {
+  const custom = item.customImage?.trim()
+  if (custom) {
+    return custom
+  }
+  return getGameFallbackImage(item.gameId)
+}
+
+const extractErrorMessage = (err: unknown, fallback: string): string =>
+  err instanceof Error ? err.message : fallback
 
 const submitNewHighlight = async (token: string): Promise<void> => {
   const payload = {
@@ -142,8 +151,7 @@ const performImageUpload = async (token: string, file: File): Promise<void> => {
     formCustomImage.value = uploadedUrl
     toastStore.showSuccess('Banner image uploaded successfully')
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'Failed to upload image'
-    toastStore.showError(message)
+    toastStore.showError(extractErrorMessage(err, 'Failed to upload image'))
   } finally {
     isUploadingImage.value = false
   }
@@ -166,6 +174,15 @@ const handleFileUpload = async (event: Event): Promise<void> => {
   input.value = ''
 }
 
+const persistHighlight = async (token: string): Promise<void> => {
+  const editId = editingHighlightId.value
+  if (isEditing.value && editId !== null) {
+    await submitUpdatedHighlight(token, editId)
+    return
+  }
+  await submitNewHighlight(token)
+}
+
 const handleSaveHighlight = async (): Promise<void> => {
   if (!formGameId.value) {
     toastStore.showError('Please select a target game')
@@ -180,16 +197,11 @@ const handleSaveHighlight = async (): Promise<void> => {
 
   isSaving.value = true
   try {
-    if (isEditing.value && editingHighlightId.value !== null) {
-      await submitUpdatedHighlight(token, editingHighlightId.value)
-    } else {
-      await submitNewHighlight(token)
-    }
+    await persistHighlight(token)
     closeModal()
     await loadHighlights()
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'Failed to save highlight'
-    toastStore.showError(message)
+    toastStore.showError(extractErrorMessage(err, 'Failed to save highlight'))
   } finally {
     isSaving.value = false
   }
@@ -219,8 +231,7 @@ const executeDeleteHighlight = async (): Promise<void> => {
     closeDeleteModal()
     await loadHighlights()
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'Failed to delete highlight'
-    toastStore.showError(message)
+    toastStore.showError(extractErrorMessage(err, 'Failed to delete highlight'))
   } finally {
     isDeleting.value = false
   }

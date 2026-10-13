@@ -9,6 +9,11 @@ const isNonEmptyString = (val: unknown): val is string => typeof val === 'string
 
 const resolveString = (val: unknown, fallback = ''): string => (isNonEmptyString(val) ? val.trim() : fallback)
 
+const resolveOptionalString = (val: unknown): string | undefined => {
+  const str = resolveString(val)
+  return str ? str : undefined
+}
+
 const resolveId = (val: unknown): string | number => {
   if (typeof val === 'number') {
     return val
@@ -19,27 +24,28 @@ const resolveId = (val: unknown): string | number => {
   return 0
 }
 
+const hasHighlightTarget = (gameId: string, gameName: string): boolean =>
+  Boolean(gameId) || Boolean(gameName)
+
 const mapRawToHighlight = (item: unknown): HighlightRecord | null => {
   if (!isRecord(item)) {
     return null
   }
-  const id = resolveId(item.id)
   const gameId = resolveString(item.gameId)
-  const gameName = resolveString(item.gameName, resolveString(item.name))
-  const customImage = resolveString(item.customImage) || undefined
-  const buttonColor = resolveString(item.buttonColor, '#8b0000')
+  const fallbackName = resolveString(item.name)
+  const gameName = resolveString(item.gameName, fallbackName)
 
-  if (!gameId && !gameName) {
+  if (!hasHighlightTarget(gameId, gameName)) {
     return null
   }
 
   return {
-    id,
+    id: resolveId(item.id),
     gameId,
     gameName,
-    customImage,
-    buttonColor,
-    createdAt: resolveString(item.createdAt) || undefined
+    customImage: resolveOptionalString(item.customImage),
+    buttonColor: resolveString(item.buttonColor, '#8b0000'),
+    createdAt: resolveOptionalString(item.createdAt)
   }
 }
 
@@ -100,7 +106,7 @@ export const createAdminHighlight = async (
   })
 
   if (!response.ok) {
-    return handleResponseError(response, 'Failed to create highlight')
+    await handleResponseError(response, 'Failed to create highlight')
   }
 
   const rawData: unknown = await response.json()
@@ -123,7 +129,7 @@ export const updateAdminHighlight = async (
   })
 
   if (!response.ok) {
-    return handleResponseError(response, 'Failed to update highlight')
+    await handleResponseError(response, 'Failed to update highlight')
   }
 
   const rawData: unknown = await response.json()
@@ -144,6 +150,6 @@ export const deleteAdminHighlight = async (
   })
 
   if (!response.ok) {
-    return handleResponseError(response, 'Failed to delete highlight')
+    await handleResponseError(response, 'Failed to delete highlight')
   }
 }
