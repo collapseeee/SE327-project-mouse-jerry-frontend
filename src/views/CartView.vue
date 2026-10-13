@@ -71,7 +71,11 @@ const handleRemove = async (gameId: string): Promise<void> => {
 }
 
 const handleCheckout = (): void => {
-  // Checkout placeholder until checkout workflow is activated
+  if (cartStore.items.length === 0) {
+    return
+  }
+  cartStore.clearDirectPurchase()
+  router.push('/purchase-page')
 }
 
 onMounted(async () => {

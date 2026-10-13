@@ -4,7 +4,11 @@ import LoginView from '../views/LoginView.vue'
 import CategoryView from '../views/CategoryView.vue'
 import SearchView from '../views/SearchView.vue'
 import GameDetailView from '../views/GameDetailView.vue'
+import AccountView from '../views/AccountView.vue'
 import CartView from '../views/CartView.vue'
+import PurchaseView from '../views/PurchaseView.vue'
+import SuccessView from '../views/SuccessView.vue'
+import KeysView from '../views/KeysView.vue'
 import { useAuthStore } from '../stores/auth'
 
 const router = createRouter({
@@ -44,6 +48,30 @@ const router = createRouter({
       path: '/cart',
       name: 'Cart',
       component: CartView,
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/account',
+      name: 'Account',
+      component: AccountView,
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/purchase-page',
+      name: 'Purchase',
+      component: PurchaseView,
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/success',
+      name: 'Success',
+      component: SuccessView,
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/my-keys',
+      name: 'Keys',
+      component: KeysView,
       meta: { requiresAuth: true }
     }
   ]

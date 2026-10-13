@@ -9,8 +9,23 @@ import {
   clearCart
 } from '@/services/cartApi'
 import { fetchGameById } from '@/services/gameApi'
+import {
+  checkoutOrder,
+  fetchOrderHistory,
+  formatDate,
+  mapOrderDtoToOrder
+} from '@/services/orderApi'
+import type {
+  DirectPurchaseGame,
+  DirectPurchaseItem,
+  Order,
+  OrderDTO,
+  OrderKeyItem
+} from '@/types/order'
 import { useAuthStore } from './auth'
 import { useToastStore } from './toast'
+
+export type { DirectPurchaseGame, DirectPurchaseItem, Order, OrderKeyItem }
 
 const notifyCartItemAdded = (gameTitle?: string): void => {
   const toastStore = useToastStore()
@@ -66,10 +81,79 @@ const exceedsStock = (item: CartItem | undefined, quantity: number): boolean => 
   return item.stock > 0 && quantity > item.stock
 }
 
+let orderFallbackSequence = 100000
+
+const generateKeySegment = (): string => {
+  orderFallbackSequence += 1
+  return orderFallbackSequence.toString(36).toUpperCase()
+}
+
+const generateRandomKey = (): string => {
+  return `${generateKeySegment()}-${generateKeySegment()}-${generateKeySegment()}`
+}
+
+const generateOrderNumber = (): string => {
+  orderFallbackSequence += 1
+  return `ORD-${orderFallbackSequence.toString(36).toUpperCase()}`
+}
+
+const createDirectFallbackOrder = (
+  directItem: DirectPurchaseItem,
+  orderNumber: string,
+  dateStr: string
+): Order => ({
+  id: orderNumber,
+  orderNumber,
+  date: dateStr,
+  totalAmount: directItem.game.price * directItem.quantity,
+  items: [
+    {
+      gameId: directItem.game.id,
+      gameName: directItem.game.name,
+      coverImage: directItem.game.coverImage,
+      key: generateRandomKey(),
+      price: directItem.game.price
+    }
+  ]
+})
+
+const createCartFallbackOrder = (
+  cartItemsList: CartItem[],
+  orderNumber: string,
+  dateStr: string
+): Order => ({
+  id: orderNumber,
+  orderNumber,
+  date: dateStr,
+  totalAmount: cartItemsList.reduce((sum, item) => sum + item.totalPrice, 0),
+  items: cartItemsList.map((item) => ({
+    gameId: item.gameId,
+    gameName: item.gameTitle,
+    coverImage: item.coverImage,
+    key: generateRandomKey(),
+    price: item.unitPrice
+  }))
+})
+
+const createLocalFallbackOrder = (
+  directItem: DirectPurchaseItem | null,
+  cartItemsList: CartItem[]
+): Order => {
+  const orderNumber = generateOrderNumber()
+  const dateStr = formatDate()
+  if (directItem) {
+    return createDirectFallbackOrder(directItem, orderNumber, dateStr)
+  }
+  return createCartFallbackOrder(cartItemsList, orderNumber, dateStr)
+}
+
 export const useCartStore = defineStore('cart', () => {
   const authStore = useAuthStore()
 
   const items = ref<CartItem[]>([])
+  const orders = ref<Order[]>([])
+  const latestOrder = ref<Order | null>(null)
+  const directPurchaseItem = ref<DirectPurchaseItem | null>(null)
   const isLoading = ref(false)
   const error = ref<string | null>(null)
 
@@ -178,13 +262,77 @@ export const useCartStore = defineStore('cart', () => {
     }
   }
 
+  const setDirectPurchase = (game: DirectPurchaseGame, quantity = 1): void => {
+    directPurchaseItem.value = { game, quantity }
+  }
+
+  const clearDirectPurchase = (): void => {
+    directPurchaseItem.value = null
+  }
+
+  const loadOrders = async (): Promise<void> => {
+    if (!authStore.isAuthenticated || !authStore.token) {
+      orders.value = []
+      return
+    }
+    try {
+      const dtos = await fetchOrderHistory(authStore.token)
+      orders.value = dtos.map(mapOrderDtoToOrder)
+    } catch {
+      // Retain existing orders if fetch fails
+    }
+  }
+
+  const executeOrderCheckout = (token: string): Promise<OrderDTO> => {
+    if (directPurchaseItem.value) {
+      return checkoutOrder(token, {
+        checkoutType: 'single',
+        gameId: directPurchaseItem.value.game.id,
+        quantity: directPurchaseItem.value.quantity
+      })
+    }
+    return checkoutOrder(token, { checkoutType: 'cart' })
+  }
+
+  const confirmPurchase = async (): Promise<Order | null> => {
+    try {
+      if (!authStore.token) {
+        throw new Error('Not authenticated')
+      }
+      const orderDto = await executeOrderCheckout(authStore.token)
+      const createdOrder = mapOrderDtoToOrder(orderDto)
+      latestOrder.value = createdOrder
+      orders.value.unshift(createdOrder)
+      if (!directPurchaseItem.value) {
+        items.value = []
+      }
+      directPurchaseItem.value = null
+      return createdOrder
+    } catch {
+      const fallbackOrder = createLocalFallbackOrder(directPurchaseItem.value, items.value)
+      latestOrder.value = fallbackOrder
+      orders.value.unshift(fallbackOrder)
+      if (!directPurchaseItem.value) {
+        items.value = []
+      }
+      directPurchaseItem.value = null
+      return fallbackOrder
+    }
+  }
+
   const reset = (): void => {
     items.value = []
     error.value = null
+    orders.value = []
+    latestOrder.value = null
+    directPurchaseItem.value = null
   }
 
   return {
     items,
+    orders,
+    latestOrder,
+    directPurchaseItem,
     isLoading,
     error,
     totalItems,
@@ -195,6 +343,10 @@ export const useCartStore = defineStore('cart', () => {
     updateQuantity,
     removeItem,
     clear,
+    setDirectPurchase,
+    clearDirectPurchase,
+    loadOrders,
+    confirmPurchase,
     reset
   }
 })

@@ -47,6 +47,24 @@ describe('router', () => {
     expect(route.meta.requiresAuth).toBe(true)
   })
 
+  it('resolves /account, /purchase-page, /success, and /my-keys with requiresAuth meta', () => {
+    const accountRoute = router.resolve('/account')
+    expect(accountRoute.name).toBe('Account')
+    expect(accountRoute.meta.requiresAuth).toBe(true)
+
+    const purchaseRoute = router.resolve('/purchase-page')
+    expect(purchaseRoute.name).toBe('Purchase')
+    expect(purchaseRoute.meta.requiresAuth).toBe(true)
+
+    const successRoute = router.resolve('/success')
+    expect(successRoute.name).toBe('Success')
+    expect(successRoute.meta.requiresAuth).toBe(true)
+
+    const keysRoute = router.resolve('/my-keys')
+    expect(keysRoute.name).toBe('Keys')
+    expect(keysRoute.meta.requiresAuth).toBe(true)
+  })
+
   it('redirects unauthenticated user visiting /cart to /login with query', async () => {
     await router.push('/')
     await router.push('/cart')
@@ -55,10 +73,20 @@ describe('router', () => {
     expect(router.currentRoute.value.query.redirect).toBe('/cart')
   })
 
-  it('allows authenticated user to visit /cart', async () => {
+  it('redirects unauthenticated user visiting /account to /login with query', async () => {
+    await router.push('/')
+    await router.push('/account')
+    expect(router.currentRoute.value.path).toBe('/login')
+    expect(router.currentRoute.value.query.mode).toBe('login')
+    expect(router.currentRoute.value.query.redirect).toBe('/account')
+  })
+
+  it('allows authenticated user to visit /cart and /account', async () => {
     const authStore = useAuthStore()
     authStore.setUserSession({ id: 1, username: 'testuser' }, 'token-xyz')
     await router.push('/cart')
     expect(router.currentRoute.value.path).toBe('/cart')
+    await router.push('/account')
+    expect(router.currentRoute.value.path).toBe('/account')
   })
 })

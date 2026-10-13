@@ -11,10 +11,20 @@ import {
   clearCart
 } from '@/services/cartApi'
 import { fetchGameById } from '@/services/gameApi'
+import { checkoutOrder, fetchOrderHistory } from '@/services/orderApi'
 import type { CartDTO, CartItem } from '@/types/cart'
 
 vi.mock('@/services/cartApi')
 vi.mock('@/services/gameApi')
+vi.mock('@/services/orderApi', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/services/orderApi')>()
+  return {
+    ...actual,
+    checkoutOrder: vi.fn(),
+    fetchOrderHistory: vi.fn(),
+    fetchOrderByNumber: vi.fn()
+  }
+})
 
 describe('useCartStore', () => {
   beforeEach(() => {
@@ -298,10 +308,114 @@ describe('useCartStore', () => {
       const store = useCartStore()
       store.items = [sampleCartItem]
       store.error = 'Some error'
+      store.orders = [
+        {
+          id: 'ORD-1',
+          date: 'Oct 12, 2026',
+          items: []
+        }
+      ]
+      store.setDirectPurchase({ id: 'g1', name: 'G1', price: 100, coverImage: 'img' }, 1)
 
       store.reset()
       expect(store.items).toEqual([])
       expect(store.error).toBeNull()
+      expect(store.orders).toEqual([])
+      expect(store.latestOrder).toBeNull()
+      expect(store.directPurchaseItem).toBeNull()
+    })
+  })
+
+  describe('direct purchase and orders', () => {
+    it('sets and clears direct purchase item', () => {
+      const store = useCartStore()
+      store.setDirectPurchase({ id: 'game-1', name: 'Zelda', price: 2000, coverImage: 'z.jpg' }, 2)
+      expect(store.directPurchaseItem?.game.name).toBe('Zelda')
+      expect(store.directPurchaseItem?.quantity).toBe(2)
+
+      store.clearDirectPurchase()
+      expect(store.directPurchaseItem).toBeNull()
+    })
+
+    it('loads orders from orderApi when authenticated', async () => {
+      const authStore = useAuthStore()
+      authStore.setUserSession({ id: 1, username: 'testuser' }, 'mock-token')
+      vi.mocked(fetchOrderHistory).mockResolvedValueOnce([
+        {
+          id: 1,
+          orderNumber: 'ORD-HIST-1',
+          totalAmount: 500,
+          purchaseDate: '2026-10-12T10:00:00Z',
+          items: []
+        }
+      ])
+
+      const store = useCartStore()
+      await store.loadOrders()
+
+      expect(store.orders).toHaveLength(1)
+      expect(store.orders[0].orderNumber).toBe('ORD-HIST-1')
+    })
+
+    it('handles confirmPurchase with cart checkout successfully', async () => {
+      const authStore = useAuthStore()
+      authStore.setUserSession({ id: 1, username: 'testuser' }, 'mock-token')
+      vi.mocked(checkoutOrder).mockResolvedValueOnce({
+        id: 10,
+        orderNumber: 'ORD-CART-1',
+        totalAmount: 1788,
+        items: [
+          {
+            gameId: 'vs-1',
+            gameTitle: 'Vampire Survivors',
+            coverImage: 'vs.jpg',
+            gameKey: 'KEY-1234',
+            price: 1788
+          }
+        ]
+      })
+
+      const store = useCartStore()
+      store.items = [sampleCartItem]
+
+      const order = await store.confirmPurchase()
+      expect(order).toBeDefined()
+      expect(order?.orderNumber).toBe('ORD-CART-1')
+      expect(store.latestOrder?.orderNumber).toBe('ORD-CART-1')
+      expect(store.items).toEqual([])
+    })
+
+    it('handles confirmPurchase with direct purchase successfully', async () => {
+      const authStore = useAuthStore()
+      authStore.setUserSession({ id: 1, username: 'testuser' }, 'mock-token')
+      vi.mocked(checkoutOrder).mockResolvedValueOnce({
+        id: 11,
+        orderNumber: 'ORD-DIRECT-1',
+        totalAmount: 600,
+        items: []
+      })
+
+      const store = useCartStore()
+      store.setDirectPurchase({ id: 'g2', name: 'Celeste', price: 600, coverImage: 'c.jpg' }, 1)
+
+      const order = await store.confirmPurchase()
+      expect(order?.orderNumber).toBe('ORD-DIRECT-1')
+      expect(store.directPurchaseItem).toBeNull()
+    })
+
+    it('falls back to local simulated order when checkout API fails', async () => {
+      const authStore = useAuthStore()
+      authStore.setUserSession({ id: 1, username: 'testuser' }, 'mock-token')
+      vi.mocked(checkoutOrder).mockRejectedValueOnce(new Error('Network error'))
+
+      const store = useCartStore()
+      store.items = [sampleCartItem]
+
+      const order = await store.confirmPurchase()
+      expect(order).toBeDefined()
+      expect(order?.items).toHaveLength(1)
+      expect(order?.items[0].gameName).toBe('Vampire Survivors')
+      expect(store.latestOrder).toBeDefined()
     })
   })
 })
