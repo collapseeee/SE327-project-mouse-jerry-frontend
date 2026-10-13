@@ -218,8 +218,11 @@ export const uploadGameImage = async (
     throw new Error(msg)
   }
   const data: unknown = await response.json()
-  if (isRecord(data) && isNonEmptyString(data.fileUrl)) {
-    return data.fileUrl
+  if (isRecord(data)) {
+    const rawUrl = data.publicUrl || data.fileUrl || data.url
+    if (isNonEmptyString(rawUrl)) {
+      return rawUrl
+    }
   }
   throw new Error('Upload succeeded but no image URL was returned')
 }
