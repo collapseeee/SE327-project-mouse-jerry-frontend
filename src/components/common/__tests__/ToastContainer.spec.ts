@@ -37,6 +37,16 @@ describe('ToastContainer', () => {
     expect(wrapper.text()).toContain('Game "Elden Ring" updated successfully')
   })
 
+  it('renders Updated Completed as fallback when success toast title is not specified', () => {
+    const toastStore = useToastStore()
+    toastStore.showToast({ message: 'Game updated', type: 'success' })
+
+    const wrapper = mount(ToastContainer)
+    expect(wrapper.text()).toContain('Updated Completed')
+    expect(wrapper.text()).not.toContain('Added to Cart')
+    expect(wrapper.text()).toContain('Game updated')
+  })
+
   it('renders an error toast with error icon', () => {
     const toastStore = useToastStore()
     toastStore.showError('Unable to connect to server')
