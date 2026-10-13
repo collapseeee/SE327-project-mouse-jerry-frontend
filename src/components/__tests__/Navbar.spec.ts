@@ -212,6 +212,8 @@ describe('Navbar', () => {
     expect(wrapper.find('[data-test="admin-navbar-container"]').exists()).toBe(true)
     expect(wrapper.find('[data-test="admin-brand-logo"]').text()).toBe('MOUSE JERRY')
     expect(wrapper.find('[data-test="admin-nav-game"]').exists()).toBe(true)
+    expect(wrapper.find('[data-test="admin-nav-category"]').exists()).toBe(true)
+    expect(wrapper.find('[data-test="admin-nav-category"]').attributes('href')).toBe('/admin/categories')
     expect(wrapper.text()).toContain('CATEGORY')
     expect(wrapper.text()).toContain('HIGHLIGHT')
     expect(wrapper.text()).toContain('SALE HISTORY')
