@@ -301,4 +301,77 @@ describe('LoginView', () => {
 
     expect(mockPush).toHaveBeenCalledWith('/product/123')
   })
+
+  it('redirects admin user directly to /admin/games on successful login', async () => {
+    const authStore = useAuthStore()
+    vi.spyOn(authStore, 'login').mockImplementationOnce(async () => {
+      authStore.user = { id: 1, username: 'admin', role: 'ROLE_ADMIN' }
+      return { success: true, user: authStore.user }
+    })
+
+    const wrapper = mount(LoginView)
+    const authCard = wrapper.findComponent(AuthCard)
+
+    authCard.vm.$emit('submit', {
+      mode: 'login',
+      username: 'admin',
+      password: 'admin123'
+    })
+    await flushPromises()
+
+    expect(mockPush).toHaveBeenCalledWith('/admin/games')
+  })
+
+  it('redirects admin user to specific admin subpage when redirect query is provided', async () => {
+    const vueRouter = await import('vue-router')
+    vi.mocked(vueRouter.useRoute).mockReturnValueOnce({
+      path: '/login',
+      query: { mode: 'login', redirect: '/admin/games/new' }
+    } as unknown as ReturnType<typeof vueRouter.useRoute>)
+
+    const authStore = useAuthStore()
+    vi.spyOn(authStore, 'login').mockImplementationOnce(async () => {
+      authStore.user = { id: 1, username: 'admin', role: 'ROLE_ADMIN' }
+      return { success: true, user: authStore.user }
+    })
+
+    const wrapper = mount(LoginView)
+    const authCard = wrapper.findComponent(AuthCard)
+
+    authCard.vm.$emit('submit', {
+      mode: 'login',
+      username: 'admin',
+      password: 'admin123'
+    })
+    await flushPromises()
+
+    expect(mockPush).toHaveBeenCalledWith('/admin/games/new')
+  })
+
+  it('does not redirect non-admin user to admin path if query parameter attempts it', async () => {
+    const vueRouter = await import('vue-router')
+    vi.mocked(vueRouter.useRoute).mockReturnValueOnce({
+      path: '/login',
+      query: { mode: 'login', redirect: '/admin/games' }
+    } as unknown as ReturnType<typeof vueRouter.useRoute>)
+
+    const authStore = useAuthStore()
+    vi.spyOn(authStore, 'login').mockImplementationOnce(async () => {
+      authStore.user = { id: 2, username: 'customer', role: 'ROLE_CUSTOMER' }
+      return { success: true, user: authStore.user }
+    })
+
+    const wrapper = mount(LoginView)
+    const authCard = wrapper.findComponent(AuthCard)
+
+    authCard.vm.$emit('submit', {
+      mode: 'login',
+      username: 'customer',
+      password: 'password123'
+    })
+    await flushPromises()
+
+    expect(mockPush).toHaveBeenCalledWith('/')
+  })
 })
+
