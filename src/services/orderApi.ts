@@ -91,7 +91,7 @@ const parseUserId = (val: unknown): number | undefined =>
 const parseOptionalString = (val: unknown): string | undefined =>
   isNonEmptyString(val) ? val : undefined
 
-const mapRawOrderDTO = (raw: unknown): OrderDTO => {
+export const mapRawOrderDTO = (raw: unknown): OrderDTO => {
   if (!isRecord(raw)) {
     return { id: 0, orderNumber: '', totalAmount: 0, items: [] }
   }

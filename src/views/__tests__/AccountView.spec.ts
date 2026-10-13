@@ -129,4 +129,54 @@ describe('AccountView', () => {
     expect(wrapper.text()).toContain('CP77-1234-5678')
     expect(wrapper.text()).toContain('Oct 12, 2026')
   })
+
+  it('paginates orders list at 15 items per page', async () => {
+    const authStore = useAuthStore()
+    authStore.setUserSession({ id: 1, username: 'player' }, 'mock-jwt')
+    const cartStore = useCartStore()
+
+    const seventeenOrders: Order[] = Array.from({ length: 17 }, (_, i) => ({
+      id: `ORD-PAGE-${i + 1}`,
+      orderNumber: `ORD-PAGE-${i + 1}`,
+      date: 'Oct 12, 2026',
+      totalAmount: 100,
+      items: [
+        {
+          id: i + 1,
+          gameId: 'game-1',
+          gameName: `Game ${i + 1}`,
+          coverImage: 'game.jpg',
+          key: `KEY-${i + 1}`,
+          price: 100
+        }
+      ]
+    }))
+
+    cartStore.orders = [...seventeenOrders]
+    vi.spyOn(cartStore, 'loadOrders').mockResolvedValue()
+
+    const wrapper = mountAccountView()
+    await flushPromises()
+
+    // Page 1 should show first 15 orders
+    expect(wrapper.find('[data-test="account-order-ORD-PAGE-1"]').exists()).toBe(true)
+    expect(wrapper.find('[data-test="account-order-ORD-PAGE-15"]').exists()).toBe(true)
+    expect(wrapper.find('[data-test="account-order-ORD-PAGE-16"]').exists()).toBe(false)
+
+    const pagination = wrapper.find('[data-test="account-orders-pagination"]')
+    expect(pagination.exists()).toBe(true)
+
+    // Switch to page 2
+    const page2Btn = pagination.findAll('button').find((btn) => btn.text() === '2')
+    expect(page2Btn).toBeDefined()
+    if (page2Btn) {
+      await page2Btn.trigger('click')
+    }
+    await flushPromises()
+
+    // Page 2 should show 16th and 17th orders
+    expect(wrapper.find('[data-test="account-order-ORD-PAGE-1"]').exists()).toBe(false)
+    expect(wrapper.find('[data-test="account-order-ORD-PAGE-16"]').exists()).toBe(true)
+    expect(wrapper.find('[data-test="account-order-ORD-PAGE-17"]').exists()).toBe(true)
+  })
 })

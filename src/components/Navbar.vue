@@ -144,9 +144,14 @@ onUnmounted(() => {
         <span class="text-white/70 hover:text-white cursor-pointer transition-colors uppercase">
           HIGHLIGHT
         </span>
-        <span class="text-white/70 hover:text-white cursor-pointer transition-colors uppercase">
+        <router-link
+          to="/admin/sale-history"
+          class="text-white hover:text-accent-yellow transition-colors pb-1 uppercase"
+          :class="{ 'border-b-2 border-accent-yellow text-accent-yellow': route.path.startsWith('/admin/sale-history') || route.path.startsWith('/admin/sales') }"
+          data-test="admin-nav-sale-history"
+        >
           SALE HISTORY
-        </span>
+        </router-link>
         <router-link
           to="/account"
           class="text-white hover:text-accent-yellow transition-colors ml-1 sm:ml-2"
