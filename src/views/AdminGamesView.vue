@@ -5,8 +5,9 @@ export default {
 </script>
 
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
+import Pagination from '@/components/Pagination.vue'
 import { fetchAdminGames, deleteAdminGame } from '@/services/adminGameApi'
 import { useAuthStore } from '@/stores/auth'
 import { useToastStore } from '@/stores/toast'
@@ -21,10 +22,15 @@ const games = ref<Game[]>([])
 const isLoading = ref(false)
 const errorMessage = ref<string | null>(null)
 
+const currentPage = ref(1)
+const pageSize = ref(15)
+const totalCount = ref(0)
+const totalPages = computed(() => Math.max(1, Math.ceil(totalCount.value / pageSize.value)))
+
 const gameToDelete = ref<Game | null>(null)
 const isDeleting = ref(false)
 
-const loadGames = async (search = ''): Promise<void> => {
+const loadGames = async (search = '', page = currentPage.value): Promise<void> => {
   if (!authStore.token) {
     return
   }
@@ -33,9 +39,12 @@ const loadGames = async (search = ''): Promise<void> => {
   try {
     const res = await fetchAdminGames(authStore.token, {
       search: search.trim() || undefined,
-      size: 100
+      page,
+      size: pageSize.value
     })
     games.value = res.games
+    totalCount.value = res.totalCount
+    currentPage.value = page
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : 'Failed to load games'
     errorMessage.value = msg
@@ -43,6 +52,12 @@ const loadGames = async (search = ''): Promise<void> => {
   } finally {
     isLoading.value = false
   }
+}
+
+const onPageChange = async (page: number): Promise<void> => {
+  const querySearch = typeof route.query.search === 'string' ? route.query.search : ''
+  await loadGames(querySearch, page)
+  window.scrollTo({ top: 0, behavior: 'smooth' })
 }
 
 const confirmDelete = (game: Game): void => {
@@ -62,8 +77,12 @@ const executeDelete = async (): Promise<void> => {
   try {
     await deleteAdminGame(authStore.token, target.id)
     toastStore.showSuccess(`Deleted game "${target.name}" successfully`)
-    games.value = games.value.filter((g) => g.id !== target.id)
     gameToDelete.value = null
+    const querySearch = typeof route.query.search === 'string' ? route.query.search : ''
+    const nextPage = games.value.length === 1 && currentPage.value > 1
+      ? currentPage.value - 1
+      : currentPage.value
+    await loadGames(querySearch, nextPage)
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : 'Failed to delete game'
     toastStore.showError(msg)
@@ -83,13 +102,14 @@ const handleAddGame = (): void => {
 watch(
   () => route.query.search,
   (newSearch) => {
-    loadGames(typeof newSearch === 'string' ? newSearch : '')
+    currentPage.value = 1
+    loadGames(typeof newSearch === 'string' ? newSearch : '', 1)
   }
 )
 
 onMounted(() => {
   const querySearch = typeof route.query.search === 'string' ? route.query.search : ''
-  loadGames(querySearch)
+  loadGames(querySearch, 1)
 })
 </script>
 
@@ -208,6 +228,14 @@ onMounted(() => {
           </table>
         </div>
       </div>
+
+      <!-- Pagination -->
+      <Pagination
+        :current-page="currentPage"
+        :total-pages="totalPages"
+        data-test="admin-games-pagination"
+        @page-change="onPageChange"
+      />
     </div>
 
     <!-- Floating Action Button (FAB) matching Screenshot 1 -->
