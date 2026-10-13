@@ -132,7 +132,7 @@ describe('AdminGameFormView', () => {
 
       // Remove screenshot
       const removeBtn = wrapper.find('[data-test="remove-screenshot-0"]')
-      await removeBtn.trigger('click')
+      await removeBtn.trigger('keydown.enter')
       expect(shotSlot.find('img').exists()).toBe(false)
     })
 

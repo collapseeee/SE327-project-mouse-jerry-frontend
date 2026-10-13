@@ -61,7 +61,7 @@ describe('HighlightCarousel', () => {
     })
 
     const slides = wrapper.findAll('.slide')
-    expect(slides.length).toBe(5)
+    expect(slides).toHaveLength(5)
   })
 
   it('handles empty highlights gracefully', () => {
@@ -79,6 +79,6 @@ describe('HighlightCarousel', () => {
     })
 
     const slides = wrapper.findAll('.slide')
-    expect(slides.length).toBe(0)
+    expect(slides).toHaveLength(0)
   })
 })

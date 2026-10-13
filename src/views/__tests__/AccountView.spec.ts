@@ -71,7 +71,7 @@ describe('AccountView', () => {
   it('renders customer account badge when role is not admin', async () => {
     const authStore = useAuthStore()
     authStore.setUserSession(
-      { id: 2, username: 'gamer99', email: 'gamer99@example.com', role: 'ROLE_USER' },
+      { id: 2, username: 'gamer99', email: 'gamer99@example.com', role: 'ROLE_CUSTOMER' },
       'mock-jwt'
     )
     const cartStore = useCartStore()

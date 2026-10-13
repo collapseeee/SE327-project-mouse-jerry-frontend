@@ -164,12 +164,12 @@ const confirmImageModal = (): void => {
   closeImageModal()
 }
 
-const removeCoverImage = (event: MouseEvent): void => {
+const removeCoverImage = (event: Event): void => {
   event.stopPropagation()
   coverImage.value = ''
 }
 
-const removeScreenshot = (index: number, event: MouseEvent): void => {
+const removeScreenshot = (index: number, event: Event): void => {
   event.stopPropagation()
   screenshots.value[index] = ''
 }
@@ -326,16 +326,13 @@ onMounted(async () => {
         <div class="flex flex-col sm:flex-row gap-6 items-start">
           <!-- Cover Image Slot matching Screenshot 2 -->
           <div class="flex-shrink-0">
-            <div
-              role="button"
-              tabindex="0"
-              class="w-36 h-48 border-2 border-dashed border-gray-300 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-primary hover:bg-slate-50/50 transition-all relative overflow-hidden group bg-slate-50/30"
+            <button
+              type="button"
+              class="w-36 h-48 border-2 border-dashed border-gray-300 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-primary hover:bg-slate-50/50 transition-all relative overflow-hidden group bg-slate-50/30 p-0 text-left"
               title="Add / Change Cover Image"
               aria-label="Add or change cover image"
               data-test="cover-image-slot"
               @click="openImageModal({ type: 'cover' })"
-              @keydown.enter.prevent="openImageModal({ type: 'cover' })"
-              @keydown.space.prevent="openImageModal({ type: 'cover' })"
             >
               <template v-if="coverImage">
                 <img
@@ -343,20 +340,24 @@ onMounted(async () => {
                   alt="Cover Preview"
                   class="w-full h-full object-cover"
                 />
-                <button
-                  type="button"
-                  class="absolute top-2 right-2 bg-black/60 hover:bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+                <span
+                  class="absolute top-2 right-2 bg-black/60 hover:bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
                   title="Remove cover"
+                  role="button"
+                  tabindex="0"
+                  aria-label="Remove cover image"
                   data-test="remove-cover-btn"
                   @click="removeCoverImage"
+                  @keydown.enter.stop="removeCoverImage"
+                  @keydown.space.stop.prevent="removeCoverImage"
                 >
                   <i class="fa-solid fa-xmark"></i>
-                </button>
+                </span>
               </template>
               <template v-else>
                 <i class="fa-solid fa-plus text-2xl text-gray-400 group-hover:text-primary transition-colors"></i>
               </template>
-            </div>
+            </button>
           </div>
 
           <!-- Basic Info Fields (Game name, Price, Stock, Cancel/Save buttons) -->
@@ -442,18 +443,15 @@ onMounted(async () => {
             Screenshots (5 slots) :
           </p>
           <div class="grid grid-cols-5 gap-3">
-            <div
+            <button
               v-for="(slotUrl, idx) in screenshots"
               :key="idx"
-              role="button"
-              tabindex="0"
-              class="h-20 border-2 border-dashed border-gray-300 rounded-xl flex items-center justify-center cursor-pointer hover:border-primary hover:bg-slate-50/50 transition-all relative overflow-hidden group bg-slate-50/30"
+              type="button"
+              class="h-20 border-2 border-dashed border-gray-300 rounded-xl flex items-center justify-center cursor-pointer hover:border-primary hover:bg-slate-50/50 transition-all relative overflow-hidden group bg-slate-50/30 p-0"
               :title="`Screenshot slot ${idx + 1}`"
               :aria-label="`Screenshot slot ${idx + 1}`"
               :data-test="`screenshot-slot-${idx}`"
               @click="openImageModal({ type: 'screenshot', index: idx })"
-              @keydown.enter.prevent="openImageModal({ type: 'screenshot', index: idx })"
-              @keydown.space.prevent="openImageModal({ type: 'screenshot', index: idx })"
             >
               <template v-if="slotUrl">
                 <img
@@ -461,20 +459,24 @@ onMounted(async () => {
                   :alt="`Screenshot ${idx + 1}`"
                   class="w-full h-full object-cover"
                 />
-                <button
-                  type="button"
-                  class="absolute top-1 right-1 bg-black/60 hover:bg-red-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-[10px] opacity-0 group-hover:opacity-100 transition-opacity"
+                <span
+                  class="absolute top-1 right-1 bg-black/60 hover:bg-red-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-[10px] opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
                   title="Remove screenshot"
+                  role="button"
+                  tabindex="0"
+                  :aria-label="`Remove screenshot ${idx + 1}`"
                   :data-test="`remove-screenshot-${idx}`"
                   @click="removeScreenshot(idx, $event)"
+                  @keydown.enter.stop="removeScreenshot(idx, $event)"
+                  @keydown.space.stop.prevent="removeScreenshot(idx, $event)"
                 >
                   <i class="fa-solid fa-xmark"></i>
-                </button>
+                </span>
               </template>
               <template v-else>
                 <i class="fa-solid fa-plus text-base text-gray-400 group-hover:text-primary transition-colors"></i>
               </template>
-            </div>
+            </button>
           </div>
         </div>
 
