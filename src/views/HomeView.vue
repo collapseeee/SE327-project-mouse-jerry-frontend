@@ -19,6 +19,7 @@ const pageSize = ref(15)
 const totalCount = ref(0)
 const catalogGames = ref<Game[]>([])
 const isLoading = ref(true)
+const gamesSectionRef = ref<HTMLElement | null>(null)
 
 const totalPages = computed(() => {
   return Math.ceil(totalCount.value / pageSize.value) || 1
@@ -73,7 +74,9 @@ onMounted(async () => {
 const onPageChange = async (page: number): Promise<void> => {
   currentPage.value = page
   await loadPageGames(page)
-  window.scrollTo({ top: 0, behavior: 'smooth' })
+  if (gamesSectionRef.value && typeof gamesSectionRef.value.scrollIntoView === 'function') {
+    gamesSectionRef.value.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
 }
 
 const handleAddToCart = async (game: Game): Promise<void> => {
@@ -90,13 +93,13 @@ const handleAddToCart = async (game: Game): Promise<void> => {
 
 <template>
   <main class="max-w-7xl mx-auto px-6 py-6">
-    <!-- Premium Swiper Coverflow Carousel -->
-    <section v-if="highlights.length > 0" class="mb-8 animate-fade-in-scale">
+    <!-- Premium Swiper Coverflow Carousel (memoized to never re-render on pagination) -->
+    <section v-if="highlights.length > 0" v-memo="[highlights]" class="mb-8">
       <HighlightCarousel :highlights="highlights" />
     </section>
 
     <!-- Section Title -->
-    <div class="mb-6 animate-fade-in-down delay-100">
+    <div ref="gamesSectionRef" class="mb-6 animate-fade-in-down delay-100 scroll-mt-6">
       <h3 class="text-2xl font-bold text-primary">
         All Games
       </h3>
