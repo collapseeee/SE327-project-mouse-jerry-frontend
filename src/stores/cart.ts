@@ -33,7 +33,11 @@ const notifyCartItemAdded = (gameTitle?: string): void => {
     toastStore.showCartSuccess(gameTitle)
     return
   }
-  toastStore.showSuccess('Item added to cart!')
+  toastStore.showToast({
+    message: 'Item added to cart!',
+    title: 'Added to Cart',
+    type: 'success'
+  })
 }
 
 const isAuthMissing = (isAuthenticated: boolean, token: string | null): boolean =>

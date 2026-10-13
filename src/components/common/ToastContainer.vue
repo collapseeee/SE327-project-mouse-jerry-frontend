@@ -62,7 +62,7 @@ const toastStore = useToastStore()
             class="text-xs font-bold text-accent-green uppercase tracking-wider"
             data-test="toast-badge-success"
           >
-            {{ toast.title || (toast.gameTitle ? 'Added to Cart' : 'Updated Completed') }}
+            {{ toast.title || 'Updated Completed' }}
           </p>
           <p
             v-else-if="toast.type === 'error'"
@@ -78,8 +78,11 @@ const toastStore = useToastStore()
           >
             {{ toast.title || 'Notice' }}
           </p>
-          <p class="text-sm font-semibold text-text-dark truncate" :title="toast.gameTitle ? `&quot;${toast.gameTitle}&quot;` : toast.message">
-            {{ toast.gameTitle ? `"${toast.gameTitle}"` : toast.message }}
+          <p
+            class="text-sm font-semibold text-text-dark truncate"
+            :title="toast.title === 'Added to Cart' && toast.gameTitle ? `&quot;${toast.gameTitle}&quot;` : toast.message"
+          >
+            {{ toast.title === 'Added to Cart' && toast.gameTitle ? `"${toast.gameTitle}"` : toast.message }}
           </p>
         </div>
 
