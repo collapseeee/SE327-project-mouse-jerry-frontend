@@ -325,38 +325,36 @@ onMounted(async () => {
         <!-- Top Section: Cover Image (Left) + Basic Info (Right) -->
         <div class="flex flex-col sm:flex-row gap-6 items-start">
           <!-- Cover Image Slot matching Screenshot 2 -->
-          <div class="flex-shrink-0">
+          <div class="flex-shrink-0 relative group w-36 h-48">
             <button
               type="button"
-              class="w-36 h-48 border-2 border-dashed border-gray-300 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-primary hover:bg-slate-50/50 transition-all relative overflow-hidden group bg-slate-50/30 p-0 text-left"
-              title="Add / Change Cover Image"
-              aria-label="Add or change cover image"
+              class="w-full h-full border-2 border-dashed border-gray-300 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-primary hover:bg-slate-50/50 transition-all overflow-hidden bg-slate-50/30 p-0 text-left"
+              :title="coverImage ? 'Change Cover Image' : 'Add Cover Image'"
+              :aria-label="coverImage ? 'Change cover image' : 'Add cover image'"
               data-test="cover-image-slot"
               @click="openImageModal({ type: 'cover' })"
             >
-              <template v-if="coverImage">
-                <img
-                  :src="coverImage"
-                  alt="Cover Preview"
-                  class="w-full h-full object-cover"
-                />
-                <span
-                  class="absolute top-2 right-2 bg-black/60 hover:bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
-                  title="Remove cover"
-                  role="button"
-                  tabindex="0"
-                  aria-label="Remove cover image"
-                  data-test="remove-cover-btn"
-                  @click="removeCoverImage"
-                  @keydown.enter.stop="removeCoverImage"
-                  @keydown.space.stop.prevent="removeCoverImage"
-                >
-                  <i class="fa-solid fa-xmark"></i>
-                </span>
-              </template>
-              <template v-else>
-                <i class="fa-solid fa-plus text-2xl text-gray-400 group-hover:text-primary transition-colors"></i>
-              </template>
+              <img
+                v-if="coverImage"
+                :src="coverImage"
+                alt="Cover Preview"
+                class="w-full h-full object-cover"
+              />
+              <i
+                v-else
+                class="fa-solid fa-plus text-2xl text-gray-400 group-hover:text-primary transition-colors"
+              ></i>
+            </button>
+            <button
+              v-if="coverImage"
+              type="button"
+              class="absolute top-2 right-2 bg-black/60 hover:bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer z-10"
+              title="Remove cover"
+              aria-label="Remove cover image"
+              data-test="remove-cover-btn"
+              @click.stop="removeCoverImage"
+            >
+              <i class="fa-solid fa-xmark"></i>
             </button>
           </div>
 
@@ -443,40 +441,44 @@ onMounted(async () => {
             Screenshots (5 slots) :
           </p>
           <div class="grid grid-cols-5 gap-3">
-            <button
+            <div
               v-for="(slotUrl, idx) in screenshots"
               :key="idx"
-              type="button"
-              class="h-20 border-2 border-dashed border-gray-300 rounded-xl flex items-center justify-center cursor-pointer hover:border-primary hover:bg-slate-50/50 transition-all relative overflow-hidden group bg-slate-50/30 p-0"
-              :title="`Screenshot slot ${idx + 1}`"
-              :aria-label="`Screenshot slot ${idx + 1}`"
-              :data-test="`screenshot-slot-${idx}`"
-              @click="openImageModal({ type: 'screenshot', index: idx })"
+              class="relative group h-20"
             >
-              <template v-if="slotUrl">
+              <button
+                type="button"
+                class="w-full h-full border-2 border-dashed border-gray-300 rounded-xl flex items-center justify-center cursor-pointer hover:border-primary hover:bg-slate-50/50 transition-all overflow-hidden bg-slate-50/30 p-0 text-left"
+                :title="slotUrl ? `Change screenshot ${idx + 1}` : `Screenshot slot ${idx + 1}`"
+                :aria-label="slotUrl ? `Change screenshot ${idx + 1}` : `Screenshot slot ${idx + 1}`"
+                :data-test="`screenshot-slot-${idx}`"
+                @click="openImageModal({ type: 'screenshot', index: idx })"
+              >
                 <img
+                  v-if="slotUrl"
                   :src="slotUrl"
                   :alt="`Screenshot ${idx + 1}`"
                   class="w-full h-full object-cover"
                 />
-                <span
-                  class="absolute top-1 right-1 bg-black/60 hover:bg-red-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-[10px] opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
-                  title="Remove screenshot"
-                  role="button"
-                  tabindex="0"
-                  :aria-label="`Remove screenshot ${idx + 1}`"
-                  :data-test="`remove-screenshot-${idx}`"
-                  @click="removeScreenshot(idx, $event)"
-                  @keydown.enter.stop="removeScreenshot(idx, $event)"
-                  @keydown.space.stop.prevent="removeScreenshot(idx, $event)"
-                >
-                  <i class="fa-solid fa-xmark"></i>
-                </span>
-              </template>
-              <template v-else>
-                <i class="fa-solid fa-plus text-base text-gray-400 group-hover:text-primary transition-colors"></i>
-              </template>
-            </button>
+                <i
+                  v-else
+                  class="fa-solid fa-plus text-base text-gray-400 group-hover:text-primary transition-colors"
+                ></i>
+              </button>
+              <button
+                v-if="slotUrl"
+                type="button"
+                class="absolute top-1 right-1 bg-black/60 hover:bg-red-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-[10px] opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer z-10"
+                title="Remove screenshot"
+                :aria-label="`Remove screenshot ${idx + 1}`"
+                :data-test="`remove-screenshot-${idx}`"
+                @click.stop="removeScreenshot(idx, $event)"
+                @keydown.enter.stop="removeScreenshot(idx, $event)"
+                @keydown.space.stop.prevent="removeScreenshot(idx, $event)"
+              >
+                <i class="fa-solid fa-xmark"></i>
+              </button>
+            </div>
           </div>
         </div>
 
